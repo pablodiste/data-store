@@ -22,12 +22,14 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
     override fun stream(key: K, refresh: Boolean): Flow<StoreResponse<T>> {
         return flow {
             if (cache.exists(key)) {
+                val streamFlow = streamFromCache(key)
                 if (refresh) {
                     val fetchedFlow = flow {
                         emit(performFetch(key))
                     }
-                    val streamFlow = streamFromCache(key)
                     emitAll(flowOf(fetchedFlow, streamFlow).flattenMerge())
+                } else {
+                    emitAll(streamFlow)
                 }
             } else {
                 emitAll(fetchAndStream(key))

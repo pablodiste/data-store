@@ -2,6 +2,8 @@ package com.pablodiste.android.sample
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
 import com.pablodiste.android.sample.ui.main.MainFragment
 
 class MainActivity : AppCompatActivity() {
@@ -15,4 +17,5 @@ class MainActivity : AppCompatActivity() {
                 .commitNow()
         }
     }
+
 }
