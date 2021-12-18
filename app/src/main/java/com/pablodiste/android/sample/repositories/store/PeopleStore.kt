@@ -1,18 +1,21 @@
 package com.pablodiste.android.sample.repositories.store
 
+import android.util.Log
 import com.pablodiste.android.adapters.retrofit.RetrofitFetcher
 import com.pablodiste.android.datastore.FetcherResult
-import com.pablodiste.android.datastore.impl.NoKey
-import com.pablodiste.android.datastore.impl.NoKeySimpleStoreImpl
 import com.pablodiste.android.datastore.adapters.realm.SimpleRealmListCache
+import com.pablodiste.android.datastore.closable.NoKeyScopedSimpleStore
+import com.pablodiste.android.datastore.impl.NoKey
 import com.pablodiste.android.sample.models.realm.People
 import com.pablodiste.android.sample.network.RetrofitManager
 import com.pablodiste.android.sample.network.StarWarsService
 import io.realm.RealmQuery
+import kotlinx.coroutines.CoroutineScope
 
-class PeopleStore: NoKeySimpleStoreImpl<List<People>>(
+class PeopleStore(coroutineScope: CoroutineScope): NoKeyScopedSimpleStore<List<People>>(
     fetcher = PeopleFetcher(),
-    cache = PeopleCache()
+    cache = PeopleCache(),
+    coroutineContext = coroutineScope.coroutineContext
 ) {
 
     class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
@@ -26,4 +29,7 @@ class PeopleStore: NoKeySimpleStoreImpl<List<People>>(
         override fun query(key: NoKey): (query: RealmQuery<People>) -> Unit = { }
     }
 
+    fun something() {
+        Log.d("Test", "Testing custom methods")
+    }
 }

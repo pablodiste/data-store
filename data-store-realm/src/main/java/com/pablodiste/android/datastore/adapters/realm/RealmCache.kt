@@ -1,6 +1,6 @@
 package com.pablodiste.android.datastore.adapters.realm
 
-import com.pablodiste.android.datastore.Cache
+import com.pablodiste.android.datastore.impl.ClosableCache
 import io.realm.Realm
 import io.realm.RealmObject
 import io.realm.RealmQuery
@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
 abstract class RealmCache<K: Any, T: RealmObject>(
     val klass: Class<T>,
     private val stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
-    ): Cache<K, T> {
+    ): ClosableCache<K, T>() {
 
     abstract fun query(key: K): (query: RealmQuery<T>) -> Unit
 
@@ -22,7 +22,7 @@ abstract class RealmCache<K: Any, T: RealmObject>(
 
     open fun deleteFromRealm(key: K, bgRealm: Realm) = deleteAll(klass, bgRealm, query(key))
 
-    override suspend fun get(key: K): T = findFirst(klass, query(key))
+    override suspend fun get(key: K): T = findFirst(klass, query(key), closeableResourceManager)
 
     override suspend fun exists(key: K): Boolean = exists(klass, query(key))
 
@@ -59,7 +59,7 @@ abstract class SimpleRealmCache<K: Any, T: RealmObject>(
 abstract class RealmListCache<K: Any, T: RealmObject>(
     val klass: Class<T>,
     private val stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
-    ): Cache<K, List<T>> {
+    ): ClosableCache<K, List<T>>() {
 
     abstract fun query(key: K): (query: RealmQuery<T>) -> Unit
 
@@ -67,7 +67,7 @@ abstract class RealmListCache<K: Any, T: RealmObject>(
 
     open fun deleteFromRealm(key: K, bgRealm: Realm) = deleteAll(klass, bgRealm, query(key))
 
-    override suspend fun get(key: K): List<T> = findAll(klass, query(key))
+    override suspend fun get(key: K): List<T> = findAll(klass, query(key), closeableResourceManager)
 
     override suspend fun exists(key: K): Boolean = exists(klass, query(key))
 

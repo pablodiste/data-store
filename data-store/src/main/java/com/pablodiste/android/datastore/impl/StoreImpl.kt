@@ -1,6 +1,7 @@
 package com.pablodiste.android.datastore.impl
 
 import com.pablodiste.android.datastore.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
@@ -89,6 +90,10 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
      * @param forced    if true, it ignores the rate limiter and makes the API call anyways.
      */
     suspend fun performFetch(key: K, forced: Boolean = false) = fetch(key, forced)
+
+    open fun scoped(viewModelScope: CoroutineScope): ScopedStore<K, I, T> {
+        return ScopedStore(fetcher, cache as ClosableCache, mapper, viewModelScope.coroutineContext)
+    }
 }
 
 /**
@@ -96,4 +101,10 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
  * Useful when parsing json over the DB objects directly.
  */
 open class SimpleStoreImpl<K: Any, T: Any>(fetcher: Fetcher<K, T>, cache: Cache<K, T>):
-    StoreImpl<K, T, T>(fetcher, cache, SameEntityMapper())
+    StoreImpl<K, T, T>(fetcher, cache, SameEntityMapper()) {
+
+        override fun scoped(viewModelScope: CoroutineScope): ScopedSimpleStoreImpl<K, T> {
+            return ScopedSimpleStoreImpl(fetcher, cache as ClosableCache, viewModelScope.coroutineContext)
+        }
+
+    }
