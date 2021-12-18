@@ -1,9 +1,11 @@
 package com.pablodiste.android.sample.models.realm
 
 import io.realm.RealmObject
+import io.realm.annotations.PrimaryKey
 
 open class People: RealmObject() {
 
+    @PrimaryKey
     var name: String? = null
     var height: String? = null
     var mass: String? = null

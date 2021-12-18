@@ -14,7 +14,7 @@ object RetrofitManager : RetrofitServiceProvider {
 
     init {
         val okHttpClientBuilder = OkHttpClient.Builder()
-        retrofit = okHttpClientBuilder.buildRetrofit("swapi.dev/api/")
+        retrofit = okHttpClientBuilder.buildRetrofit("swapi.py4e.com/api/")
     }
 
     override fun <T> createService(service: Class<T>): T {
