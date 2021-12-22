@@ -1,5 +1,6 @@
 package com.pablodiste.android.datastore.impl
 
+import android.util.Log
 import com.pablodiste.android.datastore.*
 import com.pablodiste.android.datastore.ratelimiter.RateLimiter
 import com.pablodiste.android.datastore.ratelimiter.RateLimiterFetcherController
@@ -18,6 +19,7 @@ class FetcherController<K: Any, I: Any>(
     private val TAG = this.javaClass.simpleName
 
     private fun getRateLimiter(key: K): RateLimiter<String> {
+        Log.d(TAG, "Limiting using key: $key")
         return RateLimiterFetcherController.get(key.toString(), fetcher.rateLimitPolicy.timeout, fetcher.rateLimitPolicy.timeUnit)
     }
 

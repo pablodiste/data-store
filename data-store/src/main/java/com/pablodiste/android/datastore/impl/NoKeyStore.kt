@@ -2,12 +2,17 @@ package com.pablodiste.android.datastore.impl
 
 import com.pablodiste.android.datastore.StoreResponse
 import kotlinx.coroutines.flow.Flow
+import kotlin.reflect.typeOf
 
-data class NoKey(val value: Int = 0)
+data class NoKey(val className: String = "")
 
 typealias NoKeySimpleStore<T> = SimpleStoreImpl<NoKey, T>
 
-fun <T: Any> NoKeySimpleStore<T>.stream(refresh: Boolean): Flow<StoreResponse<T>> = stream(NoKey(), refresh)
-suspend fun <T: Any> NoKeySimpleStore<T>.get(): StoreResponse<T> = get(NoKey())
-suspend fun <T: Any> NoKeySimpleStore<T>.fetch(forced: Boolean): StoreResponse<T> = fetch(NoKey(), forced)
-suspend fun <T: Any> NoKeySimpleStore<T>.performFetch(forced: Boolean): StoreResponse<T> = performFetch(NoKey(), forced)
+@OptIn(ExperimentalStdlibApi::class)
+inline fun <reified T: Any> NoKeySimpleStore<T>.stream(refresh: Boolean): Flow<StoreResponse<T>> = stream(NoKey( typeOf<T>().toString() ), refresh)
+@OptIn(ExperimentalStdlibApi::class)
+suspend inline fun <reified T: Any> NoKeySimpleStore<T>.get(): StoreResponse<T> = get(NoKey( typeOf<T>().toString() ))
+@OptIn(ExperimentalStdlibApi::class)
+suspend inline fun <reified T: Any> NoKeySimpleStore<T>.fetch(forced: Boolean): StoreResponse<T> = fetch(NoKey( typeOf<T>().toString() ), forced)
+@OptIn(ExperimentalStdlibApi::class)
+suspend inline fun <reified T: Any> NoKeySimpleStore<T>.performFetch(forced: Boolean): StoreResponse<T> = performFetch(NoKey( typeOf<T>().toString() ), forced)
