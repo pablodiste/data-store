@@ -1,6 +1,7 @@
 package com.pablodiste.android.datastore.impl
 
 import com.pablodiste.android.datastore.*
+import com.pablodiste.android.datastore.ratelimiter.RateLimiter
 import com.pablodiste.android.datastore.ratelimiter.RateLimiterFetcherController
 import com.pablodiste.android.datastore.throttling.ThrottlingFetcherController
 import kotlinx.coroutines.Dispatchers
@@ -16,10 +17,10 @@ class FetcherController<K: Any, I: Any>(
 
     private val TAG = this.javaClass.simpleName
 
-    private val rateLimiter = RateLimiterFetcherController.get<K>(
-        fetcher.rateLimitPolicy.timeout,
-        fetcher.rateLimitPolicy.timeUnit
-    )
+    private fun getRateLimiter(key: K): RateLimiter<String> {
+        return RateLimiterFetcherController.get(key.toString(), fetcher.rateLimitPolicy.timeout, fetcher.rateLimitPolicy.timeUnit)
+    }
+
     private val throttlingController: ThrottlingFetcherController = StoreConfig.throttlingController
 
     /**
@@ -28,8 +29,9 @@ class FetcherController<K: Any, I: Any>(
     suspend fun fetch(key: K, force: Boolean): FetcherResult<I> {
         val isLimiterDisabled: Boolean = StoreConfig.isRateLimiterEnabled().not()
         val isThrottlingDisabled: Boolean = StoreConfig.isThrottlingEnabled().not()
+        val rateLimiter = getRateLimiter(key)
 
-        return if (force || rateLimiter.shouldFetch(key) || isLimiterDisabled) {
+        return if (force || rateLimiter.shouldFetch(key.toString()) || isLimiterDisabled) {
             withContext(Dispatchers.IO) {
                 if (!isThrottlingDisabled && throttlingController.isThrottling()) {
                     // Currently throttling requests
@@ -39,7 +41,7 @@ class FetcherController<K: Any, I: Any>(
                         return@withContext fetcher.fetch(key)
                     } catch (e: Exception) {
                         if (throttlingController.isApiError(e)) throttlingController.onServerError()
-                        rateLimiter.reset(key)
+                        rateLimiter.reset(key.toString())
                         throw e
                     }
                 }

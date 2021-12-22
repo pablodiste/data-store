@@ -1,10 +1,8 @@
 package com.pablodiste.android.datastore.impl
 
 import com.pablodiste.android.datastore.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.withContext
 
 open class StoreImpl<K: Any, I: Any, T: Any>(
     protected val fetcher: Fetcher<K, I>,
@@ -22,18 +20,18 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
      */
     override fun stream(key: K, refresh: Boolean): Flow<StoreResponse<T>> {
         return flow {
-            if (cache.exists(key)) {
-                val streamFlow = streamFromCache(key)
-                if (refresh) {
-                    val fetchedFlow = flow {
-                        emit(performFetch(key))
+            coroutineScope {
+                if (cache.exists(key)) {
+                    val streamFlow = streamFromCache(key)
+                    if (refresh) {
+                        launch {
+                            performFetch(key)
+                        }
                     }
-                    emitAll(flowOf(fetchedFlow, streamFlow).flattenMerge())
-                } else {
                     emitAll(streamFlow)
+                } else {
+                    emitAll(fetchAndStream(key))
                 }
-            } else {
-                emitAll(fetchAndStream(key))
             }
         }
     }
