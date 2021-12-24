@@ -1,4 +1,4 @@
-package com.pablodiste.android.sample.ui.main
+package com.pablodiste.android.sample.ui.stream1
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -12,14 +12,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
-class MainViewModel : ViewModel() {
+class StreamExampleViewModel : ViewModel() {
 
     private val peopleStore1 = PeopleStore(viewModelScope)
     private val peopleStore2 = PeopleStore(viewModelScope)
     private val planetStore = PlanetsStore(viewModelScope)
     val uiState = MutableStateFlow<List<People>>(listOf())
 
-    fun getPeople() {
+    init {
         viewModelScope.launch {
             peopleStore1.stream(refresh = true).collect { result ->
                 Log.d(TAG, "Stream 1: ${result.origin} Received new People")
@@ -49,6 +49,6 @@ class MainViewModel : ViewModel() {
     }
 
     companion object {
-        private val TAG: String = MainViewModel::class.java.simpleName
+        private val TAG: String = StreamExampleViewModel::class.java.simpleName
     }
 }
