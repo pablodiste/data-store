@@ -21,6 +21,7 @@ class PeopleStore(coroutineScope: CoroutineScope): NoKeyScopedSimpleStore<List<P
     class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
         override suspend fun fetch(key: NoKey, service: StarWarsService): FetcherResult<List<People>> {
             val people = service.getPeople()
+            people.results.forEach { it.parseId() }
             return FetcherResult.Data(people.results)
         }
     }

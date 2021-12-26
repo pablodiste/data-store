@@ -2,7 +2,10 @@ package com.pablodiste.android.datastore.impl
 
 import com.pablodiste.android.datastore.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 
 open class StoreImpl<K: Any, I: Any, T: Any>(
     protected val fetcher: Fetcher<K, I>,
@@ -74,7 +77,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
                     fetched to ResponseOrigin.FETCHER
                 }
                 is FetcherResult.NoData -> {
-                    val cacheResponse = cache.listen(key).first()
+                    val cacheResponse = cache.get(key)
                     cacheResponse to ResponseOrigin.CACHE
                 }
                 is FetcherResult.Error -> throw fetcherResult.error

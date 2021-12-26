@@ -6,23 +6,20 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.pablodiste.android.sample.ui.stream1.StreamExampleViewModel
+import com.pablodiste.android.sample.ui.fetch.FetchExample
+import com.pablodiste.android.sample.ui.fetch.FetchExampleViewModel
 import com.pablodiste.android.sample.ui.stream1.StreamExample
+import com.pablodiste.android.sample.ui.stream1.StreamExampleViewModel
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -71,56 +68,11 @@ fun AppMainScreen() {
                     val viewModel = viewModel<StreamExampleViewModel>()
                     StreamExample(viewModel, openDrawer = { openDrawer() })
                 }
-                /*
-                composable(DrawerScreens.Account.route) {
-                    Account(
-                        openDrawer = {
-                            openDrawer()
-                        }
-                    )
+                composable(DrawerScreens.FetchExample.route) {
+                    val viewModel = viewModel<FetchExampleViewModel>()
+                    FetchExample(viewModel, openDrawer = { openDrawer() })
                 }
-                composable(DrawerScreens.Help.route) {
-                    Help(
-                        navController = navController
-                    )
-                }
-
-                 */
             }
-        }
-    }
-}
-
-@Composable
-fun Account(openDrawer: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopBar(
-            title = "Account",
-            buttonIcon = Icons.Filled.Menu,
-            onButtonClicked = { openDrawer() }
-        )
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = "Account.", style = MaterialTheme.typography.h4)
-        }
-    }
-}
-
-@Composable
-fun Help(navController: NavController) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopBar(
-            title = "Help",
-            buttonIcon = Icons.Filled.ArrowBack,
-            onButtonClicked = { navController.popBackStack() }
-        )
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = "Help.", style = MaterialTheme.typography.h4)
         }
     }
 }
@@ -145,14 +97,12 @@ fun TopBar(title: String = "", buttonIcon: ImageVector, onButtonClicked: () -> U
 
 sealed class DrawerScreens(val title: String, val route: String) {
     object StreamExample : DrawerScreens("Stream Example", "stream1")
-    object Account : DrawerScreens("Account", "account")
-    object Help : DrawerScreens( "Help", "help")
+    object FetchExample : DrawerScreens("Fetch Example", "fetch1")
 }
 
 private val screens = listOf(
     DrawerScreens.StreamExample,
-    DrawerScreens.Account,
-    DrawerScreens.Help
+    DrawerScreens.FetchExample,
 )
 
 @Composable
