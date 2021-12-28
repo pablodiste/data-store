@@ -13,10 +13,9 @@ import com.pablodiste.android.sample.network.StarWarsService
 import io.realm.RealmQuery
 import kotlinx.coroutines.CoroutineScope
 
-class PlanetsStore(coroutineScope: CoroutineScope): NoKeyScopedSimpleStore<List<Planet>>(
+class PlanetsStore: NoKeyScopedSimpleStore<List<Planet>>(
     fetcher = PlanetFetcher(),
-    cache = PlanetCache(),
-    coroutineContext = coroutineScope.coroutineContext
+    cache = PlanetCache()
 ) {
 
     class PlanetFetcher: RetrofitFetcher<NoKey, List<Planet>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {

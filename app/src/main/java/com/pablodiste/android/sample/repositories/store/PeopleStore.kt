@@ -12,10 +12,9 @@ import com.pablodiste.android.sample.network.StarWarsService
 import io.realm.RealmQuery
 import kotlinx.coroutines.CoroutineScope
 
-class PeopleStore(coroutineScope: CoroutineScope): NoKeyScopedSimpleStore<List<People>>(
+class PeopleStore: NoKeyScopedSimpleStore<List<People>>(
     fetcher = PeopleFetcher(),
-    cache = PeopleCache(),
-    coroutineContext = coroutineScope.coroutineContext
+    cache = PeopleCache()
 ) {
 
     class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {

@@ -10,10 +10,9 @@ import com.pablodiste.android.sample.network.StarWarsService
 import io.realm.RealmQuery
 import kotlinx.coroutines.CoroutineScope
 
-class PersonStore(coroutineScope: CoroutineScope): ScopedSimpleStoreImpl<PersonStore.Key, People>(
+class PersonStore: ScopedSimpleStoreImpl<PersonStore.Key, People>(
     fetcher = PersonFetcher(),
-    cache = PersonCache(),
-    coroutineContext = coroutineScope.coroutineContext
+    cache = PersonCache()
 ) {
 
     data class Key(val id: String)

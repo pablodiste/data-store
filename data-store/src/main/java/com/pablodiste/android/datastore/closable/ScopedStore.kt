@@ -58,6 +58,5 @@ class CloseableResourceManager {
  * Useful when parsing json over the DB objects directly.
  */
 open class ScopedSimpleStoreImpl<K: Any, T: Any>(fetcher: Fetcher<K, T>,
-                                                 cache: ClosableCache<K, T>,
-                                                 coroutineContext: CoroutineContext):
+                                                 cache: ClosableCache<K, T>):
     ScopedStore<K, T, T>(fetcher, cache, SameEntityMapper())

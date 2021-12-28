@@ -15,9 +15,9 @@ import kotlinx.coroutines.job
 
 class StreamExampleViewModel : ViewModel() {
 
-    private val peopleStore1 = PeopleStore(viewModelScope)
-    private val peopleStore2 = PeopleStore(viewModelScope)
-    private val planetStore = PlanetsStore(viewModelScope)
+    private val peopleStore1 = PeopleStore()
+    private val peopleStore2 = PeopleStore()
+    private val planetStore = PlanetsStore()
     val uiState = MutableStateFlow<List<People>>(listOf())
 
     init {

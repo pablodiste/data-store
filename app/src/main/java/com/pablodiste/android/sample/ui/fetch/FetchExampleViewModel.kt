@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 
 class FetchExampleViewModel : ViewModel() {
 
-    private val personStore = PersonStore(viewModelScope)
+    private val personStore = PersonStore()
     val uiState = MutableStateFlow<People>(People())
 
     init {
