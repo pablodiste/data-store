@@ -3,7 +3,7 @@ package com.pablodiste.android.sample.repositories.store
 import com.pablodiste.android.adapters.retrofit.RetrofitFetcher
 import com.pablodiste.android.datastore.FetcherResult
 import com.pablodiste.android.datastore.adapters.realm.SimpleRealmCache
-import com.pablodiste.android.datastore.impl.ScopedSimpleStoreImpl
+import com.pablodiste.android.datastore.closable.ScopedSimpleStoreImpl
 import com.pablodiste.android.sample.models.realm.People
 import com.pablodiste.android.sample.network.RetrofitManager
 import com.pablodiste.android.sample.network.StarWarsService

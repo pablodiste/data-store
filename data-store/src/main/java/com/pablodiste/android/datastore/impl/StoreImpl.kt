@@ -1,16 +1,19 @@
 package com.pablodiste.android.datastore.impl
 
 import com.pablodiste.android.datastore.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 open class StoreImpl<K: Any, I: Any, T: Any>(
-    protected val fetcher: Fetcher<K, I>,
-    protected val cache: Cache<K, T>,
-    protected val mapper: Mapper<I, T>
+    protected open val fetcher: Fetcher<K, I>,
+    protected open val cache: Cache<K, T>,
+    protected open val mapper: Mapper<I, T>
 ): Store<K, T> {
 
     private val TAG = this.javaClass.simpleName
@@ -91,10 +94,6 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
      * @param forced    if true, it ignores the rate limiter and makes the API call anyways.
      */
     suspend fun performFetch(key: K, forced: Boolean = false) = fetch(key, forced)
-
-    open fun scoped(viewModelScope: CoroutineScope): ScopedStore<K, I, T> {
-        return ScopedStore(fetcher, cache as ClosableCache, mapper, viewModelScope.coroutineContext)
-    }
 }
 
 /**
@@ -102,10 +101,4 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
  * Useful when parsing json over the DB objects directly.
  */
 open class SimpleStoreImpl<K: Any, T: Any>(fetcher: Fetcher<K, T>, cache: Cache<K, T>):
-    StoreImpl<K, T, T>(fetcher, cache, SameEntityMapper()) {
-
-        override fun scoped(viewModelScope: CoroutineScope): ScopedSimpleStoreImpl<K, T> {
-            return ScopedSimpleStoreImpl(fetcher, cache as ClosableCache, viewModelScope.coroutineContext)
-        }
-
-    }
+    StoreImpl<K, T, T>(fetcher, cache, SameEntityMapper())

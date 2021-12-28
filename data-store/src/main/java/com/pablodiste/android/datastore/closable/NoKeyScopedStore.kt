@@ -2,7 +2,6 @@ package com.pablodiste.android.datastore.closable
 
 import com.pablodiste.android.datastore.StoreResponse
 import com.pablodiste.android.datastore.impl.NoKey
-import com.pablodiste.android.datastore.impl.ScopedSimpleStoreImpl
 import kotlinx.coroutines.flow.Flow
 import kotlin.reflect.typeOf
 

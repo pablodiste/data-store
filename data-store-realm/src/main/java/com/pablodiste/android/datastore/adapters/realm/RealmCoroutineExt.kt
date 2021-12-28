@@ -1,11 +1,14 @@
 package com.pablodiste.android.datastore.adapters.realm
 
-import com.pablodiste.android.datastore.impl.CloseableResourceManager
+import android.util.Log
+import com.pablodiste.android.datastore.closable.CloseableResourceManager
 import io.realm.Realm
 import io.realm.RealmObject
 import io.realm.RealmQuery
 import io.realm.kotlin.executeTransactionAwait
 import io.realm.kotlin.toFlow
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 
 /**
@@ -16,11 +19,13 @@ import kotlinx.coroutines.flow.*
  */
 suspend fun <T : RealmObject> findFirst(javaClass: Class<T>,
                                         runQuery: (query: RealmQuery<T>) -> Unit = {},
-                                        closeableResourceManager: CloseableResourceManager): T {
+                                        closeableResourceManager: CloseableResourceManager
+): T {
     val realm = Realm.getDefaultInstance()
     val baseQuery = realm.where(javaClass)
     runQuery(baseQuery)
     closeableResourceManager.addOnCloseListener {
+        Log.d("Realm", "Closing Realm")
         realm.close()
     }
     return baseQuery.findFirstAsync()
@@ -37,11 +42,13 @@ suspend fun <T : RealmObject> findFirst(javaClass: Class<T>,
  */
 suspend fun <T : RealmObject> findAll(javaClass: Class<T>,
                                       runQuery: (query: RealmQuery<T>) -> Unit = {},
-                                      closeableResourceManager: CloseableResourceManager): List<T> {
+                                      closeableResourceManager: CloseableResourceManager
+): List<T> {
     val realm = Realm.getDefaultInstance()
     val baseQuery = realm.where(javaClass)
     runQuery(baseQuery)
     closeableResourceManager.addOnCloseListener {
+        Log.d("Realm", "Closing Realm")
         realm.close()
     }
     return baseQuery.findAllAsync().toFlow()

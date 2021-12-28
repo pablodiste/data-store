@@ -1,6 +1,6 @@
 package com.pablodiste.android.datastore.adapters.realm
 
-import com.pablodiste.android.datastore.impl.ClosableCache
+import com.pablodiste.android.datastore.closable.ClosableCache
 import io.realm.Realm
 import io.realm.RealmObject
 import io.realm.RealmQuery

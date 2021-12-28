@@ -3,6 +3,7 @@ package com.pablodiste.android.sample.ui.fetch
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pablodiste.android.datastore.closable.launch
 import com.pablodiste.android.sample.models.realm.People
 import com.pablodiste.android.sample.repositories.store.PersonStore
 import com.pablodiste.android.sample.ui.stream1.StreamExampleViewModel
@@ -15,7 +16,7 @@ class FetchExampleViewModel : ViewModel() {
     val uiState = MutableStateFlow<People>(People())
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(personStore) {
             val response = personStore.fetch(PersonStore.Key("1"))
             Log.d(TAG, "Fetch response: ${response.value}")
             uiState.value = response.value
@@ -23,6 +24,6 @@ class FetchExampleViewModel : ViewModel() {
     }
 
     companion object {
-        private val TAG: String = StreamExampleViewModel::class.java.simpleName
+        private val TAG: String = FetchExampleViewModel::class.java.simpleName
     }
 }
