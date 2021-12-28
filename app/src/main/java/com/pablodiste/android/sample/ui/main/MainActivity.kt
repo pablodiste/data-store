@@ -18,6 +18,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.pablodiste.android.sample.ui.fetch.FetchExample
 import com.pablodiste.android.sample.ui.fetch.FetchExampleViewModel
+import com.pablodiste.android.sample.ui.get.GetExample
+import com.pablodiste.android.sample.ui.get.GetExampleViewModel
 import com.pablodiste.android.sample.ui.stream1.StreamExample
 import com.pablodiste.android.sample.ui.stream1.StreamExampleViewModel
 import kotlinx.coroutines.launch
@@ -72,6 +74,10 @@ fun AppMainScreen() {
                     val viewModel = viewModel<FetchExampleViewModel>()
                     FetchExample(viewModel, openDrawer = { openDrawer() })
                 }
+                composable(DrawerScreens.GetExample.route) {
+                    val viewModel = viewModel<GetExampleViewModel>()
+                    GetExample(viewModel, openDrawer = { openDrawer() })
+                }
             }
         }
     }
@@ -98,11 +104,13 @@ fun TopBar(title: String = "", buttonIcon: ImageVector, onButtonClicked: () -> U
 sealed class DrawerScreens(val title: String, val route: String) {
     object StreamExample : DrawerScreens("Stream Example", "stream1")
     object FetchExample : DrawerScreens("Fetch Example", "fetch1")
+    object GetExample : DrawerScreens("Get Example", "get1")
 }
 
 private val screens = listOf(
     DrawerScreens.StreamExample,
     DrawerScreens.FetchExample,
+    DrawerScreens.GetExample,
 )
 
 @Composable
