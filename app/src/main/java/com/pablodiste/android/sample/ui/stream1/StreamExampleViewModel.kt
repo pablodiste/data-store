@@ -3,15 +3,15 @@ package com.pablodiste.android.sample.ui.stream1
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pablodiste.android.datastore.closable.launch
+import com.pablodiste.android.datastore.closable.autoClose
 import com.pablodiste.android.datastore.closable.stream
 import com.pablodiste.android.sample.models.realm.People
 import com.pablodiste.android.sample.repositories.store.PeopleStore
 import com.pablodiste.android.sample.repositories.store.PlanetsStore
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 
 class StreamExampleViewModel : ViewModel() {
 
@@ -21,13 +21,13 @@ class StreamExampleViewModel : ViewModel() {
     val uiState = MutableStateFlow<List<People>>(listOf())
 
     init {
-        viewModelScope.launch(peopleStore1) {
+        viewModelScope.launch {
             peopleStore1.stream(refresh = true).collect { result ->
                 Log.d(TAG, "Stream 1: ${result.origin} Received new People")
-                //people.forEach { Log.d(TAG, "People: $it") }
                 uiState.value = result.value
             }
-        }
+        }.autoClose(peopleStore1)
+        /*
         viewModelScope.launch(peopleStore2) {
             peopleStore2.stream(refresh = true).collect { result ->
                 Log.d(TAG, "Stream 2: ${result.origin} Received new People")
@@ -40,6 +40,7 @@ class StreamExampleViewModel : ViewModel() {
                 Log.d(TAG, "Stream 3: ${result.origin} Received new Planets")
             }
         }
+         */
         //uiState.value = peopleStore.get().value
         peopleStore1.something()
 

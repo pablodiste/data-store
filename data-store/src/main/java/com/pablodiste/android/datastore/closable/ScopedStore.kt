@@ -17,10 +17,26 @@ open class ScopedStore<K: Any, I: Any, T: Any>(
     mapper: Mapper<I, T>
 ): StoreImpl<K, I, T>(fetcher, cache, mapper) {
 
+    fun autoClose(coroutineScope: CoroutineScope) {
+        autoClose(coroutineScope.coroutineContext)
+    }
+
+    fun autoClose(coroutineContext: CoroutineContext) {
+        autoClose(coroutineContext.job)
+    }
+
+    fun autoClose(job: Job) {
+        job.invokeOnCompletion { close() }
+    }
+
     fun close() {
         Log.d("ScopedStore", "Releasing resources")
         cache.closeableResourceManager.close()
     }
+}
+
+fun Job.autoClose(vararg scopedStores: ScopedStore<*, *, *>) {
+    scopedStores.forEach { it.autoClose(this) }
 }
 
 fun <K: Any, I: Any, T: Any> CoroutineScope.launch(
@@ -29,7 +45,7 @@ fun <K: Any, I: Any, T: Any> CoroutineScope.launch(
     start: CoroutineStart = CoroutineStart.DEFAULT,
     block: suspend CoroutineScope.() -> Unit
 ): Job {
-    this.coroutineContext.job.invokeOnCompletion { scopedStore.close() }
+    scopedStore.autoClose(this)
     return launch(context, start, block)
 }
 
