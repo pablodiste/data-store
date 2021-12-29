@@ -10,7 +10,7 @@ interface StarWarsService {
     @GET("people/")
     suspend fun getPeople(): ApiListResponse<People>
 
-    @GET("people/{id}")
+    @GET("people/{id}/")
     suspend fun getPerson(@Path("id") id: String): People
 
     @GET("planets/")
