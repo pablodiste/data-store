@@ -1,4 +1,4 @@
-package com.pablodiste.android.sample.ui.get
+package com.pablodiste.android.sample.ui.realm.fetch
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,23 +13,23 @@ import androidx.compose.ui.unit.dp
 import com.pablodiste.android.sample.ui.main.TopBar
 
 @Composable
-fun GetExample(viewModel: GetExampleViewModel, openDrawer: () -> Unit) {
+fun FetchExample(viewModel: FetchExampleViewModel, openDrawer: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         TopBar(
-            title = "Store Get Example",
+            title = "Store Fetch Example",
             buttonIcon = Icons.Filled.Menu,
             onButtonClicked = { openDrawer() }
         )
-        GetExamplePerson(viewModel)
+        FetchExamplePerson(viewModel)
     }
 }
 
 @Composable
-fun GetExamplePerson(viewModel: GetExampleViewModel) {
+fun FetchExamplePerson(viewModel: FetchExampleViewModel) {
     val uiState = viewModel.uiState.collectAsState()
     Column(modifier = Modifier.padding(10.dp)) {
-        Text(text = "This information was obtained from the cache",
-            modifier = Modifier.padding(bottom = 10.dp))
+        Text(text = "This information is fetched from the API and then cached",
+             modifier = Modifier.padding(bottom = 10.dp))
         Text(text = "Name: ${uiState.value.name.orEmpty()}")
         Text(text = "Height: ${uiState.value.height.orEmpty()}")
         Text(text = "Mass: ${uiState.value.mass.orEmpty()}")

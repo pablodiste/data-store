@@ -8,9 +8,8 @@ import com.pablodiste.android.sample.models.realm.People
 import com.pablodiste.android.sample.network.RetrofitManager
 import com.pablodiste.android.sample.network.StarWarsService
 import io.realm.RealmQuery
-import kotlinx.coroutines.CoroutineScope
 
-class PersonStore: ScopedSimpleStoreImpl<PersonStore.Key, People>(
+class RealmPersonStore: ScopedSimpleStoreImpl<RealmPersonStore.Key, People>(
     fetcher = PersonFetcher(),
     cache = PersonCache()
 ) {

@@ -1,4 +1,4 @@
-package com.pablodiste.android.sample.ui.stream1
+package com.pablodiste.android.sample.ui.realm.stream
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -6,8 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.pablodiste.android.datastore.closable.autoClose
 import com.pablodiste.android.datastore.closable.stream
 import com.pablodiste.android.sample.models.realm.People
-import com.pablodiste.android.sample.repositories.store.PeopleStore
-import com.pablodiste.android.sample.repositories.store.PlanetsStore
+import com.pablodiste.android.sample.repositories.store.RealmPeopleStore
+import com.pablodiste.android.sample.repositories.store.RealmPlanetsStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.job
@@ -15,9 +15,9 @@ import kotlinx.coroutines.launch
 
 class StreamExampleViewModel : ViewModel() {
 
-    private val peopleStore1 = PeopleStore()
-    private val peopleStore2 = PeopleStore()
-    private val planetStore = PlanetsStore()
+    private val peopleStore1 = RealmPeopleStore()
+    private val peopleStore2 = RealmPeopleStore()
+    private val planetStore = RealmPlanetsStore()
     val uiState = MutableStateFlow<List<People>>(listOf())
 
     init {

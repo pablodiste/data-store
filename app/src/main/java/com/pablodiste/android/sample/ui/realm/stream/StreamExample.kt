@@ -1,4 +1,4 @@
-package com.pablodiste.android.sample.ui.stream1
+package com.pablodiste.android.sample.ui.realm.stream
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,7 +17,7 @@ import com.pablodiste.android.sample.ui.main.TopBar
 fun StreamExample(viewModel: StreamExampleViewModel, openDrawer: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         TopBar(
-            title = "Store Stream Example",
+            title = "Store Stream Example (Realm)",
             buttonIcon = Icons.Filled.Menu,
             onButtonClicked = { openDrawer() }
         )

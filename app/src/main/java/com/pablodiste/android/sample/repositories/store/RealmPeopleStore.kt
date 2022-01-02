@@ -7,26 +7,26 @@ import com.pablodiste.android.datastore.adapters.realm.SimpleRealmListCache
 import com.pablodiste.android.datastore.closable.NoKeyScopedSimpleStore
 import com.pablodiste.android.datastore.impl.NoKey
 import com.pablodiste.android.sample.models.realm.People
-import com.pablodiste.android.sample.models.realm.Planet
 import com.pablodiste.android.sample.network.RetrofitManager
 import com.pablodiste.android.sample.network.StarWarsService
 import io.realm.RealmQuery
 import kotlinx.coroutines.CoroutineScope
 
-class PlanetsStore: NoKeyScopedSimpleStore<List<Planet>>(
-    fetcher = PlanetFetcher(),
-    cache = PlanetCache()
+class RealmPeopleStore: NoKeyScopedSimpleStore<List<People>>(
+    fetcher = PeopleFetcher(),
+    cache = PeopleCache()
 ) {
 
-    class PlanetFetcher: RetrofitFetcher<NoKey, List<Planet>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
-        override suspend fun fetch(key: NoKey, service: StarWarsService): FetcherResult<List<Planet>> {
-            val planets = service.getPlanets()
-            return FetcherResult.Data(planets.results)
+    class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
+        override suspend fun fetch(key: NoKey, service: StarWarsService): FetcherResult<List<People>> {
+            val people = service.getPeople()
+            people.results.forEach { it.parseId() }
+            return FetcherResult.Data(people.results)
         }
     }
 
-    class PlanetCache: SimpleRealmListCache<NoKey, Planet>(Planet::class.java) {
-        override fun query(key: NoKey): (query: RealmQuery<Planet>) -> Unit = { }
+    class PeopleCache: SimpleRealmListCache<NoKey, People>(People::class.java) {
+        override fun query(key: NoKey): (query: RealmQuery<People>) -> Unit = { }
     }
 
     fun something() {

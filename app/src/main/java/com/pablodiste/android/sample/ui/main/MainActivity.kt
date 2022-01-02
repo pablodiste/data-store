@@ -16,12 +16,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.pablodiste.android.sample.ui.fetch.FetchExample
-import com.pablodiste.android.sample.ui.fetch.FetchExampleViewModel
-import com.pablodiste.android.sample.ui.get.GetExample
-import com.pablodiste.android.sample.ui.get.GetExampleViewModel
-import com.pablodiste.android.sample.ui.stream1.StreamExample
-import com.pablodiste.android.sample.ui.stream1.StreamExampleViewModel
+import com.pablodiste.android.sample.ui.realm.fetch.FetchExample
+import com.pablodiste.android.sample.ui.realm.fetch.FetchExampleViewModel
+import com.pablodiste.android.sample.ui.realm.get.GetExample
+import com.pablodiste.android.sample.ui.realm.get.GetExampleViewModel
+import com.pablodiste.android.sample.ui.realm.stream.StreamExample
+import com.pablodiste.android.sample.ui.realm.stream.StreamExampleViewModel
+import com.pablodiste.android.sample.ui.room.stream.RoomStreamExample
+import com.pablodiste.android.sample.ui.room.stream.RoomStreamExampleViewModel
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -64,11 +66,15 @@ fun AppMainScreen() {
         ) {
             NavHost(
                 navController = navController,
-                startDestination = DrawerScreens.StreamExample.route
+                startDestination = DrawerScreens.RoomStreamExample.route
             ) {
-                composable(DrawerScreens.StreamExample.route) {
+                composable(DrawerScreens.RealmStreamExample.route) {
                     val viewModel = viewModel<StreamExampleViewModel>()
                     StreamExample(viewModel, openDrawer = { openDrawer() })
+                }
+                composable(DrawerScreens.RoomStreamExample.route) {
+                    val viewModel = viewModel<RoomStreamExampleViewModel>()
+                    RoomStreamExample(viewModel, openDrawer = { openDrawer() })
                 }
                 composable(DrawerScreens.FetchExample.route) {
                     val viewModel = viewModel<FetchExampleViewModel>()
@@ -102,13 +108,15 @@ fun TopBar(title: String = "", buttonIcon: ImageVector, onButtonClicked: () -> U
 
 
 sealed class DrawerScreens(val title: String, val route: String) {
-    object StreamExample : DrawerScreens("Stream Example", "stream1")
+    object RealmStreamExample : DrawerScreens("Stream Example (Realm)", "stream1")
+    object RoomStreamExample : DrawerScreens("Stream Example (Room)", "stream2")
     object FetchExample : DrawerScreens("Fetch Example", "fetch1")
     object GetExample : DrawerScreens("Get Example", "get1")
 }
 
 private val screens = listOf(
-    DrawerScreens.StreamExample,
+    DrawerScreens.RealmStreamExample,
+    DrawerScreens.RoomStreamExample,
     DrawerScreens.FetchExample,
     DrawerScreens.GetExample,
 )
