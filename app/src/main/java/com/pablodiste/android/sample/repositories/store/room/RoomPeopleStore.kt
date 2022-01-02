@@ -1,8 +1,7 @@
-package com.pablodiste.android.sample.repositories.store
+package com.pablodiste.android.sample.repositories.store.room
 
 import androidx.room.Dao
 import com.pablodiste.android.adapters.retrofit.RetrofitFetcher
-import com.pablodiste.android.datastore.Cache
 import com.pablodiste.android.datastore.FetcherResult
 import com.pablodiste.android.datastore.adapters.room.GenericListDAO
 import com.pablodiste.android.datastore.adapters.room.SimpleRoomListCache
@@ -12,7 +11,6 @@ import com.pablodiste.android.sample.SampleApplication
 import com.pablodiste.android.sample.models.room.People
 import com.pablodiste.android.sample.network.RetrofitManager
 import com.pablodiste.android.sample.network.RoomStarWarsService
-import kotlinx.coroutines.flow.Flow
 
 class RoomPeopleStore: NoKeySimpleStore<List<People>>(
     fetcher = PeopleFetcher(),

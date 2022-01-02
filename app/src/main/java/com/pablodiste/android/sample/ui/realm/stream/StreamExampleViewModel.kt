@@ -6,8 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.pablodiste.android.datastore.closable.autoClose
 import com.pablodiste.android.datastore.closable.stream
 import com.pablodiste.android.sample.models.realm.People
-import com.pablodiste.android.sample.repositories.store.RealmPeopleStore
-import com.pablodiste.android.sample.repositories.store.RealmPlanetsStore
+import com.pablodiste.android.sample.repositories.store.realm.RealmPeopleStore
+import com.pablodiste.android.sample.repositories.store.realm.RealmPlanetsStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.job

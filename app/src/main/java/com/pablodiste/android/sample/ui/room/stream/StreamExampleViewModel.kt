@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pablodiste.android.datastore.impl.stream
 import com.pablodiste.android.sample.models.room.People
-import com.pablodiste.android.sample.repositories.store.RoomPeopleStore
+import com.pablodiste.android.sample.repositories.store.room.RoomPeopleStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch

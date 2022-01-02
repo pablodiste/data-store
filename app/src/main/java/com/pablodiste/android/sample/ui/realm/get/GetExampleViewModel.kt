@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pablodiste.android.datastore.closable.launch
 import com.pablodiste.android.sample.models.realm.People
-import com.pablodiste.android.sample.repositories.store.RealmPersonStore
+import com.pablodiste.android.sample.repositories.store.realm.RealmPersonStore
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class GetExampleViewModel : ViewModel() {

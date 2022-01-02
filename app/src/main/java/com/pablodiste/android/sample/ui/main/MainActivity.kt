@@ -72,15 +72,19 @@ fun AppMainScreen() {
                     val viewModel = viewModel<StreamExampleViewModel>()
                     StreamExample(viewModel, openDrawer = { openDrawer() })
                 }
+                composable(DrawerScreens.RoomFetchExample.route) {
+                    val viewModel = viewModel<com.pablodiste.android.sample.ui.room.fetch.FetchExampleViewModel>()
+                    com.pablodiste.android.sample.ui.room.fetch.FetchExample(viewModel, openDrawer = { openDrawer() })
+                }
                 composable(DrawerScreens.RoomStreamExample.route) {
                     val viewModel = viewModel<RoomStreamExampleViewModel>()
                     RoomStreamExample(viewModel, openDrawer = { openDrawer() })
                 }
-                composable(DrawerScreens.FetchExample.route) {
+                composable(DrawerScreens.RealmFetchExample.route) {
                     val viewModel = viewModel<FetchExampleViewModel>()
                     FetchExample(viewModel, openDrawer = { openDrawer() })
                 }
-                composable(DrawerScreens.GetExample.route) {
+                composable(DrawerScreens.RealmGetExample.route) {
                     val viewModel = viewModel<GetExampleViewModel>()
                     GetExample(viewModel, openDrawer = { openDrawer() })
                 }
@@ -108,17 +112,19 @@ fun TopBar(title: String = "", buttonIcon: ImageVector, onButtonClicked: () -> U
 
 
 sealed class DrawerScreens(val title: String, val route: String) {
-    object RealmStreamExample : DrawerScreens("Stream Example (Realm)", "stream1")
     object RoomStreamExample : DrawerScreens("Stream Example (Room)", "stream2")
-    object FetchExample : DrawerScreens("Fetch Example", "fetch1")
-    object GetExample : DrawerScreens("Get Example", "get1")
+    object RoomFetchExample : DrawerScreens("Fetch Example (Room)", "fetch2")
+    object RealmStreamExample : DrawerScreens("Stream Example (Realm)", "stream1")
+    object RealmFetchExample : DrawerScreens("Fetch Example (Realm)", "fetch1")
+    object RealmGetExample : DrawerScreens("Get Example (Realm)", "get1")
 }
 
 private val screens = listOf(
-    DrawerScreens.RealmStreamExample,
     DrawerScreens.RoomStreamExample,
-    DrawerScreens.FetchExample,
-    DrawerScreens.GetExample,
+    DrawerScreens.RoomFetchExample,
+    DrawerScreens.RealmStreamExample,
+    DrawerScreens.RealmFetchExample,
+    DrawerScreens.RealmGetExample,
 )
 
 @Composable

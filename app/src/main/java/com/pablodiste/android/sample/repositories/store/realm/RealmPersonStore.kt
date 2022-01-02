@@ -1,4 +1,4 @@
-package com.pablodiste.android.sample.repositories.store
+package com.pablodiste.android.sample.repositories.store.realm
 
 import com.pablodiste.android.adapters.retrofit.RetrofitFetcher
 import com.pablodiste.android.datastore.FetcherResult

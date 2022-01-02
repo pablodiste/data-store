@@ -1,4 +1,4 @@
-package com.pablodiste.android.sample.repositories.store
+package com.pablodiste.android.sample.repositories.store.realm
 
 import android.util.Log
 import com.pablodiste.android.adapters.retrofit.RetrofitFetcher
@@ -10,7 +10,6 @@ import com.pablodiste.android.sample.models.realm.People
 import com.pablodiste.android.sample.network.RetrofitManager
 import com.pablodiste.android.sample.network.StarWarsService
 import io.realm.RealmQuery
-import kotlinx.coroutines.CoroutineScope
 
 class RealmPeopleStore: NoKeyScopedSimpleStore<List<People>>(
     fetcher = PeopleFetcher(),

@@ -1,4 +1,4 @@
-package com.pablodiste.android.sample.repositories.store
+package com.pablodiste.android.sample.repositories.store.realm
 
 import android.util.Log
 import com.pablodiste.android.adapters.retrofit.RetrofitFetcher
@@ -6,12 +6,10 @@ import com.pablodiste.android.datastore.FetcherResult
 import com.pablodiste.android.datastore.adapters.realm.SimpleRealmListCache
 import com.pablodiste.android.datastore.closable.NoKeyScopedSimpleStore
 import com.pablodiste.android.datastore.impl.NoKey
-import com.pablodiste.android.sample.models.realm.People
 import com.pablodiste.android.sample.models.realm.Planet
 import com.pablodiste.android.sample.network.RetrofitManager
 import com.pablodiste.android.sample.network.StarWarsService
 import io.realm.RealmQuery
-import kotlinx.coroutines.CoroutineScope
 
 class RealmPlanetsStore: NoKeyScopedSimpleStore<List<Planet>>(
     fetcher = PlanetFetcher(),
