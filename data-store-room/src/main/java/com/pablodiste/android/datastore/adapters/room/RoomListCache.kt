@@ -13,18 +13,14 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-interface ListCache<K: Any, T: Any> {
-    suspend fun exists(key: K): Boolean
-    fun listen(key: K): Flow<List<T>>
-    suspend fun store(key: K, entity: List<T>, removeStale: Boolean): List<T>
-    suspend fun get(key: K): List<T>
-    suspend fun delete(key: K): Boolean
-}
-
-abstract class GenericListDAO<K: Any, T: Any>(
+/**
+ * Database cache based on Room (DAO), list version
+ */
+abstract class RoomListCache<K: Any, T: Any>(
     private val tableName: String,
-    private val database: RoomDatabase
-): ListCache<K, T> {
+    private val database: RoomDatabase,
+    private val stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
+): Cache<K, List<T>> {
 
     override suspend fun get(key: K): List<T> {
         val query = baseSelectQuery(key)
@@ -128,26 +124,6 @@ abstract class GenericListDAO<K: Any, T: Any>(
     @Delete
     abstract fun delete(entities: List<T>)
 
-}
-
-/**
- * Database cache based on Room (DAO), list version
- */
-abstract class RoomListCache<K: Any, T: Any>(
-    private val dao: GenericListDAO<K, T>,
-    private val stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
-): Cache<K, List<T>> {
-
-    override suspend fun get(key: K): List<T> = dao.get(key)
-
-    override suspend fun exists(key: K): Boolean = dao.exists(key)
-
-    override fun listen(key: K): Flow<List<T>> = dao.listen(key)
-
-    override suspend fun store(key: K, entity: List<T>, removeStale: Boolean): List<T> = dao.store(key, entity, removeStale)
-
-    override suspend fun delete(key: K): Boolean = dao.delete(key)
-
     // fun <U> getAndRun(key: K, operation: (result: List<T>) -> U): U = findAllManagedAndRun(klass, query(key), operation)
 
     // private fun removeStale(bgRealm: Realm, key: K, entity: List<T>) = stalenessPolicy.removeStaleListInRealm(bgRealm, this, key, entity)
@@ -155,6 +131,7 @@ abstract class RoomListCache<K: Any, T: Any>(
 }
 
 abstract class SimpleRoomListCache<K: Any, T: Any>(
-    private val dao: GenericListDAO<K, T>,
+    private val tableName: String,
+    private val database: RoomDatabase,
     stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
-): RoomListCache<K, T>(dao, stalenessPolicy)
+): RoomListCache<K, T>(tableName, database, stalenessPolicy)

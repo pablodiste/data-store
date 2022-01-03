@@ -2,11 +2,9 @@ package com.pablodiste.android.sample
 
 import android.app.Application
 import androidx.room.Room
-import androidx.room.RoomDatabase
 import com.pablodiste.android.sample.database.AppDatabase
 import io.realm.Realm
 import io.realm.RealmConfiguration
-import io.realm.rx.RealmObservableFactory
 
 class SampleApplication: Application() {
 
@@ -17,7 +15,9 @@ class SampleApplication: Application() {
     }
 
     private fun initRoom() {
-        roomDb = Room.databaseBuilder(applicationContext, AppDatabase::class.java, "store-sample").build()
+        roomDb = Room.databaseBuilder(applicationContext, AppDatabase::class.java, "store-sample")
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     private fun initRealm() {

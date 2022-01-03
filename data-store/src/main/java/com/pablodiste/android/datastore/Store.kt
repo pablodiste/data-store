@@ -11,7 +11,7 @@ interface Store<K: Any, T: Any> {
 
 interface Cache<K: Any, T: Any> {
     suspend fun exists(key: K): Boolean
-    fun listen(key: K): Flow<T>
+    fun listen(key: K): Flow<@JvmWildcard T>
     suspend fun store(key: K, entity: T, removeStale: Boolean = false): T
     suspend fun get(key: K): T
     suspend fun delete(key: K): Boolean

@@ -3,7 +3,6 @@ package com.pablodiste.android.sample.repositories.store.room
 import androidx.room.Dao
 import com.pablodiste.android.adapters.retrofit.RetrofitFetcher
 import com.pablodiste.android.datastore.FetcherResult
-import com.pablodiste.android.datastore.adapters.room.GenericListDAO
 import com.pablodiste.android.datastore.adapters.room.SimpleRoomListCache
 import com.pablodiste.android.datastore.impl.NoKey
 import com.pablodiste.android.datastore.impl.NoKeySimpleStore
@@ -14,7 +13,7 @@ import com.pablodiste.android.sample.network.RoomStarWarsService
 
 class RoomPeopleStore: NoKeySimpleStore<List<People>>(
     fetcher = PeopleFetcher(),
-    cache = PeopleCache(SampleApplication.roomDb.peopleCache())
+    cache = SampleApplication.roomDb.peopleCache()
 ) {
 
     class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, RoomStarWarsService>(RoomStarWarsService::class.java, RetrofitManager) {
@@ -25,10 +24,8 @@ class RoomPeopleStore: NoKeySimpleStore<List<People>>(
         }
     }
 
-    class PeopleCache(dao: GenericListDAO<NoKey, People>): SimpleRoomListCache<NoKey, People>(dao)
-
     @Dao
-    abstract class PeopleDao: GenericListDAO<NoKey, People>("people", SampleApplication.roomDb) {
+    abstract class PeopleCache: SimpleRoomListCache<NoKey, People>("people", SampleApplication.roomDb) {
         override fun query(key: NoKey): String = ""
     }
 

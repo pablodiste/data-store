@@ -13,9 +13,14 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-abstract class GenericDAO<K: Any, T: Any>(
+
+/**
+ * Database cache based on Room (DAO), list version
+ */
+abstract class RoomCache<K: Any, T: Any>(
     private val tableName: String,
-    private val database: RoomDatabase
+    private val database: RoomDatabase,
+    private val stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
 ): Cache<K, T> {
 
     override suspend fun get(key: K): T {
@@ -105,26 +110,6 @@ abstract class GenericDAO<K: Any, T: Any>(
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract fun upsert(entity: T)
 
-}
-
-/**
- * Database cache based on Room (DAO), list version
- */
-abstract class RoomCache<K: Any, T: Any>(
-    private val dao: GenericDAO<K, T>,
-    private val stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
-): Cache<K, T> {
-
-    override suspend fun get(key: K): T = dao.get(key)
-
-    override suspend fun exists(key: K): Boolean = dao.exists(key)
-
-    override fun listen(key: K): Flow<T> = dao.listen(key)
-
-    override suspend fun store(key: K, entity: T, removeStale: Boolean): T = dao.store(key, entity, removeStale)
-
-    override suspend fun delete(key: K): Boolean = dao.delete(key)
-
     // fun <U> getAndRun(key: K, operation: (result: List<T>) -> U): U = findAllManagedAndRun(klass, query(key), operation)
 
     // private fun removeStale(bgRealm: Realm, key: K, entity: List<T>) = stalenessPolicy.removeStaleListInRealm(bgRealm, this, key, entity)
@@ -132,6 +117,7 @@ abstract class RoomCache<K: Any, T: Any>(
 }
 
 abstract class SimpleRoomCache<K: Any, T: Any>(
-    private val dao: GenericDAO<K, T>,
+    private val tableName: String,
+    private val database: RoomDatabase,
     stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
-): RoomCache<K, T>(dao, stalenessPolicy)
+): RoomCache<K, T>(tableName, database, stalenessPolicy)
