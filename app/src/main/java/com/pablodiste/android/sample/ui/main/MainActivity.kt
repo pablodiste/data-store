@@ -76,6 +76,10 @@ fun AppMainScreen() {
                     val viewModel = viewModel<com.pablodiste.android.sample.ui.room.fetch.FetchExampleViewModel>()
                     com.pablodiste.android.sample.ui.room.fetch.FetchExample(viewModel, openDrawer = { openDrawer() })
                 }
+                composable(DrawerScreens.RoomGetExample.route) {
+                    val viewModel = viewModel<com.pablodiste.android.sample.ui.room.get.GetExampleViewModel>()
+                    com.pablodiste.android.sample.ui.room.get.GetExample(viewModel, openDrawer = { openDrawer() })
+                }
                 composable(DrawerScreens.RoomStreamExample.route) {
                     val viewModel = viewModel<RoomStreamExampleViewModel>()
                     RoomStreamExample(viewModel, openDrawer = { openDrawer() })
@@ -114,6 +118,7 @@ fun TopBar(title: String = "", buttonIcon: ImageVector, onButtonClicked: () -> U
 sealed class DrawerScreens(val title: String, val route: String) {
     object RoomStreamExample : DrawerScreens("Stream Example (Room)", "stream2")
     object RoomFetchExample : DrawerScreens("Fetch Example (Room)", "fetch2")
+    object RoomGetExample : DrawerScreens("Get Example (Room)", "fetch2")
     object RealmStreamExample : DrawerScreens("Stream Example (Realm)", "stream1")
     object RealmFetchExample : DrawerScreens("Fetch Example (Realm)", "fetch1")
     object RealmGetExample : DrawerScreens("Get Example (Realm)", "get1")
@@ -122,6 +127,7 @@ sealed class DrawerScreens(val title: String, val route: String) {
 private val screens = listOf(
     DrawerScreens.RoomStreamExample,
     DrawerScreens.RoomFetchExample,
+    DrawerScreens.RoomGetExample,
     DrawerScreens.RealmStreamExample,
     DrawerScreens.RealmFetchExample,
     DrawerScreens.RealmGetExample,

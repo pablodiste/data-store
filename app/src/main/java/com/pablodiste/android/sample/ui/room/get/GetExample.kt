@@ -1,4 +1,4 @@
-package com.pablodiste.android.sample.ui.realm.get
+package com.pablodiste.android.sample.ui.room.get
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -11,7 +11,7 @@ import com.pablodiste.android.sample.ui.main.BaseScreen
 
 @Composable
 fun GetExample(viewModel: GetExampleViewModel, openDrawer: () -> Unit) {
-    BaseScreen(title = "Store Get Example (Realm)", openDrawer = openDrawer) {
+    BaseScreen(title = "Store Get Example (Room)", openDrawer = openDrawer) {
         GetExamplePerson(viewModel)
     }
 }

@@ -1,25 +1,17 @@
 package com.pablodiste.android.sample.ui.room.fetch
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.pablodiste.android.sample.ui.main.TopBar
+import com.pablodiste.android.sample.ui.main.BaseScreen
 
 @Composable
 fun FetchExample(viewModel: FetchExampleViewModel, openDrawer: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopBar(
-            title = "Store Fetch Example",
-            buttonIcon = Icons.Filled.Menu,
-            onButtonClicked = { openDrawer() }
-        )
+    BaseScreen(title = "Store Fetch Example (Room)", openDrawer = openDrawer) {
         FetchExamplePerson(viewModel)
     }
 }
