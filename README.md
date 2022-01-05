@@ -47,18 +47,18 @@ The Store will be in charge of fetching data from the API and caching the data o
 You can either define different data classes for API and Database or use the same definition, depending of your needs. In the following examples we are going to use the same entity class for simplicity.
 
 Here is a Room entity.
-```kotlin  
-@Entity(tableName = "people")  
-data class People(  
-  @PrimaryKey var id: String = "",  
-  @ColumnInfo(name = "name") var name: String? = null,  
-  @ColumnInfo(name = "height") var height: String? = null,  
-  @ColumnInfo(name = "mass") var mass: String? = null,  
-  @ColumnInfo(name = "gender") var gender: String? = null,  
-  @ColumnInfo(name = "url") var url: String? = null,  
+```kotlin
+@Entity(tableName = "people")
+data class People(
+  @PrimaryKey var id: String = "",
+  @ColumnInfo(name = "name") var name: String? = null,
+  @ColumnInfo(name = "height") var height: String? = null,
+  @ColumnInfo(name = "mass") var mass: String? = null,
+  @ColumnInfo(name = "gender") var gender: String? = null,
+  @ColumnInfo(name = "url") var url: String? = null,
 )
-```  
-## 2. Creating a Store  
+```
+## 2. Creating a Store
 
 We have few base classes you can use for creating an Store:
 
@@ -67,46 +67,46 @@ We have few base classes you can use for creating an Store:
  - `NoKeySimpleStore` is a `SimpleStoreImpl` where the Key is NoKey. Please read the Key section for more information on Keys.
 
 For example:
-```kotlin  
+```kotlin
 class PeopleStore: NoKeySimpleStore<List<People>>(
     fetcher = PeopleFetcher(),
-    cache = PeopleCache()) {  
-    ...  
+    cache = PeopleCache()) {
+    ...
 }
-```  
+```
 Defines a store which will fetch using a fetcher based on the entity People, and it will cache it in a database using the same Entity.
-  
-## 2. Define a Key.  
-A `Key` is a parametric data class used to identify the data to be stored. This `Key` can be any class with a `toString` implementation, and unique per API request. Its fields are used to provide parameters to the API and it is also used as a unique identifier for each API Request, so we can avoid multiple repeated calls.  
-  
-In case our endpoint requires a parameter id, we can do:  
-```kotlin  
-    data class Key(val id: String)  
-```  
-  
-In case you need to fetch a list of entities without any parameters, or there is no field which could identify the request, you can use an existing `NoKey` implementation instead of creating your own.  
-This key should be referenced in the generic parameter K of the store definition. For example: `SimpleStoreImpl<PeopleStore.Key, People>`. 
-  
-## 3. Implement the Fetcher  
-  
-The fetcher fetches data from an API and returns a FetcherResults. There is a useful subclass if you want to use Retrofit:  
-  
-Coroutines version uses suspend functions  
-```kotlin  
-class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {  
-    override suspend fun fetch(key: NoKey, service: StarWarsService): FetcherResult<List<People>> {  
+
+## 3. Define a Key.
+A `Key` is a parametric data class used to identify the data to be stored. This `Key` can be any class with a `toString` implementation, and unique per API request. Its fields are used to provide parameters to the API and it is also used as a unique identifier for each API Request, so we can avoid multiple repeated calls.
+
+In case our endpoint requires a parameter id, we can do:
+```kotlin
+    data class Key(val id: String)
+```
+
+In case you need to fetch a list of entities without any parameters, or there is no field which could identify the request, you can use an existing `NoKey` implementation instead of creating your own.
+This key should be referenced in the generic parameter K of the store definition. For example: `SimpleStoreImpl<PeopleStore.Key, People>`.
+
+## 4. Implement the Fetcher
+
+The fetcher fetches data from an API and returns a FetcherResults. There is a useful subclass if you want to use Retrofit:
+
+Coroutines version uses suspend functions
+```kotlin
+class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
+    override suspend fun fetch(key: NoKey, service: StarWarsService): FetcherResult<List<People>> {
         val people = service.getPeople()
         // Make any changes to the entities before caching them
-        return FetcherResult.Data(people.results)  
-    }  
-}  
-```  
-In this case the service is a Retrofit service call. You can also use other libraries to fetch data, you just need to make the call in the fetch override and return the `FetcherResult`.  
-  
- - `RetrofitManager` is a `RetrofitServiceProvider` implementation that manages the creation of the retrofit service.  
- - `StarWarsService` is a Retrofit service definition class.  
-  
-## 4. Implement the Cache  
+        return FetcherResult.Data(people.results)
+    }
+}
+```
+In this case the service is a Retrofit service call. You can also use other libraries to fetch data, you just need to make the call in the fetch override and return the `FetcherResult`.
+
+ - `RetrofitManager` is a `RetrofitServiceProvider` implementation that manages the creation of the retrofit service.
+ - `StarWarsService` is a Retrofit service definition class.
+
+## 5. Implement the Cache
 
 ### Using Room
 We have provided base DAOs for using with Room:
@@ -115,116 +115,129 @@ We have provided base DAOs for using with Room:
  - `RoomCache` and `SimpleRoomCache` stores individual objects.
 
 For example if we want to store a list of People we can do:
-```kotlin  
-@Dao  
-abstract class PeopleCache: SimpleRoomListCache<NoKey, People>("people", SampleApplication.roomDb) {  
-    override fun query(key: NoKey): String = ""  
+```kotlin
+@Dao
+abstract class PeopleCache: SimpleRoomListCache<NoKey, People>("people", SampleApplication.roomDb) {
+    override fun query(key: NoKey): String = ""
 }
-```  
+```
 The `query` is the filter to be used to retrieve the cached data which has been stored after the API call. It generally matches the parameters sent to the API.
-For example if we are fetching an entity by id, our Cache class will look like this one:  
-```kotlin  
-@Dao  
-abstract class PersonCache: SimpleRoomCache<Key, People>("people", SampleApplication.roomDb) {  
-    override fun query(key: Key): String = "id = ${key.id}"  
+For example if we are fetching an entity by id, our Cache class will look like this one:
+```kotlin
+@Dao
+abstract class PersonCache: SimpleRoomCache<Key, People>("people", SampleApplication.roomDb) {
+    override fun query(key: Key): String = "id = ${key.id}"
 }
-```  
+```
 All created DAOs automatically generate the required methods for making it work with the Store, but you can also add your own methods for using the cache directly as a regular Room DAO.
 
 The created DAOs should be connected with your Room Database implementation, for example:
-```kotlin  
-@Database(entities = [People::class], version = 1)  
-abstract class AppDatabase : RoomDatabase() {  
-    abstract fun peopleCache(): RoomPeopleStore.PeopleCache  
-    abstract fun personCache(): RoomPersonStore.PersonCache  
+```kotlin
+@Database(entities = [People::class], version = 1)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun peopleCache(): RoomPeopleStore.PeopleCache
+    abstract fun personCache(): RoomPersonStore.PersonCache
 }
-```  
+```
 and you need to provide the DAO as the cache in the Store:
-```kotlin 
-class RoomPersonStore: SimpleStoreImpl<RoomPersonStore.Key, People>(  
-    fetcher = PersonFetcher(),  
-    cache = SampleApplication.roomDb.personCache()  
+```kotlin
+class RoomPersonStore: SimpleStoreImpl<RoomPersonStore.Key, People>(
+    fetcher = PersonFetcher(),
+    cache = SampleApplication.roomDb.personCache()
 )
-```  
+```
 Please refer to the Room implementation for more details on the Database definition.
 
 ### Using Realm database
-In case we are using `Realm` we can use:  
-```kotlin  
-class PeopleCache: SimpleRealmListCache<NoKey, People>(People::class.java) {  
-    override fun query(key: NoKey): (query: RealmQuery<People>) -> Unit = { }  
-}  
-```  
-The `query` is the filter to be used to retrieve the cached data which has been stored after the API call. It generally matches the parameters sent to the API.  
-For example if we are fetching an entity by id, our Cache class will look like this one:  
-```kotlin  
-class PersonCache: SimpleRealmCache<Key, People>(People::class.java) {  
-    override fun query(key: Key): (query: RealmQuery<People>) -> Unit = {  
- it.equalTo("id", key.id)  
-    }  
-}  
-```  
-Optionally you can provide a `storeInRealm` which implements a custom method to persist to the Realm cache.  
-  
-```kotlin  
-class PersonCache: SimpleRealmCache<Key, People>(People::class.java) {  
-    override fun query(key: Key): (query: RealmQuery<People>) -> Unit = { it.equalTo("id", key.id) }  
-  override fun storeInRealm(key: Key, bgRealm: Realm, entity: People) { bgRealm.copyToRealmOrUpdate(entity) // Custom code }  
-}  
-```  
-  
-## 5. Using the Store  
-  
-These are the main methods for using the Store we just created:  
-  
-### Instancing your Store  
-  
-```kotlin  
-val peopleStore = PeopleStore() // or injected using DI  
-```  
-also if your cache requires closing resources after the lifecycle scope finishes you can provide it in the constructor.  
-```kotlin  
-val peopleStore = PeopleStore(viewModelScope)  
-```  
-  
-### Stream data  
-  
-The `stream` method does the following:  
-1. Checks the cache for any cached data, if they exist it returns them.  
-2. If the `refresh` parameter is `true`, if calls the Fetcher for new data from the API and caches them. Then it will emit the new data. If old data existed before the fetch, you will receive **two emissions**: one for the old data and another one for the new data after the fetch has completed.  
-3. If initially there was no data on the cache, it performs the fetch from the API. Then it gets stored in the cache and emitted to the consumer.  
-  
-For example, from your ViewModel  
-```kotlin  
-viewModelScope.launch {  
-   peopleStore.stream(refresh = true).collect { result ->  
-      Log.d(TAG, "Received new people list: ${result.value}")  
-   }  
-}  
-```  
-Stream returns a `Flow`, and it can be combined and processed like any other `Flow`.  
-  
-### Making an API call directly  
-  
+In case we are using `Realm` we can use:
+```kotlin
+class PeopleCache: SimpleRealmListCache<NoKey, People>(People::class.java) {
+    override fun query(key: NoKey): (query: RealmQuery<People>) -> Unit = { }
+}
+```
+The `query` is the filter to be used to retrieve the cached data which has been stored after the API call. It generally matches the parameters sent to the API.
+For example if we are fetching an entity by id, our Cache class will look like this one:
+```kotlin
+class PersonCache: SimpleRealmCache<Key, People>(People::class.java) {
+    override fun query(key: Key): (query: RealmQuery<People>) -> Unit = {
+ it.equalTo("id", key.id)
+    }
+}
+```
+Optionally you can provide a `storeInRealm` which implements a custom method to persist to the Realm cache.
+
+```kotlin
+class PersonCache: SimpleRealmCache<Key, People>(People::class.java) {
+    override fun query(key: Key): (query: RealmQuery<People>) -> Unit = { it.equalTo("id", key.id) }
+  override fun storeInRealm(key: Key, bgRealm: Realm, entity: People) { bgRealm.copyToRealmOrUpdate(entity) // Custom code }
+}
+```
+
+## 6. Using the Store
+
+These are the main methods for using the Store we just created:
+
+### Instancing your Store
+```kotlin
+val peopleStore = PeopleStore() // or injected using DI
+```
+All operation with the store are usually tied to an scope, we can use the viewModelScope for example to launch a coroutine that listens for the incoming data.
+```kotlin
+viewModelScope.launch {
+  val response = personStore.fetch(RealmPersonStore.Key("1"))
+  ...
+}
+```
+With some databases like Realm we should close the opened resources when we are done with using the data. We have provided some extension functions for closing automatically the Realm instances.
+```kotlin
+viewModelScope.launch(personStore) {
+  val response = personStore.fetch(RealmPersonStore.Key("1"))
+}
+```
+Here in the launch we provide the store instance and it will close itself once the coroutine job is cancelled (finished).
+As an alternative, we have an additional method to close many stores.
+```kotlin
+viewModelScope.launch {
+	... (use peopleStore and planetStore)
+}.autoClose(peopleStore, planetStore)
+```
+
+### Stream data
+
+The `stream` method does the following:
+1. Checks the cache for any cached data, if they exist it returns them.
+2. If the `refresh` parameter is `true`, if calls the Fetcher for new data from the API and caches them. Then it will emit the new data. If old data existed before the fetch, you will receive **two emissions**: one for the old data and another one for the new data after the fetch has completed.
+3. If initially there was no data on the cache, it performs the fetch from the API. Then it gets stored in the cache and emitted to the consumer.
+
+For example, from your ViewModel
+```kotlin
+viewModelScope.launch {
+   peopleStore.stream(refresh = true).collect { result ->
+      Log.d(TAG, "Received new people list: ${result.value}")
+   }
+}
+```
+`stream` returns a `Flow`, and it can be combined and processed like any other `Flow`.
+
+### Making an API call directly
+
 The `fetch` method makes an API call, caches the result and then it returns the new data. It does not check the cache for any previously existing data.
-  
-```kotlin  
-viewModelScope.launch {  
+
+```kotlin
+viewModelScope.launch {
   val response = personStore.fetch(PersonStore.Key("1"))
   Log.d(TAG, "Fetch response: ${response.value}")
 }
-```  
-  
-### Getting the data from cache (no API)  
-  
+```
+
+### Getting the data from cache (no API)
+
 The `get` method gets the data from the cache, usually used in places when you know the data should be already cached. If there is no data in the cache, it automatically tries to fetch the data from API. `get` is a suspend function and it does not keep listening for changes, it returns the current status of cached data.
-  
-```kotlin  
-playerStore.get(PlayerDataStore.Key(teamId = teamId)).subscribe({ storeResponse ->  
-    SNLog.d(TAG, "Data here is coming from the cache: ${storeResponse.value}")  
-}, {  
-    SNLog.e(TAG, "Error getting Players from the Cache and the API")  
-})  
+
+```kotlin
+viewModelScope.launch {
+  val response = personStore.get(RoomPersonStore.Key("1"))
+}
 ```  
   
 ### Summary  
