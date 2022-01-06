@@ -58,14 +58,14 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
      */
     override suspend fun get(key: K): StoreResponse<T> {
         return if (cache.exists(key)) {
-            val first = cache.get(key)
-            StoreResponse(first, ResponseOrigin.CACHE)
+            val cached = cache.get(key)
+            StoreResponse.Data(cached, ResponseOrigin.CACHE)
         } else {
             fetch(key, forced = true)
         }
     }
 
-    private fun streamFromCache(key: K) = cache.listen(key).map { StoreResponse(it, ResponseOrigin.CACHE) }
+    private fun streamFromCache(key: K) = cache.listen(key).map { StoreResponse.Data(it, ResponseOrigin.CACHE) }
 
     /**
      * Fetches an entity from the fetcher. This call forces the API call.
@@ -74,18 +74,17 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
         val fetcherResult = fetcherController.fetch(key, forced)
 
         return withContext(Dispatchers.Main) {
-            val result = when (fetcherResult) {
+            return@withContext when (fetcherResult) {
                 is FetcherResult.Data -> {
                     val fetched = cache.store(key, mapper.toCacheEntity(fetcherResult.value), true)
-                    fetched to ResponseOrigin.FETCHER
+                    StoreResponse.Data(fetched, ResponseOrigin.FETCHER)
                 }
                 is FetcherResult.NoData -> {
                     val cacheResponse = cache.get(key)
-                    cacheResponse to ResponseOrigin.CACHE
+                    StoreResponse.Data(cacheResponse, ResponseOrigin.CACHE)
                 }
-                is FetcherResult.Error -> throw fetcherResult.error
+                is FetcherResult.Error -> StoreResponse.Error(fetcherResult.error)
             }
-            StoreResponse(result.first, result.second)
         }
     }
 

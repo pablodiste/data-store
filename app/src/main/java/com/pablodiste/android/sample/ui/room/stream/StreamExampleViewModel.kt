@@ -8,6 +8,7 @@ import com.pablodiste.android.sample.models.room.People
 import com.pablodiste.android.sample.repositories.store.room.RoomPeopleStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class RoomStreamExampleViewModel : ViewModel() {
@@ -17,9 +18,9 @@ class RoomStreamExampleViewModel : ViewModel() {
 
     init {
         viewModelScope.launch {
-            peopleStore1.stream(refresh = true).collect { result ->
-                Log.d(TAG, "Stream 1: ${result.origin} Received new People")
-                uiState.value = result.value
+            peopleStore1.stream(refresh = true).map { it.requireData() }.collect { result ->
+                Log.d(TAG, "Stream 1: $result Received new People")
+                uiState.value = result
             }
         }
     }

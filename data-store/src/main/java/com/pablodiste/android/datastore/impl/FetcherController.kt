@@ -44,7 +44,7 @@ class FetcherController<K: Any, I: Any>(
                     } catch (e: Exception) {
                         if (throttlingController.isApiError(e)) throttlingController.onServerError()
                         rateLimiter.reset(key.toString())
-                        throw e
+                        return@withContext FetcherResult.Error(e)
                     }
                 }
             }

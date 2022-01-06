@@ -15,9 +15,9 @@ class FetchExampleViewModel : ViewModel() {
 
     init {
         viewModelScope.launch(personStore) {
-            val response = personStore.fetch(RealmPersonStore.Key("1"))
-            Log.d(TAG, "Fetch response: ${response.value}")
-            uiState.value = response.value
+            val people = personStore.fetch(RealmPersonStore.Key("1")).requireData()
+            Log.d(TAG, "Fetch response: $people")
+            uiState.value = people
         }
     }
 

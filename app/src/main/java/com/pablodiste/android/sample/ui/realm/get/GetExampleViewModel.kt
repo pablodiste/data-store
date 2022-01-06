@@ -3,6 +3,7 @@ package com.pablodiste.android.sample.ui.realm.get
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pablodiste.android.datastore.StoreResponse
 import com.pablodiste.android.datastore.closable.launch
 import com.pablodiste.android.sample.models.realm.People
 import com.pablodiste.android.sample.repositories.store.realm.RealmPersonStore
@@ -15,9 +16,9 @@ class GetExampleViewModel : ViewModel() {
 
     init {
         viewModelScope.launch(personStore) {
-            val response = personStore.get(RealmPersonStore.Key("1"))
-            Log.d(TAG, "Fetch response: ${response.value}")
-            uiState.value = response.value
+            val person = personStore.get(RealmPersonStore.Key("1")).requireData()
+            Log.d(TAG, "Fetch response: $person")
+            uiState.value = person
         }
     }
 

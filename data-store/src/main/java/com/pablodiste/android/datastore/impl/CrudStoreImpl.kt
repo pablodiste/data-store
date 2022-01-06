@@ -14,13 +14,13 @@ abstract class CrudStoreImpl<K: Any, I: Any, T: Any>(
     override suspend fun create(entity: T): StoreResponse<T> {
         val createResult = crudFetcher.create(mapper.toFetcherEntity(entity))
         val storeResult = storeFetcherResult(createResult)
-        return StoreResponse(storeResult, ResponseOrigin.FETCHER)
+        return StoreResponse.Data(storeResult, ResponseOrigin.FETCHER)
     }
 
     override suspend fun update(key: K, entity: T): StoreResponse<T> {
         val updateResult = crudFetcher.update(mapper.toFetcherEntity(entity))
         val storeResult = storeFetcherResult(updateResult)
-        return StoreResponse(storeResult, ResponseOrigin.FETCHER)
+        return StoreResponse.Data(storeResult, ResponseOrigin.FETCHER)
     }
 
     override suspend fun delete(key: K, entity: T): Boolean {
