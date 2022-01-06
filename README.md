@@ -181,7 +181,7 @@ These are the main methods for using the Store we just created:
 ```kotlin
 val peopleStore = PeopleStore() // or injected using DI
 ```
-All operation with the store are usually tied to an scope, we can use the viewModelScope for example to launch a coroutine that listens for the incoming data.
+All operation with the store are usually tied to a scope, we can use the viewModelScope for example to launch a coroutine that listens for the incoming data.
 ```kotlin
 viewModelScope.launch {
   val response = personStore.fetch(RealmPersonStore.Key("1"))
@@ -192,6 +192,7 @@ With some databases like Realm we should close the opened resources when we are 
 ```kotlin
 viewModelScope.launch(personStore) {
   val response = personStore.fetch(RealmPersonStore.Key("1"))
+  ...
 }
 ```
 Here in the launch we provide the store instance and it will close itself once the coroutine job is cancelled (finished).
@@ -201,6 +202,14 @@ viewModelScope.launch {
 	... (use peopleStore and planetStore)
 }.autoClose(peopleStore, planetStore)
 ```
+### Responses
+All responses coming from the store are based on StoreResponse classes. The subclasses are:
+| StoreResponse | Description |
+|---------------|-------------|
+| Data          | When the request was successful it returns the parsed objects |
+| Error         | It is returned when there was a network or parsing error, includes the exception that generated it. Please note Store will not throw the exception |
+| NoData        | When there is no data returned |
+
 
 ### Stream data
 
@@ -213,11 +222,17 @@ For example, from your ViewModel
 ```kotlin
 viewModelScope.launch {
    peopleStore.stream(refresh = true).collect { result ->
-      Log.d(TAG, "Received new people list: ${result.value}")
+      when (result) {
+          is StoreResponse.Data -> // Here you send it to the UI
+          is StoreResponse.Error -> // You can show an error
+          else -> // You can also handle the NoData showing an error
+      }
    }
 }
 ```
 `stream` returns a `Flow`, and it can be combined and processed like any other `Flow`.
+
+You can also add `.map { it.requireData() }` in case you want the errors to be thrown and handled in a different way.
 
 ### Making an API call directly
 
@@ -238,15 +253,37 @@ The `get` method gets the data from the cache, usually used in places when you k
 viewModelScope.launch {
   val response = personStore.get(RoomPersonStore.Key("1"))
 }
-```  
-  
-### Summary  
-| method | feature |  
-|--------|---------|  
-| stream | Gets the data first from the cache, then from the API and listens for cache updates. It usually emits twice or more times (old and new data) |  
-| fetch | Gets the data from the API and caches it. |  
-| get | Gets the data from the cache. It does not listen for updates. |  
-  
+```
+
+### Summary
+| method | feature |
+|--------|---------|
+| stream | Gets the data first from the cache, then from the API and listens for cache updates. It usually emits twice or more times (old and new data) |
+| fetch | Gets the data from the API and caches it. |
+| get | Gets the data from the cache. It does not listen for updates. |
+
+### Error handling
+You can detect errors in different ways:
+```kotlin
+viewModelScope.launch {
+  val result = personStore.fetch(RoomPersonStore.Key("1"))
+    when (result) {
+        is StoreResponse.Data -> // UI work
+        is StoreResponse.Error -> // Handle the error here
+        else -> {}
+    }
+}
+```
+Another alternative is using the catch method after a `requireData()` call.
+```kotlin
+viewModelScope.launch {
+  personStore.stream(RoomPersonStore.Key("1"), refresh = true)
+        .map { it.requireData() }
+        .catch { /* Error handling */ }
+        .collect { result -> /* UI work */ }
+}
+```
+
 ## Staleness Settings  
   
 When the data is returned from the API, it gets stored in the cache. The methods Cache.store or RealmCache.storeInRealm are used to store all entities returned from the API. For example in Realm we use `bgRealm.copyToRealmOrUpdate(newData)` in the Cache object. The `copytoRealmOrUpdate` will be in charge of creating new rows in the database or updating them if they already exist. If there are entities that were deleted in the backend, the API response will not contain them, and the cache will still have them stored -and they will appear in queries-. In order to delete the cache properly we have some strategies.  

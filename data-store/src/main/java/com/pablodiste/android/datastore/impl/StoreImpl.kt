@@ -22,7 +22,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
     /**
      * Finds and listen the cache for a entity. If the entity is not in cache if fetches it using the fetcher.
      * If there is anything in the cache, it emits it, otherwise it calls the fetcher.
-     * @param refresh when true, if performs the fetch operation anyways, even if the data is cached.
+     * @param refresh when true, if performs the fetch operation anyways in parallel, even if the data is cached.
      */
     override fun stream(key: K, refresh: Boolean): Flow<StoreResponse<T>> {
         return flow {
@@ -31,7 +31,11 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
                     val streamFlow = streamFromCache(key)
                     if (refresh) {
                         launch {
-                            performFetch(key)
+                            val fetched = performFetch(key)
+                            // We do not emit the fetched data because we are listening reactively for updates in the cache.
+                            if (fetched !is StoreResponse.Data) {
+                                emit(fetched)
+                            }
                         }
                     }
                     emitAll(streamFlow)

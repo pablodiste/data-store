@@ -7,6 +7,9 @@ import com.pablodiste.android.sample.models.room.People
 import com.pablodiste.android.sample.repositories.store.room.RoomPersonStore
 import com.pablodiste.android.sample.repositories.store.room.RoomPersonStoreWithError
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class ErrorExampleViewModel : ViewModel() {
@@ -20,6 +23,8 @@ class ErrorExampleViewModel : ViewModel() {
     )
 
     init {
+        /*
+        // One alternative for error handling
         viewModelScope.launch {
             val result = personStore.fetch(RoomPersonStore.Key("1"))
             when (result) {
@@ -27,6 +32,15 @@ class ErrorExampleViewModel : ViewModel() {
                 is StoreResponse.Error -> uiState.value.loadingError = true
                 else -> {}
             }
+        }
+        */
+
+        // Another alternative for error handling in Flows
+        viewModelScope.launch {
+            personStore.stream(RoomPersonStore.Key("1"), refresh = true)
+                .map { it.requireData() }
+                .catch { uiState.value.loadingError = true }
+                .collect { result -> uiState.value.data = result }
         }
     }
 

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 class FetchExampleViewModel : ViewModel() {
 
     private val personStore = RealmPersonStore()
-    val uiState = MutableStateFlow<People>(People())
+    val uiState = MutableStateFlow(People())
 
     init {
         viewModelScope.launch(personStore) {
