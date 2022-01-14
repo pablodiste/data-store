@@ -5,12 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pablodiste.android.sample.models.room.People
 import com.pablodiste.android.sample.repositories.store.room.RoomPersonStore
+import com.pablodiste.android.sample.repositories.store.room.providePersonStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class FetchExampleViewModel : ViewModel() {
 
-    private val personStore = RoomPersonStore()
+    //private val personStore = RoomPersonStore()
+    private val personStore = providePersonStore()
     val uiState = MutableStateFlow(People())
 
     init {

@@ -116,8 +116,10 @@ abstract class RoomCache<K: Any, T: Any>(
 
 }
 
+/*
 abstract class SimpleRoomCache<K: Any, T: Any>(
     private val tableName: String,
     private val database: RoomDatabase,
     stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
 ): RoomCache<K, T>(tableName, database, stalenessPolicy)
+ */

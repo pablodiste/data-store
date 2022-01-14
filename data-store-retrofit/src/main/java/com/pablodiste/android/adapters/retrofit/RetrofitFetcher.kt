@@ -1,6 +1,7 @@
 package com.pablodiste.android.adapters.retrofit
 
 import com.pablodiste.android.datastore.CrudFetcher
+import com.pablodiste.android.datastore.Fetcher
 import com.pablodiste.android.datastore.FetcherResult
 import com.pablodiste.android.datastore.impl.LimitedFetcher
 import com.pablodiste.android.datastore.ratelimiter.RateLimitPolicy
@@ -26,7 +27,21 @@ abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
 
     override suspend fun fetch(key: K): FetcherResult<I> = fetch(key, service)
 
+    companion object {
+        fun <K: Any, I: Any, S: Any> of(
+            serviceClass: Class<S>,
+            serviceProvider: RetrofitServiceProvider,
+            fetch: suspend (K, S) -> FetcherResult<I>,
+            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS)
+        ): Fetcher<K, I> {
+            return object: RetrofitFetcher<K, I, S>(serviceClass, serviceProvider, rateLimitPolicy) {
+                override suspend fun fetch(key: K, service: S): FetcherResult<I> = fetch(key, service)
+            }
+        }
+    }
+
 }
+
 
 /**
  * Implements a retrofit service call, K = key, I: entity DTO class, S: Retrofit service class

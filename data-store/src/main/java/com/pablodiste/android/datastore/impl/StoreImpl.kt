@@ -105,3 +105,4 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
  */
 open class SimpleStoreImpl<K: Any, T: Any>(fetcher: Fetcher<K, T>, cache: Cache<K, T>):
     StoreImpl<K, T, T>(fetcher, cache, SameEntityMapper())
+
