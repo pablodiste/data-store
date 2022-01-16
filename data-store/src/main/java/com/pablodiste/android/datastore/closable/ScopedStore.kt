@@ -13,7 +13,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 
 open class ScopedStore<K: Any, I: Any, T: Any>(
     fetcher: Fetcher<K, I>,
-    override val cache: ClosableCache<K, T>,
+    private val cache: ClosableCache<K, T>,
     mapper: Mapper<I, T>
 ): StoreImpl<K, I, T>(fetcher, cache, mapper) {
 

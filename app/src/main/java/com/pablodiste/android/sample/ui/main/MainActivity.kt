@@ -120,13 +120,13 @@ fun TopBar(title: String = "", buttonIcon: ImageVector, onButtonClicked: () -> U
 
 
 sealed class DrawerScreens(val title: String, val route: String) {
-    object RoomStreamExample : DrawerScreens("Stream Example (Room)", "stream2")
-    object RoomFetchExample : DrawerScreens("Fetch Example (Room)", "fetch2")
-    object RoomGetExample : DrawerScreens("Get Example (Room)", "fetch2")
-    object RoomErrorExample : DrawerScreens("Error Handling Example (Room)", "error1")
-    object RealmStreamExample : DrawerScreens("Stream Example (Realm)", "stream1")
-    object RealmFetchExample : DrawerScreens("Fetch Example (Realm)", "fetch1")
-    object RealmGetExample : DrawerScreens("Get Example (Realm)", "get1")
+    object RoomStreamExample : DrawerScreens("Stream Example (Room)", "room_stream")
+    object RoomFetchExample : DrawerScreens("Fetch Example (Room)", "room_fetch")
+    object RoomGetExample : DrawerScreens("Get Example (Room)", "room_get")
+    object RoomErrorExample : DrawerScreens("Error Handling Example (Room)", "room_error")
+    object RealmStreamExample : DrawerScreens("Stream Example (Realm)", "realm_stream")
+    object RealmFetchExample : DrawerScreens("Fetch Example (Realm)", "realm_fetch")
+    object RealmGetExample : DrawerScreens("Get Example (Realm)", "realm_get")
 }
 
 private val screens = listOf(

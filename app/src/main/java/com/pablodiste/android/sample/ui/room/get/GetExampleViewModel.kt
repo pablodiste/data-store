@@ -15,9 +15,9 @@ class GetExampleViewModel : ViewModel() {
 
     init {
         viewModelScope.launch {
-            val person = personStore.get(RoomPersonStore.Key("1")).requireData()
-            Log.d(TAG, "Fetch response: $person")
-            uiState.value = person
+            val result = personStore.get(RoomPersonStore.Key("1"))
+            Log.d(TAG, "Received $result")
+            uiState.value = result.requireData()
         }
     }
 

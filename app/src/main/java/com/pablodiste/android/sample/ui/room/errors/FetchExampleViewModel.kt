@@ -1,11 +1,13 @@
 package com.pablodiste.android.sample.ui.room.errors
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pablodiste.android.datastore.StoreResponse
 import com.pablodiste.android.sample.models.room.People
 import com.pablodiste.android.sample.repositories.store.room.RoomPersonStore
 import com.pablodiste.android.sample.repositories.store.room.RoomPersonStoreWithError
+import com.pablodiste.android.sample.ui.room.stream.RoomStreamExampleViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
@@ -38,7 +40,10 @@ class ErrorExampleViewModel : ViewModel() {
         // Another alternative for error handling in Flows
         viewModelScope.launch {
             personStore.stream(RoomPersonStore.Key("1"), refresh = true)
-                .map { it.requireData() }
+                .map {
+                    Log.d(TAG, "Received $it")
+                    it.requireData()
+                }
                 .catch { uiState.value.loadingError = true }
                 .collect { result -> uiState.value.data = result }
         }

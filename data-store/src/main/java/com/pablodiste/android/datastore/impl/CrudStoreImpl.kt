@@ -25,7 +25,7 @@ abstract class CrudStoreImpl<K: Any, I: Any, T: Any>(
 
     override suspend fun delete(key: K, entity: T): Boolean {
         crudFetcher.delete(mapper.toFetcherEntity(entity))
-        cache.delete(key)
+        pausableCache.delete(key)
         return true
     }
 
@@ -33,7 +33,7 @@ abstract class CrudStoreImpl<K: Any, I: Any, T: Any>(
         return when (result) {
             is FetcherResult.Data -> {
                 val entityToSave = mapper.toCacheEntity(result.value)
-                cache.store(buildKey(entityToSave), entityToSave)
+                pausableCache.store(buildKey(entityToSave), entityToSave)
             }
             is FetcherResult.Error -> throw result.error
             else -> throw Throwable("Error creating entity, invalid state")

@@ -3,19 +3,17 @@ package com.pablodiste.android.datastore.impl
 import com.pablodiste.android.datastore.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 open class StoreImpl<K: Any, I: Any, T: Any>(
     protected open val fetcher: Fetcher<K, I>,
-    protected open val cache: Cache<K, T>,
+    cache: Cache<K, T>,
     protected open val mapper: Mapper<I, T>
 ): Store<K, T> {
 
+    protected var pausableCache: PausableCache<K, T> = PausableCache(cache)
     private val TAG = this.javaClass.simpleName
     private val fetcherController = FetcherController(fetcher)
 
@@ -27,18 +25,21 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
     override fun stream(key: K, refresh: Boolean): Flow<StoreResponse<T>> {
         return flow {
             coroutineScope {
-                if (cache.exists(key)) {
+                if (pausableCache.exists(key)) {
                     val streamFlow = streamFromCache(key)
                     if (refresh) {
-                        launch {
+                        val fetcherFlow = flow {
                             val fetched = performFetch(key)
-                            // We do not emit the fetched data because we are listening reactively for updates in the cache.
+                            // We do not emit the fetched data because we are listening reactively for updates in the streamFlow.
+                            // We only emit errors
                             if (fetched !is StoreResponse.Data) {
                                 emit(fetched)
                             }
                         }
+                        emitAll(merge(streamFlow, fetcherFlow))
+                    } else {
+                        emitAll(streamFlow)
                     }
-                    emitAll(streamFlow)
                 } else {
                     emitAll(fetchAndStream(key))
                 }
@@ -61,15 +62,15 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
      * Loads an entity from cache (simple query), if it is not in cache, it calls the fetcher for it.
      */
     override suspend fun get(key: K): StoreResponse<T> {
-        return if (cache.exists(key)) {
-            val cached = cache.get(key)
+        return if (pausableCache.exists(key)) {
+            val cached = pausableCache.get(key)
             StoreResponse.Data(cached, ResponseOrigin.CACHE)
         } else {
             fetch(key, forced = true)
         }
     }
 
-    private fun streamFromCache(key: K) = cache.listen(key).map { StoreResponse.Data(it, ResponseOrigin.CACHE) }
+    private fun streamFromCache(key: K) = pausableCache.listenWithResponse(key)
 
     /**
      * Fetches an entity from the fetcher. This call forces the API call.
@@ -80,11 +81,11 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
         return withContext(Dispatchers.Main) {
             return@withContext when (fetcherResult) {
                 is FetcherResult.Data -> {
-                    val fetched = cache.store(key, mapper.toCacheEntity(fetcherResult.value), true)
+                    val fetched = pausableCache.store(key, mapper.toCacheEntity(fetcherResult.value), true)
                     StoreResponse.Data(fetched, ResponseOrigin.FETCHER)
                 }
                 is FetcherResult.NoData -> {
-                    val cacheResponse = cache.get(key)
+                    val cacheResponse = pausableCache.get(key)
                     StoreResponse.Data(cacheResponse, ResponseOrigin.CACHE)
                 }
                 is FetcherResult.Error -> StoreResponse.Error(fetcherResult.error)

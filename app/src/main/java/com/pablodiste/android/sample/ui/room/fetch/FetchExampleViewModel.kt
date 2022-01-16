@@ -17,9 +17,9 @@ class FetchExampleViewModel : ViewModel() {
 
     init {
         viewModelScope.launch {
-            val people = personStore.fetch(RoomPersonStore.Key("1")).requireData()
-            Log.d(TAG, "Fetch response: $people")
-            uiState.value = people
+            val result = personStore.fetch(RoomPersonStore.Key("1"))
+            Log.d(TAG, "Received $result")
+            uiState.value = result.requireData()
         }
     }
 
