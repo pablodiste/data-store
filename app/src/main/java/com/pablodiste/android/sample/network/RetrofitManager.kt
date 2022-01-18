@@ -9,16 +9,21 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitManager : RetrofitServiceProvider {
 
-    private val retrofit: Retrofit
+    private val retrofitSW: Retrofit
+    private val retrofitJP: Retrofit
     private val gson: Gson = GsonBuilder().setLenient().create()
 
     init {
         val okHttpClientBuilder = OkHttpClient.Builder()
-        retrofit = okHttpClientBuilder.buildRetrofit("swapi.py4e.com/api/")
+        retrofitSW = okHttpClientBuilder.buildRetrofit("swapi.py4e.com/api/")
+        retrofitJP = okHttpClientBuilder.buildRetrofit("jsonplaceholder.typicode.com/")
     }
 
     override fun <T> createService(service: Class<T>): T {
-        return retrofit.create(service)
+        return when (service.simpleName) {
+            RoomStarWarsService::class.java.simpleName -> retrofitSW.create(service)
+            else -> retrofitJP.create(service)
+        }
     }
 
     private fun OkHttpClient.Builder.buildRetrofit(url: String) = Retrofit.Builder()

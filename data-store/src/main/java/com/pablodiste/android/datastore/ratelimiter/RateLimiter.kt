@@ -44,5 +44,5 @@ class RateLimiter<K>(timeout: Int, timeUnit: TimeUnit) {
 
 }
 
-class FetchOnlyOnce: RateLimitPolicy(24, TimeUnit.HOURS)
-class FetchAlways: RateLimitPolicy(0, TimeUnit.SECONDS)
+object FetchOnlyOnce: RateLimitPolicy(24, TimeUnit.HOURS)
+object FetchAlways: RateLimitPolicy(0, TimeUnit.SECONDS)

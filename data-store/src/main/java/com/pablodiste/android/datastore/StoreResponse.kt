@@ -15,6 +15,14 @@ sealed class StoreResponse<out T> {
         }
     }
 
+    fun requireOrigin(): ResponseOrigin {
+        return when (this) {
+            is Data -> origin
+            is Error -> throw error
+            is NoData -> throw IllegalStateException("There is no data")
+        }
+    }
+
     data class Data<T>(val value: T, val origin: ResponseOrigin): StoreResponse<T>()
     data class NoData(val message: String): StoreResponse<Nothing>()
     data class Error(val error: Throwable): StoreResponse<Nothing>()

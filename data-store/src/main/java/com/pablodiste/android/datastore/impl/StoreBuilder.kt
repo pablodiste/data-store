@@ -23,7 +23,7 @@ open class StoreBuilder<K: Any, I: Any, T: Any>(
         return this
     }
 
-    fun build(): Store<K, T> {
+    open fun build(): Store<K, T> {
         return StoreImpl(fetcher, cache, mapper)
     }
 
@@ -39,6 +39,12 @@ class SimpleStoreBuilder<K: Any, T: Any>(
     private var fetcher: Fetcher<K, T>,
     private var cache: Cache<K, T>
 ): StoreBuilder<K, T, T>(fetcher, cache, SameEntityMapper()) {
+
+    override fun build(): Store<K, T> {
+        return SimpleStoreImpl(fetcher, cache)
+    }
+
+
     companion object {
         fun <K : Any, T : Any> from(fetcher: Fetcher<K, T>, cache: Cache<K, T>): SimpleStoreBuilder<K, T> =
             SimpleStoreBuilder(fetcher, cache)

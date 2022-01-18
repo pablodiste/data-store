@@ -1,10 +1,10 @@
 package com.pablodiste.android.datastore.impl
 
+import android.util.Log
 import com.pablodiste.android.datastore.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 open class StoreImpl<K: Any, I: Any, T: Any>(
@@ -85,6 +85,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
                     StoreResponse.Data(fetched, ResponseOrigin.FETCHER)
                 }
                 is FetcherResult.NoData -> {
+                    Log.d("StoreImpl", "Received No Data")
                     val cacheResponse = pausableCache.get(key)
                     StoreResponse.Data(cacheResponse, ResponseOrigin.CACHE)
                 }
