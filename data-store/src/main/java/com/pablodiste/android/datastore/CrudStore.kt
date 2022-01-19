@@ -5,7 +5,7 @@ interface CrudStore<K: Any, T: Any>: Store<K, T> {
      * Performs a create operation (usually a HTTP POST), and stores it in the cache
      * @return the cached entity
      */
-    suspend fun create(entity: T): StoreResponse<T>
+    suspend fun create(key: K, entity: T): StoreResponse<T>
 
     /**
      * Performs an update operation (usually a HTTP PUT), and updates it in the cache
@@ -27,7 +27,7 @@ interface CrudStore<K: Any, T: Any>: Store<K, T> {
 }
 
 interface CrudFetcher<K: Any, I: Any>: Fetcher<K, I> {
-    suspend fun create(entity: I): FetcherResult<I>
-    suspend fun update(entity: I): FetcherResult<I>
-    suspend fun delete(entity: I): Boolean
+    suspend fun create(key: K, entity: I): FetcherResult<I>
+    suspend fun update(key: K, entity: I): FetcherResult<I>
+    suspend fun delete(key: K, entity: I): Boolean
 }

@@ -52,13 +52,13 @@ abstract class RetrofitCrudFetcher<K: Any, I: Any, S: Any>(
     override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS)
 ): RetrofitFetcher<K, I, S>(serviceClass, serviceProvider, rateLimitPolicy), CrudFetcher<K, I> {
 
-    abstract suspend fun create(entity: I, service: S): FetcherResult<I>
-    abstract suspend fun update(entity: I, service: S): FetcherResult<I>
-    abstract suspend fun delete(entity: I, service: S): Boolean
+    abstract suspend fun create(key: K, entity: I, service: S): FetcherResult<I>
+    abstract suspend fun update(key: K, entity: I, service: S): FetcherResult<I>
+    abstract suspend fun delete(key: K, entity: I, service: S): Boolean
 
     override suspend fun fetch(key: K): FetcherResult<I> = fetch(key, service)
-    override suspend fun create(entity: I): FetcherResult<I> = create(entity, service)
-    override suspend fun update(entity: I): FetcherResult<I> = update(entity, service)
-    override suspend fun delete(entity: I): Boolean = delete(entity, service)
+    override suspend fun create(key: K, entity: I): FetcherResult<I> = create(key, entity, service)
+    override suspend fun update(key: K, entity: I): FetcherResult<I> = update(key, entity, service)
+    override suspend fun delete(key: K, entity: I): Boolean = delete(key, entity, service)
 
 }
