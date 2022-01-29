@@ -5,7 +5,8 @@ import com.pablodiste.android.datastore.*
 open class CrudStoreImpl<K: Any, I: Any, T: Any>(
     fetcher: CrudFetcher<K, I>,
     cache: Cache<K, T>,
-    mapper: Mapper<I, T>
+    mapper: Mapper<I, T>,
+    private val keyBuilder: ((T) -> K)? = null
 ):
     StoreImpl<K, I, T>(fetcher, cache, mapper), CrudStore<K, T> {
 
@@ -41,7 +42,8 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
     }
 
     override fun buildKey(entity: T): K {
-        TODO("Override this method providing a way to build the Key")
+        return keyBuilder?.let { it(entity) } ?:
+            throw IllegalStateException("Override this method or provide a keyBuilder to build the Key for CRUD operations")
     }
 
 }
@@ -49,5 +51,8 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
 /**
  * Simple CRUD store where the parsed fetcher entity type is the same as the cached entity type.
  */
-open class SimpleCrudStoreImpl<K: Any, T: Any>(fetcher: CrudFetcher<K, T>, cache: Cache<K, T>):
-    CrudStoreImpl<K, T, T>(fetcher, cache, SameEntityMapper())
+open class SimpleCrudStoreImpl<K: Any, T: Any>(
+    fetcher: CrudFetcher<K, T>,
+    cache: Cache<K, T>,
+    keyBuilder: ((T) -> K)? = null
+): CrudStoreImpl<K, T, T>(fetcher, cache, SameEntityMapper(), keyBuilder)

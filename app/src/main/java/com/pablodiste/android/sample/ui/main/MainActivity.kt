@@ -24,6 +24,8 @@ import com.pablodiste.android.sample.ui.realm.stream.StreamExample
 import com.pablodiste.android.sample.ui.realm.stream.StreamExampleViewModel
 import com.pablodiste.android.sample.ui.room.concurrent.RoomConcurrentExample
 import com.pablodiste.android.sample.ui.room.concurrent.RoomConcurrentExampleViewModel
+import com.pablodiste.android.sample.ui.room.crud.RoomCrudExample
+import com.pablodiste.android.sample.ui.room.crud.RoomCrudExampleViewModel
 import com.pablodiste.android.sample.ui.room.stream.RoomStreamExample
 import com.pablodiste.android.sample.ui.room.stream.RoomStreamExampleViewModel
 import kotlinx.coroutines.launch
@@ -90,6 +92,10 @@ fun AppMainScreen() {
                     val viewModel = viewModel<RoomConcurrentExampleViewModel>()
                     RoomConcurrentExample(viewModel, openDrawer = { openDrawer() })
                 }
+                composable(DrawerScreens.RoomCrudExample.route) {
+                    val viewModel = viewModel<RoomCrudExampleViewModel>()
+                    RoomCrudExample(viewModel, openDrawer = { openDrawer() })
+                }
                 composable(DrawerScreens.RoomStreamExample.route) {
                     val viewModel = viewModel<RoomStreamExampleViewModel>()
                     RoomStreamExample(viewModel, openDrawer = { openDrawer() })
@@ -131,6 +137,7 @@ sealed class DrawerScreens(val title: String, val route: String) {
     object RoomGetExample : DrawerScreens("Get Example (Room)", "room_get")
     object RoomErrorExample : DrawerScreens("Error Handling Example (Room)", "room_error")
     object RoomConcurrentExample : DrawerScreens("Concurrent Example (Room)", "room_concurrent")
+    object RoomCrudExample : DrawerScreens("Crud Example (Room)", "room_crud")
     object RealmStreamExample : DrawerScreens("Stream Example (Realm)", "realm_stream")
     object RealmFetchExample : DrawerScreens("Fetch Example (Realm)", "realm_fetch")
     object RealmGetExample : DrawerScreens("Get Example (Realm)", "realm_get")
@@ -142,6 +149,7 @@ private val screens = listOf(
     DrawerScreens.RoomGetExample,
     DrawerScreens.RoomErrorExample,
     DrawerScreens.RoomConcurrentExample,
+    DrawerScreens.RoomCrudExample,
     DrawerScreens.RealmStreamExample,
     DrawerScreens.RealmFetchExample,
     DrawerScreens.RealmGetExample,

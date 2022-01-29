@@ -39,5 +39,5 @@ class PausableCache<K: Any, T: Any>(val cache: Cache<K, T>): Cache<K, T> {
 
     override suspend fun get(key: K): T = cache.get(key)
 
-    override suspend fun delete(key: K): Boolean = delete(key)
+    override suspend fun delete(key: K): Boolean = cache.delete(key)
 }

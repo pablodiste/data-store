@@ -18,5 +18,5 @@ interface JsonPlaceholderService {
     suspend fun updatePost(@Path("id") id: Int, @Body post: Post): Post
 
     @DELETE("posts/{id}")
-    suspend fun deletePost(@Path("id") id: Int): Boolean
+    suspend fun deletePost(@Path("id") id: Int): Unit
 }

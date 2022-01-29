@@ -51,32 +51,42 @@ class SimpleStoreBuilder<K: Any, T: Any>(
 }
 
 open class CrudStoreBuilder<K: Any, I: Any, T: Any>(
-    val crudFetcher: CrudFetcher<K, I>,
+    protected val crudFetcher: CrudFetcher<K, I>,
     cache: Cache<K, T>,
-    mapper: Mapper<I, T>
+    mapper: Mapper<I, T>,
+    protected val keyBuilder: (T) -> K
 ): StoreBuilder<K, I, T>(crudFetcher, cache, mapper) {
 
     override fun build(): Store<K, T> {
-        return CrudStoreImpl(crudFetcher, cache, mapper)
+        return CrudStoreImpl(crudFetcher, cache, mapper, keyBuilder)
     }
 
     companion object {
-        fun <K: Any, I: Any, T: Any> from(crudFetcher: CrudFetcher<K, I>, cache: Cache<K, T>, mapper: Mapper<I, T>): CrudStoreBuilder<K, I, T> =
-            CrudStoreBuilder(crudFetcher, cache, mapper)
+        fun <K: Any, I: Any, T: Any> from(
+            crudFetcher: CrudFetcher<K, I>,
+            cache: Cache<K, T>,
+            mapper: Mapper<I, T>,
+            keyBuilder: (T) -> K
+        ): CrudStoreBuilder<K, I, T> =
+            CrudStoreBuilder(crudFetcher, cache, mapper, keyBuilder)
     }
 }
 
 class SimpleCrudStoreBuilder<K: Any, T: Any>(
     fetcher: CrudFetcher<K, T>,
-    cache: Cache<K, T>
-): CrudStoreBuilder<K, T, T>(fetcher, cache, SameEntityMapper()) {
+    cache: Cache<K, T>,
+    keyBuilder: (T) -> K
+): CrudStoreBuilder<K, T, T>(fetcher, cache, SameEntityMapper(), keyBuilder) {
 
     override fun build(): Store<K, T> {
-        return SimpleCrudStoreImpl(crudFetcher, cache)
+        return SimpleCrudStoreImpl(crudFetcher, cache, keyBuilder)
     }
 
     companion object {
-        fun <K: Any, T: Any> from(fetcher: CrudFetcher<K, T>, cache: Cache<K, T>): SimpleCrudStoreBuilder<K, T> =
-            SimpleCrudStoreBuilder(fetcher, cache)
+        fun <K: Any, T: Any> from(
+            fetcher: CrudFetcher<K, T>,
+            cache: Cache<K, T>,
+            keyBuilder: (T) -> K
+        ): SimpleCrudStoreBuilder<K, T> = SimpleCrudStoreBuilder(fetcher, cache, keyBuilder)
     }
 }
