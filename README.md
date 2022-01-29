@@ -458,6 +458,17 @@ fun create() {
 And similar for `update` and `delete`. The cache is updated as soon the response is received.
 In general this CRUD requests assumes an API expecting POST and PUT operations which returns the created/updated object with the generated/edited id as a result.
 
+### Error handling
+The CRUD operations returns a `StoreResponse` object which can be an `Error`. None of the operations are throwing exceptions.
+```kotlin
+val response = postsStore.create(PostKey(id = 1), Post(title = "Title", body = "Body", userId = 1))
+when (response) {
+    is StoreResponse.Data -> uiState.value = "Created"
+    is StoreResponse.Error -> uiState.value = "Error in create"
+}
+```
+
+
 ## Roadmap
 
  - Review staleness options

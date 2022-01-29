@@ -13,21 +13,33 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
     protected val crudFetcher get() = fetcher as CrudFetcher
 
     override suspend fun create(key: K, entity: T): StoreResponse<T> {
-        val createResult = crudFetcher.create(key, mapper.toFetcherEntity(entity))
-        val storeResult = storeFetcherResult(createResult)
-        return StoreResponse.Data(storeResult, ResponseOrigin.FETCHER)
+        return try {
+            val createResult = crudFetcher.create(key, mapper.toFetcherEntity(entity))
+            val storeResult = storeFetcherResult(createResult)
+            StoreResponse.Data(storeResult, ResponseOrigin.FETCHER)
+        } catch (e: Exception) {
+            StoreResponse.Error(e)
+        }
     }
 
     override suspend fun update(key: K, entity: T): StoreResponse<T> {
-        val updateResult = crudFetcher.update(key, mapper.toFetcherEntity(entity))
-        val storeResult = storeFetcherResult(updateResult)
-        return StoreResponse.Data(storeResult, ResponseOrigin.FETCHER)
+        return try {
+            val updateResult = crudFetcher.update(key, mapper.toFetcherEntity(entity))
+            val storeResult = storeFetcherResult(updateResult)
+            StoreResponse.Data(storeResult, ResponseOrigin.FETCHER)
+        } catch (e: Exception) {
+            StoreResponse.Error(e)
+        }
     }
 
     override suspend fun delete(key: K, entity: T): Boolean {
-        crudFetcher.delete(key, mapper.toFetcherEntity(entity))
-        pausableCache.delete(key)
-        return true
+        return try {
+            crudFetcher.delete(key, mapper.toFetcherEntity(entity))
+            pausableCache.delete(key)
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     private suspend fun storeFetcherResult(result: FetcherResult<I>): T {
