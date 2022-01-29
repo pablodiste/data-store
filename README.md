@@ -408,63 +408,60 @@ throttlingFetcherController.throttlingObservable.subscribe({ timeout ->
 
 ## CRUD Stores
 
-A CrudStore is an Store which also implements create, update and delete methods.
+A CrudStore is a Store which also implements create, update and delete methods.
 These operations are reflected in API calls (POST, PUT and DELETE REST calls for example), and the new/updated/deleted entities are also created/updated/deleted from the cache when the API call succeeds.
 
-Example of implementation:
+Example of definition:
 
 ```kotlin
-class TeamDataStore: SimpleCrudStoreImpl<TeamDataStore.Key, Team>(TeamFetcher(), TeamCache()) {
+data class PostKey(val id: Int)
 
-    data class Key(val teamId: String = "")
+fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
+    return SimpleCrudStoreBuilder.from(
+        fetcher = LimitedCrudFetcher.of(
+            fetch = { post -> FetcherResult.Data(provideService().getPost(post.id)) },
+  create = { key, post -> FetcherResult.Data(provideService().createPost(post)) },
+  update = { key, post -> FetcherResult.Data(provideService().updatePost(key.id, post)) },
+  delete = { key, post -> provideService().deletePost(key.id); true },
+  ),
+  cache = SampleApplication.roomDb.postCache(),
+  keyBuilder = { entity -> PostKey(entity.id) }
+  ).build() as SimpleCrudStoreImpl
+}
 
-    class TeamFetcher: RetrofitCrudFetcher<Key, Team, RetrofitTeamService>(RetrofitTeamService::class.java) {
+private fun provideService() = RetrofitManager.createService(JsonPlaceholderService::class.java)
 
-        override fun fetch(key: Key, service: RetrofitTeamService): Single<FetcherResult<Team>> {
-            return service.getTeam(key.teamId).observeOn(AndroidSchedulers.mainThread()).map { it.toFetcherResult() }
-        }
-
-        override fun create(entity: Team, service: RetrofitTeamService): Single<FetcherResult<Team>> {
-            return service.createTeam(entity).observeOn(AndroidSchedulers.mainThread()).map { it.toFetcherResult() }
-        }
-
-        override fun update(entity: Team, service: RetrofitTeamService): Single<FetcherResult<Team>> {
-            return service.updateTeam(entity.id!!, entity).observeOn(AndroidSchedulers.mainThread()).map { it.toFetcherResult() }
-        }
-
-        override fun delete(entity: Team, service: RetrofitTeamService): Single<Boolean> {
-            return service.deleteTeam(entity.id!!).observeOn(AndroidSchedulers.mainThread()).map { true }
-        }
-
-    }
-
-    class TeamCache: SimpleRealmCache<Key, Team>(Team::class.java) {
-        override fun query(key: Key): (query: RealmQuery<Team>) -> Unit = { it.equalTo("id", key.teamId) }
-    }
-
-    override fun buildKey(entity: Team): Key = Key(teamId = entity.id.orEmpty())
-
+@Dao
+abstract class PostCache: RoomCache<PostKey, Post>("posts", SampleApplication.roomDb) {
+    override fun query(key: PostKey): String = "id = ${key.id}"
 }
 ```
+Some details:
 
-In this case you need to provide a `RetrofitCrudFetcher` which allows the implementation of the four operations using a `Retrofit` service.
-You also have to implement `buildKey` method, used in create to construct a new `Key` for the cache, based on the data coming from the API.
+ - `PostKey` is the key used to identify each request, in this example
+   the id is used to distinguish between different entities.
+ - `providePostsCRUDStore` creates the CRUD Store, we provide one method for each CRUD operation: `create`, `update`, `delete`, and `fetch`. We also need to provide a `keyBuilder` function used to generate a new key for the new stored data.
+ - The cache in this case is a Room Dao with a query using the key provided.
 
 The usage is simple:
 
 ```kotlin
-val teamDataStore = TeamDataStore() // or injected using DI
-teamDataStore.create(team).subscribe({ storeResponse ->
-    SNLog.d(TAG, "You have created a new team and it is cached now: ${storeResponse.value}")
-}, {
-    SNLog.e(TAG, "The create API call failed")
-})
-
+private val postsStore = providePostsCRUDStore()
+//...
+fun create() {
+    viewModelScope.launch {
+    postsStore.create(PostKey(id = 1), Post(title = "Title", body = "Body", userId = 1))
+        uiState.value = "Created" // Here you can show a success message
+  }
+}
 ```
-And similar for `update` and `delete`. The cache is updated before you receive the response.
+And similar for `update` and `delete`. The cache is updated as soon the response is received.
+In general this CRUD requests assumes an API expecting POST and PUT operations which returns the created/updated object with the generated/edited id as a result.
 
 ## Roadmap
 
- - Improving CRUD operations
- - Adding functional builders for the Store
+ - Review staleness options
+ - Make examples for the rate limiter
+ - Return the same fetcher response when a request is the same as one already sent
  - Add an optional memory cache
+ - Publish the library
