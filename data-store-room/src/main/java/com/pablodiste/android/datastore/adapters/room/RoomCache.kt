@@ -65,8 +65,8 @@ abstract class RoomCache<K: Any, T: Any>(
 
     override suspend fun store(key: K, entity: T, removeStale: Boolean): T {
         withContext(Dispatchers.IO) {
-            database.runInTransaction {
-//                if (removeStale && stalenessPolicy !is DoNotExpireStalenessPolicy) removeStale(bgRealm, key, entity)
+            database.withTransaction {
+                if (removeStale && stalenessPolicy !is DoNotExpireStalenessPolicy) removeStale(key, entity)
                 upsert(entity)
             }
         }
@@ -98,6 +98,8 @@ abstract class RoomCache<K: Any, T: Any>(
 
     abstract fun query(key: K): String
 
+    private suspend fun removeStale(key: K, entity: T) = stalenessPolicy.removeStaleEntity( this, key, entity)
+
     @RawQuery
     protected abstract suspend fun getEntitySync(query: SupportSQLiteQuery): T?
 
@@ -111,8 +113,6 @@ abstract class RoomCache<K: Any, T: Any>(
     abstract fun upsert(entity: T)
 
     // fun <U> getAndRun(key: K, operation: (result: List<T>) -> U): U = findAllManagedAndRun(klass, query(key), operation)
-
-    // private fun removeStale(bgRealm: Realm, key: K, entity: List<T>) = stalenessPolicy.removeStaleListInRealm(bgRealm, this, key, entity)
 
 }
 
