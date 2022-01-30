@@ -3,7 +3,7 @@ package com.pablodiste.android.sample.repositories.store.room
 import androidx.room.Dao
 import com.pablodiste.android.adapters.retrofit.RetrofitFetcher
 import com.pablodiste.android.datastore.FetcherResult
-import com.pablodiste.android.datastore.adapters.room.SimpleRoomListCache
+import com.pablodiste.android.datastore.adapters.room.RoomListCache
 import com.pablodiste.android.datastore.impl.NoKey
 import com.pablodiste.android.datastore.impl.NoKeySimpleStore
 import com.pablodiste.android.sample.SampleApplication
@@ -25,7 +25,7 @@ class RoomPeopleStore: NoKeySimpleStore<List<People>>(
     }
 
     @Dao
-    abstract class PeopleCache: SimpleRoomListCache<NoKey, People>("people", SampleApplication.roomDb) {
+    abstract class PeopleCache: RoomListCache<NoKey, People>("people", SampleApplication.roomDb) {
         override fun query(key: NoKey): String = ""
     }
 

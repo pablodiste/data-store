@@ -112,8 +112,6 @@ abstract class RoomCache<K: Any, T: Any>(
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract fun upsert(entity: T)
 
-    // fun <U> getAndRun(key: K, operation: (result: List<T>) -> U): U = findAllManagedAndRun(klass, query(key), operation)
-
 }
 
 /*

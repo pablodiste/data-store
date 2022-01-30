@@ -126,12 +126,12 @@ abstract class RoomListCache<K: Any, T: Any>(
     @Delete
     abstract fun delete(entities: List<T>)
 
-    // fun <U> getAndRun(key: K, operation: (result: List<T>) -> U): U = findAllManagedAndRun(klass, query(key), operation)
-
 }
 
+/*
 abstract class SimpleRoomListCache<K: Any, T: Any>(
     private val tableName: String,
     private val database: RoomDatabase,
     stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
 ): RoomListCache<K, T>(tableName, database, stalenessPolicy)
+ */

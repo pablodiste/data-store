@@ -21,7 +21,7 @@ object RetrofitManager : RetrofitServiceProvider {
 
     override fun <T> createService(service: Class<T>): T {
         return when (service.simpleName) {
-            RoomStarWarsService::class.java.simpleName -> retrofitSW.create(service)
+            RoomStarWarsService::class.java.simpleName, StarWarsService::class.java.simpleName -> retrofitSW.create(service)
             else -> retrofitJP.create(service)
         }
     }
