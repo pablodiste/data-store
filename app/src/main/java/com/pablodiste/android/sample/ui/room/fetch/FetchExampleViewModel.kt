@@ -18,6 +18,8 @@ class FetchExampleViewModel : ViewModel() {
     init {
         viewModelScope.launch {
             val result = personStore.fetch(RoomPersonStore.Key("1"))
+            // Or you can avoid the rate limiter with the force parameter
+            // val result = personStore.fetch(RoomPersonStore.Key("1"), forced = true)
             Log.d(TAG, "Received $result")
             uiState.value = result.requireData()
         }

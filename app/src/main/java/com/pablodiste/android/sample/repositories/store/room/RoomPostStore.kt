@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 
 fun providePostsStore(): SimpleStoreImpl<NoKey, List<Post>> {
     return SimpleStoreBuilder.from(
-        fetcher = LimitedFetcher.of({ FetcherResult.Data(provideService().getPosts()) }, RateLimitPolicy(2, TimeUnit.SECONDS)),
+        fetcher = LimitedFetcher.of(fetch = { FetcherResult.Data(provideService().getPosts()) }, rateLimitPolicy = RateLimitPolicy(2, TimeUnit.SECONDS)),
         cache = SampleApplication.roomDb.postsCache()
     ).build() as SimpleStoreImpl
 }

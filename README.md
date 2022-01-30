@@ -333,15 +333,22 @@ class Player : RealmObject(), HasKey {
 
 ## Avoiding multiple repeated calls
 
-It is very common in a big application to request the same information from different UI pieces. In order to avoid doing repeated API calls the `Store` implements a `RateLimiter`
+It is very common in a big application to request the same information from different locations. In order to avoid doing repeated API calls the `Store` implements a `RateLimiter`. The limiter will allow the first call, and then any subsequent call inside a time span provided will not be executed and a cached result will be returned instead until the time has elapsed.
 
-`RetrofitFetcher` inherits from `LimitedFetcher` and provides a way to define a `rateLimitPolicy`:
+It is available a `LimitedFetcher` and provides a way to define a `rateLimitPolicy`:
 
 ```kotlin
-    class PlayerFetcher: LimitedFetcher<Key, List<Player>>(
-        rateLimitPolicy = RateLimitPolicy(10, TimeUnit.SECONDS)) {
+fun providePostsStore(): SimpleStoreImpl<NoKey, List<Post>> {
+    return SimpleStoreBuilder.from(
+        fetcher = LimitedFetcher.of(
+           fetch = { FetcherResult.Data(provideService().getPosts()) },
+           rateLimitPolicy = RateLimitPolicy(10, TimeUnit.SECONDS)
+        ),
+        cache = SampleApplication.roomDb.postsCache()
+    ).build() as SimpleStoreImpl
+}
 ```
-or when using `RetrofitFetcher`
+Similarly, if you are inheriting from `RetrofitFetcher` you can provide the limiter settings in the constructor.
 
 ```kotlin
     class PlayerFetcher: RetrofitFetcher<NoKey, List<Player>, RetrofitTeamService>(
@@ -359,23 +366,18 @@ The default implementation is `RateLimitPolicy(5, TimeUnit.SECONDS)`
 
 ### Forcing a fetch
 
-If you need to force a fetch to the API, you should send a parameter to the `fetch` call the following way:
+If you need to force a fetch to the API ignoring the rate limiter, you should send a parameter to the `fetch` call the following way:
 
 ```kotlin
-playerStore.fetch(PlayerDataStore.Key(teamId = teamId), forced = true).subscribe({ storeResponse ->
-    SNLog.d(TAG, "Data here is coming right from the API: ${storeResponse.value}")
-}, {
-    SNLog.e(TAG, "Error getting Players from the API")
-})
+val result = personStore.fetch(RoomPersonStore.Key("1"), forced = true)
 ```
-When `forced` is `true`, the `RateLimiter` is ignored and the call is performed always (it behaves like a `FetchAlways`).
 
 ### Disabling the Rate Limiter
 
 The Rate limiter is active by default, but you can disable it for debugging purposes with the code:
 
 ```kotlin
-StoreConfig.isRateLimiterEnabled = { runtimeBehavior.isFeatureEnabled(FeatureFlag.DISABLE_CALLS_LIMITER).not() }
+StoreConfig.isRateLimiterEnabled = { // You can use a feature flag or a remote config here to return a Boolean }
 ```
 
 ## Throttling
@@ -388,7 +390,7 @@ Note: The throttled requests are not retried automatically nor queued, they resu
 
 The throttling is active by default, but you can disable it for debugging purposes this way:
 ```kotlin
-StoreConfig.isThrottlingEnabled = { runtimeBehavior.isFeatureEnabled(FeatureFlag.DISABLE_CALLS_THROTTLING).not() }
+StoreConfig.isThrottlingEnabled = { // You can use a feature flag or a remote config here to return a Boolean }
 ```
 
 ### Showing API errors on the screen
@@ -472,7 +474,6 @@ when (response) {
 ## Roadmap
 
  - Review staleness options
- - Make examples for the rate limiter
  - Return the same fetcher response when a request is the same as one already sent
  - Add an optional memory cache
  - Publish the library
