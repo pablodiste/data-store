@@ -3,6 +3,7 @@ package com.pablodiste.android.sample.repositories.store.room
 import androidx.room.Dao
 import com.pablodiste.android.adapters.retrofit.RetrofitFetcher
 import com.pablodiste.android.datastore.FetcherResult
+import com.pablodiste.android.datastore.adapters.room.DeleteAllNotInFetchStalenessPolicy
 import com.pablodiste.android.datastore.adapters.room.RoomListCache
 import com.pablodiste.android.datastore.impl.NoKey
 import com.pablodiste.android.datastore.impl.NoKeySimpleStore
@@ -25,7 +26,9 @@ class RoomPeopleStore: NoKeySimpleStore<List<People>>(
     }
 
     @Dao
-    abstract class PeopleCache: RoomListCache<NoKey, People>("people", SampleApplication.roomDb) {
+    abstract class PeopleCache: RoomListCache<NoKey, People>("people", SampleApplication.roomDb,
+        stalenessPolicy = DeleteAllNotInFetchStalenessPolicy { people -> people.id } // Example of staleness settings.
+    ) {
         override fun query(key: NoKey): String = ""
     }
 

@@ -3,6 +3,7 @@ package com.pablodiste.android.sample.repositories.store.room
 import androidx.room.Dao
 import com.pablodiste.android.adapters.retrofit.RetrofitFetcher
 import com.pablodiste.android.datastore.FetcherResult
+import com.pablodiste.android.datastore.adapters.room.DeleteAllNotInFetchStalenessPolicy
 import com.pablodiste.android.datastore.adapters.room.RoomCache
 import com.pablodiste.android.datastore.impl.SimpleStoreImpl
 import com.pablodiste.android.sample.SampleApplication

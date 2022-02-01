@@ -304,32 +304,23 @@ viewModelScope.launch {
 
 ## Staleness Settings
 
-When the data is returned from the API, it gets stored in the cache. The methods Cache.store or RealmCache.storeInRealm are used to store all entities returned from the API. For example in Realm we use `bgRealm.copyToRealmOrUpdate(newData)` in the Cache object. The `copytoRealmOrUpdate` will be in charge of creating new rows in the database or updating them if they already exist. If there are entities that were deleted in the backend, the API response will not contain them, and the cache will still have them stored -and they will appear in queries-. In order to delete the cache properly we have some strategies.
+When we are calling the API to fetch a list of resources, we usually perform a GET call and the returned items are stored in the cache. If there are entities that were deleted in the backend, the API response will not contain them anymore, and the cache will still have them stored -and they will appear in local cache queries-. In order to sync the data and delete the cache items properly we have different strategies.
 
-The staleness strategy is configured in the Cache:
-
+The staleness strategy is configured in the Cache. For example using Room:
 ```kotlin
-    class PlayerCache: SimpleRealmListCache<Key, Player>(
-        klass = Player::class.java,
-        stalenessPolicy = DeleteAllNotInFetchStalenessPolicy()) // You can set the staleness policy here
+@Dao
+abstract class PeopleCache: RoomListCache<NoKey, People>("people", SampleApplication.roomDb,
+  stalenessPolicy = DeleteAllNotInFetchStalenessPolicy { people -> people.id } // Example of staleness settings.
+) {
+    override fun query(key: NoKey): String = ""
+}
 ```
 
 | stalenessPolicy                    | description |
 |------------------------------------|-------------|
-| DoNotExpireStalenessPolicy         | Avoids calling any DELETE on the database when new data arrives. No data is deleted. |
+| DoNotExpireStalenessPolicy         | Avoids calling any DELETE on the database when new data arrives. No data is deleted, only updates are performed. |
 | DeleteAllStalenessPolicy           | Calls DELETE doing a query using the query method of the Cache. |
-| DeleteAllNotInFetchStalenessPolicy | Calls DELETE on all database rows which are not in the API response. For knowing how to identify each row you should implement `HasKey` interface in the object used for the entity. |
-
-Example for the `HasKey` interface
-
-```kotlin
-class Player : RealmObject(), HasKey {
-    val id: String? = "" // Usually a hash string coming from the API
-    val teamId: String? = ""
-
-    override fun getKey(): Any? = id
-}
-```
+| DeleteAllNotInFetchStalenessPolicy | Calls DELETE on all database rows which are not in the API response. You should provide a function which indicates a way to compare the old and new items, usually a primary key. |
 
 ## Avoiding multiple repeated calls
 
@@ -468,12 +459,12 @@ when (response) {
     is StoreResponse.Data -> uiState.value = "Created"
     is StoreResponse.Error -> uiState.value = "Error in create"
 }
-```
-
+```  
 
 ## Roadmap
 
  - Review staleness options
+ - Review Throttling
  - Return the same fetcher response when a request is the same as one already sent
  - Add an optional memory cache
  - Publish the library

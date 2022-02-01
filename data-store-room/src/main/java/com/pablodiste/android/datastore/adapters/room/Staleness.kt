@@ -9,11 +9,8 @@ interface StalenessPolicy<K: Any, T: Any> {
  * This staleness policy does not delete any entity.
  */
 class DoNotExpireStalenessPolicy<K: Any, T: Any>: StalenessPolicy<K, T> {
-    override suspend fun removeStaleList(cache: RoomListCache<K, T>, key: K, entity: List<T>) {
-    }
-
-    override suspend fun removeStaleEntity(cache: RoomCache<K, T>, key: K, entity: T) {
-    }
+    override suspend fun removeStaleList(cache: RoomListCache<K, T>, key: K, entity: List<T>) {}
+    override suspend fun removeStaleEntity(cache: RoomCache<K, T>, key: K, entity: T) {}
 }
 
 /**
@@ -32,10 +29,10 @@ class DeleteAllStalenessPolicy<K: Any, T: Any>: StalenessPolicy<K, T> {
 
 /**
  * This staleness policy removes all stored entities which are not included in the API response
- * Requires the entities to implement HasKey interface to compare by the keys
+ * @param keyBuilder should return a primary id of the provided entity like { entity -> entity.id }
  */
-class DeleteAllNotInFetchStalenessPolicy<K: Any, T: Any>(
-    private val keyBuilder: ((T) -> K)): StalenessPolicy<K, T> {
+class DeleteAllNotInFetchStalenessPolicy<K: Any, T: Any, PK: Any>(
+    private val keyBuilder: ((T) -> PK)): StalenessPolicy<K, T> {
 
     override suspend fun removeStaleEntity(cache: RoomCache<K, T>, key: K, entity: T) {
         cache.delete(key)
@@ -47,9 +44,8 @@ class DeleteAllNotInFetchStalenessPolicy<K: Any, T: Any>(
         val cached = cache.get(key)
         cached.forEach { storedEntity ->
             // if the store contains an entity not in the API response, it gets deleted
-            val storedKey = keyBuilder(storedEntity)
-            if (!inputKeys.contains(storedKey)) {
-                cache.delete(storedKey)
+            if (!inputKeys.contains(keyBuilder(storedEntity))) {
+                cache.delete(storedEntity)
             }
         }
     }

@@ -42,18 +42,19 @@ class DeleteAllStalenessPolicy<K: Any, T: RealmObject>: StalenessPolicy<K, T> {
  * This staleness policy removes all stored entities which are not included in the API response
  * Requires the entities to implement HasKey interface to compare by the keys
  */
-class DeleteAllNotInFetchStalenessPolicy<K: Any, T: RealmObject>: StalenessPolicy<K, T> {
+class DeleteAllNotInFetchStalenessPolicy<K: Any, T: RealmObject, PK: Any>(
+    private val keyBuilder: ((T) -> PK)): StalenessPolicy<K, T> {
 
     override fun removeStaleListInRealm(bgRealm: Realm, cache: RealmListCache<K, T>, key: K, entity: List<T>) {
         // Collects all keys from API call
-        val inputKeys = entity.mapNotNullTo(HashSet()) { i -> if (i is HasKey) (i as HasKey).getKey() else null }
+        val inputKeys = entity.mapTo(HashSet()) { keyBuilder(it) }
         val where = bgRealm.where(cache.klass)
         cache.query(key).invoke(where)
         val results = where.findAll()
         results.forEach { storedEntity ->
             if (storedEntity is HasKey) {
                 // if the store contains an entity not in the API response, it gets deleted
-                if (!inputKeys.contains((storedEntity as HasKey).getKey())) {
+                if (!inputKeys.contains(keyBuilder(storedEntity))) {
                     storedEntity.deleteFromRealm()
                 }
             }
