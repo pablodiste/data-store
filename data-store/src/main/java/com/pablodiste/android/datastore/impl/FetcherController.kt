@@ -1,7 +1,9 @@
 package com.pablodiste.android.datastore.impl
 
 import android.util.Log
-import com.pablodiste.android.datastore.*
+import com.pablodiste.android.datastore.Fetcher
+import com.pablodiste.android.datastore.FetcherResult
+import com.pablodiste.android.datastore.StoreConfig
 import com.pablodiste.android.datastore.ratelimiter.RateLimiter
 import com.pablodiste.android.datastore.ratelimiter.RateLimiterFetcherController
 import com.pablodiste.android.datastore.throttling.ThrottlingFetcherController
@@ -9,7 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Manages a sequence of call identified by a Key.
+ * Manages a sequence of calls identified by a Key.
  * Implements a rate limiter to avoid calling API multiple times.
  */
 class FetcherController<K: Any, I: Any>(
@@ -33,23 +35,23 @@ class FetcherController<K: Any, I: Any>(
         val isThrottlingDisabled: Boolean = StoreConfig.isThrottlingEnabled().not()
         val rateLimiter = getRateLimiter(key)
 
-        return if (force || rateLimiter.shouldFetch(key.toString()) || isLimiterDisabled) {
-            withContext(Dispatchers.IO) {
-                if (!isThrottlingDisabled && throttlingController.isThrottling()) {
-                    // Currently throttling requests
-                    return@withContext FetcherResult.Error(throttlingController.throttlingError())
-                } else {
-                    try {
+        return if (force || isLimiterDisabled || rateLimiter.shouldFetch(key.toString())) {
+            if (isThrottlingDisabled || !throttlingController.isThrottling()) {
+                try {
+                    withContext(Dispatchers.IO) {
                         return@withContext fetcher.fetch(key)
-                    } catch (e: Exception) {
-                        if (throttlingController.isApiError(e)) throttlingController.onServerError()
-                        rateLimiter.reset(key.toString())
-                        return@withContext FetcherResult.Error(e)
                     }
+                } catch (e: Exception) {
+                    throttlingController.onException(e)
+                    rateLimiter.reset(key.toString())
+                    FetcherResult.Error(e)
                 }
+            } else {
+                // Currently throttling requests
+                FetcherResult.Error(throttlingController.throttlingError())
             }
         } else {
-            FetcherResult.NoData("No data")
+            FetcherResult.NoData("Fetch not executed")
         }
     }
 
