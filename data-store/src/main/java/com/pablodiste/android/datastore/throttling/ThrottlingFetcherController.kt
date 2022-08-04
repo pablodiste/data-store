@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.*
 
 interface ThrottlingFetcherController {
-    val throttlingState: MutableStateFlow<Long>
+    val throttlingState: MutableStateFlow<ThrottlingState>
     fun isApiError(error: Exception?): Boolean
     fun isThrottling(): Boolean
     fun throttlingError(): Exception
@@ -16,12 +16,14 @@ interface ThrottlingFetcherController {
 
 class ThrottlingFetcherControllerImpl: ThrottlingFetcherController {
 
-    override val throttlingState: MutableStateFlow<Long> = MutableStateFlow(0L)
+    override val throttlingState: MutableStateFlow<ThrottlingState> = MutableStateFlow(
+        ThrottlingState(isThrottling = false)
+    )
     private val serverErrorTimestamps: MutableList<Long> = mutableListOf()
     private var throttleBackoffFactor = 1
-    private val throttlingConfiguration: ThrottlingConfiguration = StoreConfig.throttlingConfiguration
+    private val throttlingConfiguration: ThrottlingConfiguration get() = StoreConfig.throttlingConfiguration
 
-    override fun isThrottling() = Date().time - throttlingState.value < 0
+    override fun isThrottling() = Date().time - throttlingState.value.timestampUntilNextCall < 0
 
     override fun throttlingError(): Exception = ThrottlingFetcherController.ThrottlingError()
 
@@ -49,12 +51,12 @@ class ThrottlingFetcherControllerImpl: ThrottlingFetcherController {
             serverErrorTimestamps.add(now)
             if (serverErrorTimestamps.size < throttlingConfiguration.errorCountThreshold) {
                 // Not enough errors to start throttling
-                throttlingState.tryEmit(0L)
+                throttlingState.tryEmit(ThrottlingState(isThrottling = false))
                 return
             }
             if (now - serverErrorTimestamps.removeAt(0) > throttlingConfiguration.errorDurationThreshold) {
                 // Error duration is low enough to not throttle
-                throttlingState.tryEmit(0L)
+                throttlingState.tryEmit(ThrottlingState(isThrottling = false))
                 return
             }
         }
@@ -63,13 +65,15 @@ class ThrottlingFetcherControllerImpl: ThrottlingFetcherController {
 
     private fun startThrottlingRequests(nowTime: Long) {
         // If we were already throttling, increase the throttle time by a factor of 2
-        throttleBackoffFactor = if (throttlingState.value == 0L) 1 else throttleBackoffFactor * 2
+        throttleBackoffFactor = if (throttlingState.value.timestampUntilNextCall == 0L) 1 else throttleBackoffFactor * 2
         var timeout: Long = throttleBackoffFactor * throttlingConfiguration.throttleInitialTimeout
         if (timeout > throttlingConfiguration.errorDurationThreshold) timeout = throttlingConfiguration.errorDurationThreshold
-        throttlingState.tryEmit(nowTime + timeout)
+        throttlingState.tryEmit(ThrottlingState(isThrottling = true, timestampUntilNextCall = nowTime + timeout))
     }
 
 }
+
+data class ThrottlingState(val isThrottling: Boolean, val timestampUntilNextCall: Long = 0)
 
 class ThrottlingConfiguration(
     val errorCountThreshold: Int = THROTTLE_ERROR_COUNT_THRESHOLD,

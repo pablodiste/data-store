@@ -10,5 +10,5 @@ object StoreConfig {
     var isThrottlingEnabled: () -> Boolean = { true }
     var throttlingController: ThrottlingFetcherController = ThrottlingFetcherControllerImpl()
     var throttlingConfiguration: ThrottlingConfiguration = ThrottlingConfiguration()
-    var throttlingDetectedExceptions: List<Class<out Exception>> = listOf(IOException::class.java)
+    var throttlingDetectedExceptions: MutableSet<Class<out Exception>> = mutableSetOf(IOException::class.java)
 }

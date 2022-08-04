@@ -3,8 +3,10 @@ package com.pablodiste.android.adapters.retrofit
 import com.pablodiste.android.datastore.CrudFetcher
 import com.pablodiste.android.datastore.Fetcher
 import com.pablodiste.android.datastore.FetcherResult
+import com.pablodiste.android.datastore.StoreConfig.throttlingDetectedExceptions
 import com.pablodiste.android.datastore.impl.LimitedFetcher
 import com.pablodiste.android.datastore.ratelimiter.RateLimitPolicy
+import retrofit2.HttpException
 import java.util.concurrent.TimeUnit
 
 interface RetrofitServiceProvider {
@@ -20,6 +22,10 @@ abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
         override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS)
     )
     : LimitedFetcher<K, I>(rateLimitPolicy) {
+
+    init {
+        throttlingDetectedExceptions.add(HttpException::class.java)
+    }
 
     protected val service = serviceProvider.createService(serviceClass)
 

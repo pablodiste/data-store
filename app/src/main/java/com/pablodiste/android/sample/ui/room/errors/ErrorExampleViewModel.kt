@@ -3,11 +3,10 @@ package com.pablodiste.android.sample.ui.room.errors
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pablodiste.android.datastore.StoreResponse
+import com.pablodiste.android.datastore.StoreConfig
 import com.pablodiste.android.sample.models.room.People
 import com.pablodiste.android.sample.repositories.store.room.RoomPersonStore
 import com.pablodiste.android.sample.repositories.store.room.RoomPersonStoreWithError
-import com.pablodiste.android.sample.ui.room.stream.RoomStreamExampleViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
@@ -18,6 +17,7 @@ class ErrorExampleViewModel : ViewModel() {
 
     private val personStore = RoomPersonStoreWithError()
     val uiState = MutableStateFlow(State())
+    val throttlingState = StoreConfig.throttlingController.throttlingState
 
     class State(
         var loadingError: Boolean = false,
@@ -25,6 +25,10 @@ class ErrorExampleViewModel : ViewModel() {
     )
 
     init {
+        makeRequest()
+    }
+
+    fun makeRequest() {
         /*
         // One alternative for error handling
         viewModelScope.launch {
