@@ -474,8 +474,8 @@ when (response) {
 
 ## Roadmap
 
-- Review Throttling
 - Return the same fetcher response when a request is the same as one already sent
-- Add an optional memory cache
 - Publish the library
+- Add an optional memory cache
+- Investigate automatic retries on error
 
