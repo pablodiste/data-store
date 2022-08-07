@@ -27,10 +27,10 @@ You can see the features working cloning this repository and running the app pro
 ## Features
 
 - Handles caching of fetched data automatically.
-- Allow listening for changes on the cache and fetching single values.
+- Allows listening to changes on the cache and making queries to single values.
 - It is built on coroutines.
 - Allows the integration of different fetcher sources and libraries.
-- Supports caches based on Room and Realm and allows any other caches.
+- Includes support for caches based on Room and Realm libraries but you can plug in other ones too.
 - Allows configuration of custom database queries (like DAOs)
 - Allows per-request cache expiration configuration.
 - Implements a way to limit multiple repeated calls to the same API.
@@ -77,7 +77,8 @@ class PeopleStore: NoKeySimpleStore<List<People>>(
 }
 ```  
 Defines a store which will fetch using a fetcher based on the entity People, and it will cache it in a database using the same Entity.
-As an alternative we also provide a functional builder for creating an store:
+
+As an alternative we also provide a functional builder for creating the store:
 ```kotlin  
 fun providePersonStore(): Store<Key, People> {  
     return SimpleStoreBuilder.from(  
@@ -90,7 +91,7 @@ fun providePersonStore(): Store<Key, People> {
 ```  
 
 ## 3. Define a Key.
-A `Key` is a parametric data class used to identify the data to be stored. This `Key` can be any class with a `toString` implementation, and unique per API request. Its fields are used to provide parameters to the API and it is also used as a unique identifier for each API Request, so we can avoid multiple repeated calls.
+A `Key` is a parametric data class used to identify the API request operation. This `Key` can be any class with a `toString` implementation. Its fields are used to provide parameters to the API and it is also used as a unique identifier for each API Request, so we can avoid multiple repeated calls.
 
 In case our endpoint requires a parameter id, we can do:
 ```kotlin  
@@ -232,9 +233,10 @@ All responses coming from the store are based on StoreResponse classes. The subc
 ### Stream data
 
 The `stream` method does the following:
-1. Checks the cache for any cached data, if they exist it returns them.
-2. If the `refresh` parameter is `true`, if calls the Fetcher for new data from the API and caches them. Then it will emit the new data. If old data existed before the fetch, you will receive **two emissions**: one for the old data and another one for the new data after the fetch has completed.
-3. If initially there was no data on the cache, it performs the fetch from the API. Then it gets stored in the cache and emitted to the consumer.
+1. Checks the cache looking for any cached data, if there is any, it is emitted immediately.
+2. If the `refresh` parameter is `true`, if calls the Fetcher for new data from the API and caches them. Then it will emit the new data. If cached data existed before the fetch, you will receive **two emissions**: one for the previously cached data and another one for the new data after the fetch has completed.
+3. If initially there was no data on the cache, it performs the API call. Then its result gets stored in the cache and emitted to the client.
+4. Stream keeps listening and emitting any update in the cached data.
 
 For example, from your ViewModel
 ```kotlin  
@@ -373,7 +375,8 @@ StoreConfig.isRateLimiterEnabled = { // You can use a feature flag or a remote c
 
 ## Throttling
 
-You can enable throttling for continuously failing service calls. If there are more than a configurable amount of errors in a row, the next service calls during a timeframe will result in an immediate local exception and they will not be executed.
+You can enable throttling of service calls in case of continuously failing requests. Sometimes backends and servers are not able to process the requests fast enough, or they are down, or they experience temporary issues. In that case, the Store clients are able to wait some time before making the next call.
+It works the following way: If there are more than a configurable amount of errors in a row, the next service calls during a timeframe will result in an immediate local exception and they will not be executed.
 You can configure also a base timeframe until a next call is allowed. If the time has passed and there is another error this timeframe grows exponentially to avoid flooding the server with retries or repeated calls.
 
 > The throttled requests are not retried automatically nor queued
