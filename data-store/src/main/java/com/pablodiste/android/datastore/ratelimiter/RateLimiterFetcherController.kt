@@ -6,24 +6,26 @@ import java.util.concurrent.TimeUnit
 
 object RateLimiterFetcherController {
 
-    private val rateLimiters: MutableMap<String, RateLimiter<String>> = Collections.synchronizedMap(mutableMapOf())
+    private val rateLimiters: MutableMap<String, RateLimiter<*>> = Collections.synchronizedMap(mutableMapOf())
 
-    fun get(key: String, timeout: Int, timeUnit: TimeUnit): RateLimiter<String> {
-        val rateLimiter = rateLimiters[key] ?: RateLimiter(timeout, timeUnit)
+     @Suppress("UNCHECKED_CAST")
+     fun <I: Any> get(key: String, timeout: Int, timeUnit: TimeUnit): RateLimiter<I> {
+        val rateLimiter = rateLimiters[key] ?: RateLimiter<I>(timeout, timeUnit)
         add(key, rateLimiter)
-        return rateLimiter
+        return rateLimiter as RateLimiter<I>
     }
 
-    fun add(key: String, rateLimiter: RateLimiter<String>) {
-        synchronized(this) {
-            rateLimiters[key] = rateLimiter
-        }
-    }
+    fun remove(key: String) = rateLimiters.remove(key)
 
     fun clear() {
         synchronized(this) {
-            rateLimiters.values.forEach { it.clear() }
             rateLimiters.clear()
+        }
+    }
+
+    private fun add(key: String, rateLimiter: RateLimiter<*>) {
+        synchronized(this) {
+            rateLimiters[key] = rateLimiter
         }
     }
 

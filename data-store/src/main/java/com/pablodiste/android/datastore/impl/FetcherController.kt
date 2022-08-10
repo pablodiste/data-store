@@ -8,6 +8,7 @@ import com.pablodiste.android.datastore.ratelimiter.RateLimiter
 import com.pablodiste.android.datastore.ratelimiter.RateLimiterFetcherController
 import com.pablodiste.android.datastore.throttling.ThrottlingFetcherController
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 /**
@@ -19,10 +20,11 @@ class FetcherController<K: Any, I: Any>(
 ) {
 
     private val TAG = this.javaClass.simpleName
+    private val rateLimiterFetcherController: RateLimiterFetcherController get() = RateLimiterFetcherController
 
-    private fun getRateLimiter(key: K): RateLimiter<String> {
+    private fun getRateLimiter(key: K): RateLimiter<I> {
         Log.d(TAG, "Limiting using key: $key")
-        return RateLimiterFetcherController.get(key.toString(), fetcher.rateLimitPolicy.timeout, fetcher.rateLimitPolicy.timeUnit)
+        return rateLimiterFetcherController.get(key.toString(), fetcher.rateLimitPolicy.timeout, fetcher.rateLimitPolicy.timeUnit)
     }
 
     private val throttlingController: ThrottlingFetcherController = StoreConfig.throttlingController
@@ -35,23 +37,35 @@ class FetcherController<K: Any, I: Any>(
         val isThrottlingDisabled: Boolean = StoreConfig.isThrottlingEnabled().not()
         val rateLimiter = getRateLimiter(key)
 
-        return if (force || isLimiterDisabled || rateLimiter.shouldFetch(key.toString())) {
+        return if (force || isLimiterDisabled || rateLimiter.shouldFetch()) {
             if (isThrottlingDisabled || !throttlingController.isThrottling()) {
                 try {
-                    withContext(Dispatchers.IO) {
+                    val response = withContext(Dispatchers.IO) {
                         return@withContext fetcher.fetch(key)
                     }
+                    // We offer the result to any other duplicate request
+                    rateLimiter.onResult(response)
+                    response
                 } catch (e: Exception) {
+                    val response = FetcherResult.Error(e)
                     throttlingController.onException(e)
-                    rateLimiter.reset(key.toString())
-                    FetcherResult.Error(e)
+                    rateLimiter.onResult(response)
+                    rateLimiterFetcherController.remove(key.toString())
+                    response
                 }
             } else {
                 // Currently throttling requests
                 FetcherResult.Error(throttlingController.throttlingError())
             }
         } else {
-            FetcherResult.NoData("Fetch not executed")
+            if (rateLimiter.isCallInProgress) {
+                Log.d(TAG, "Similar call is in progress, waiting for result")
+                val result = rateLimiter.onResultAvailable.first()
+                Log.d(TAG, "Result is available")
+                result
+            } else {
+                FetcherResult.NoData("Fetch not executed")
+            }
         }
     }
 

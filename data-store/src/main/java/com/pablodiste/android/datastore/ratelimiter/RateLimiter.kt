@@ -1,48 +1,48 @@
 package com.pablodiste.android.datastore.ratelimiter
 
 import android.os.SystemClock
-import android.util.ArrayMap
+import com.pablodiste.android.datastore.FetcherResult
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import java.util.concurrent.TimeUnit
 
 /**
- * Utility class that decides whether we should fetch some data or not.
- * Taken from android-architecture-components
+ * Decides whether we should fetch some data or not.
  */
-class RateLimiter<K>(timeout: Int, timeUnit: TimeUnit) {
+class RateLimiter<I: Any>(timeout: Int, timeUnit: TimeUnit) {
 
-    private val timestamps = ArrayMap<K, Long>()
+    private val _onCompletionFlow = MutableSharedFlow<FetcherResult<I>>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    val onResultAvailable: Flow<FetcherResult<I>> = _onCompletionFlow.distinctUntilChanged()
+
+    private var lastFetchedTime: Long? = null
+    private var completed: Boolean = false
     private val timeout: Long = timeUnit.toMillis(timeout.toLong())
 
+    val isCallInProgress: Boolean get() = !completed
+
     @Synchronized
-    fun shouldFetch(key: K): Boolean {
-        val lastFetched = timestamps[key]
+    fun shouldFetch(): Boolean {
+        val lastFetched = lastFetchedTime
         val now = nowTimestamp()
         if (lastFetched == null) {
-            timestamps[key] = now
+            lastFetchedTime = now
             return true
         }
         if (now - lastFetched > timeout) {
-            timestamps[key] = now
+            lastFetchedTime = now
             return true
         }
         return false
+    }
+
+    fun onResult(result: FetcherResult<I>) {
+        _onCompletionFlow.tryEmit(result)
     }
 
     private fun nowTimestamp(): Long {
         return SystemClock.uptimeMillis()
     }
 
-    @Synchronized
-    fun reset(key: K) {
-        timestamps.remove(key)
-    }
-
-    @Synchronized
-    fun clear() {
-        timestamps.clear()
-    }
-
 }
-
-object FetchOnlyOnce: RateLimitPolicy(24, TimeUnit.HOURS)
-object FetchAlways: RateLimitPolicy(0, TimeUnit.SECONDS)
