@@ -8,8 +8,7 @@ import kotlinx.coroutines.flow.*
 
 class PausableCache<K: Any, T: Any>(val cache: Cache<K, T>): Cache<K, T> {
 
-    private var paused = false
-    private var resumed = false
+    private var usingFetcher = false
 
     override fun listen(key: K): Flow<T> {
         return cache.listen(key)
@@ -18,8 +17,8 @@ class PausableCache<K: Any, T: Any>(val cache: Cache<K, T>): Cache<K, T> {
 
     fun listenWithResponse(key: K): Flow<StoreResponse<T>> {
         return listen(key).map {
-            if (resumed) {
-                resumed = false
+            if (usingFetcher) {
+                usingFetcher = false
                 StoreResponse.Data(it, ResponseOrigin.FETCHER)
             } else {
                 StoreResponse.Data(it, ResponseOrigin.CACHE)
@@ -27,13 +26,13 @@ class PausableCache<K: Any, T: Any>(val cache: Cache<K, T>): Cache<K, T> {
         }
     }
 
-    override suspend fun store(key: K, entity: T, removeStale: Boolean): T {
-        paused = true
-        val result = cache.store(key, entity, removeStale)
-        paused = false
-        resumed = true
+    suspend fun storeAfterFetch(key: K, entity: T, removeStale: Boolean): T {
+        usingFetcher = true
+        val result = store(key, entity, removeStale)
         return result
     }
+
+    override suspend fun store(key: K, entity: T, removeStale: Boolean): T = cache.store(key, entity, removeStale)
 
     override suspend fun exists(key: K): Boolean = cache.exists(key)
 

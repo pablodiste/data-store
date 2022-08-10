@@ -27,6 +27,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
             coroutineScope {
                 if (pausableCache.exists(key)) {
                     val streamFlow = streamFromCache(key)
+                    streamFlow.onEach { Log.d(TAG, "Coming from cache") }
                     if (refresh) {
                         val fetcherFlow = flow {
                             val fetched = performFetch(key)
@@ -34,6 +35,8 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
                             // We only emit errors
                             if (fetched !is StoreResponse.Data) {
                                 emit(fetched)
+                            } else {
+                                Log.d(TAG, "Received data from fetcher, not emitting it")
                             }
                         }
                         emitAll(merge(streamFlow, fetcherFlow))
@@ -81,7 +84,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
         return withContext(Dispatchers.Main) {
             return@withContext when (fetcherResult) {
                 is FetcherResult.Data -> {
-                    val fetched = pausableCache.store(key, mapper.toCacheEntity(fetcherResult.value), true)
+                    val fetched = pausableCache.storeAfterFetch(key, mapper.toCacheEntity(fetcherResult.value), true)
                     StoreResponse.Data(fetched, ResponseOrigin.FETCHER)
                 }
                 is FetcherResult.NoData -> {
