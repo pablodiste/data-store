@@ -70,8 +70,11 @@ fun AppMainScreen() {
         ) {
             NavHost(
                 navController = navController,
-                startDestination = DrawerScreens.RoomStreamExample.route
+                startDestination = DrawerScreens.Home.route
             ) {
+                composable(DrawerScreens.Home.route) {
+                    Home(openDrawer = { openDrawer() })
+                }
                 composable(DrawerScreens.RealmStreamExample.route) {
                     val viewModel = viewModel<StreamExampleViewModel>()
                     StreamExample(viewModel, openDrawer = { openDrawer() })
@@ -132,6 +135,7 @@ fun TopBar(title: String = "", buttonIcon: ImageVector, onButtonClicked: () -> U
 
 
 sealed class DrawerScreens(val title: String, val route: String) {
+    object Home : DrawerScreens("Store", "room_welcome")
     object RoomStreamExample : DrawerScreens("Stream Example (Room)", "room_stream")
     object RoomFetchExample : DrawerScreens("Fetch Example (Room)", "room_fetch")
     object RoomGetExample : DrawerScreens("Get Example (Room)", "room_get")
