@@ -62,7 +62,8 @@ class FetcherController<K: Any, I: Any>(
                 Log.d(TAG, "Similar call is in progress, waiting for result")
                 val result = rateLimiter.onResultAvailable.first()
                 Log.d(TAG, "Result is available")
-                result
+                // Marking it as non cacheable to avoid caching it multiple times
+                if (result is FetcherResult.Data) result.copy(cacheable = false) else result
             } else {
                 FetcherResult.NoData("Fetch not executed")
             }

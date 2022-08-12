@@ -79,16 +79,22 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
      * Fetches an entity from the fetcher. This call forces the API call.
      */
     override suspend fun fetch(key: K, forced: Boolean): StoreResponse<T> {
+
         val fetcherResult = fetcherController.fetch(key, forced)
 
         return withContext(Dispatchers.Main) {
             return@withContext when (fetcherResult) {
                 is FetcherResult.Data -> {
-                    val fetched = pausableCache.storeAfterFetch(key, mapper.toCacheEntity(fetcherResult.value), true)
-                    StoreResponse.Data(fetched, ResponseOrigin.FETCHER)
+                    if (fetcherResult.cacheable) {
+                        val fetched = pausableCache.storeAfterFetch(key, mapper.toCacheEntity(fetcherResult.value), true)
+                        StoreResponse.Data(fetched, ResponseOrigin.FETCHER)
+                    } else {
+                        val cacheResponse = pausableCache.get(key)
+                        StoreResponse.Data(cacheResponse, ResponseOrigin.CACHE)
+                    }
                 }
                 is FetcherResult.NoData -> {
-                    Log.d("StoreImpl", "Received No Data")
+                    Log.d(TAG, "Received No Data")
                     val cacheResponse = pausableCache.get(key)
                     StoreResponse.Data(cacheResponse, ResponseOrigin.CACHE)
                 }

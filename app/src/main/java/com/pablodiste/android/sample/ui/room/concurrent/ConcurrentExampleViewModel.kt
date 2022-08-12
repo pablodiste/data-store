@@ -23,13 +23,17 @@ class RoomConcurrentExampleViewModel : ViewModel() {
                 Log.d(TAG, "Received (1) [${result.requireOrigin()}] ${result.requireData().size} items")
                 uiState.value = result.requireData()
             }
+        }.invokeOnCompletion {
+            Log.d(TAG, "ViewModelScope Completed (1)")
         }
+
         viewModelScope.launch {
             postsStore.stream(refresh = true).collect { result ->
                 Log.d(TAG, "Received (2) [${result.requireOrigin()}] ${result.requireData().size} items")
                 uiState.value = result.requireData()
             }
         }
+
     }
 
     companion object {
