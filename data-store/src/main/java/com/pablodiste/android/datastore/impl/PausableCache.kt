@@ -12,7 +12,7 @@ class PausableCache<K: Any, T: Any>(val cache: Cache<K, T>): Cache<K, T> {
 
     override fun listen(key: K): Flow<T> {
         return cache.listen(key)
-            .onEach { Log.d("PausableCache", "Emitio") }
+            .onEach { Log.d("PausableCache", "Emitted") }
     }
 
     fun listenWithResponse(key: K): Flow<StoreResponse<T>> {

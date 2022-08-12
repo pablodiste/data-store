@@ -1,5 +1,6 @@
 package com.pablodiste.android.datastore.adapters.room
 
+import android.util.Log
 import androidx.room.*
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQuery
@@ -40,23 +41,29 @@ abstract class RoomListCache<K: Any, T: Any>(
             val observerChannel = Channel<Unit>(Channel.CONFLATED)
             val observer = object : InvalidationTracker.Observer(tableName) {
                 override fun onInvalidated(tables: MutableSet<String>) {
+                    Log.d(TAG, "Invalidation Tracker reported invalidated data")
                     observerChannel.trySend(Unit)
                 }
             }
             observerChannel.trySend(Unit) // Initial signal to perform first query.
             val resultChannel = Channel<List<T>>()
             launch {
+                Log.d(TAG, "Adding invalidation observer")
                 database.invalidationTracker.addObserver(observer)
                 try {
                     // Iterate until cancelled, transforming observer signals to query results
                     // to be emitted to the flow.
                     for (signal in observerChannel) {
+                        Log.d(TAG, "Invalidated Signal")
                         val result = getEntitySync(query)
                         result?.let { resultChannel.send(it) }
                     }
                 } finally {
+                    Log.d(TAG, "Removing invalidation observer")
                     database.invalidationTracker.removeObserver(observer)
                 }
+            }.invokeOnCompletion {
+                Log.d(TAG, "listen Job has been completed")
             }
             emitAll(resultChannel)
         }
@@ -125,6 +132,10 @@ abstract class RoomListCache<K: Any, T: Any>(
 
     @Delete
     abstract fun delete(entities: List<T>)
+
+    companion object {
+        const val TAG: String = "RoomCache"
+    }
 
 }
 
