@@ -13,9 +13,9 @@ After you have configured your Store, you will be able to do from your ViewModel
 ```kotlin
 val peopleStore = PeopleStore(viewModelScope)
 viewModelScope.launch {
-	peopleStore.stream(refresh = true).collect { result ->
-		Log.d(TAG, "Hello ${result.value.name}")
-		uiState.value = result.value
+  peopleStore.stream(refresh = true).collect { result ->
+    Log.d(TAG, "Hello ${result.value.name}")
+    uiState.value = result.value
   }
 }
 ```
@@ -71,9 +71,9 @@ We have few base classes you can use for creating an Store:
 For example:
 ```kotlin
 class PeopleStore: NoKeySimpleStore<List<People>>(
-	fetcher = PeopleFetcher(),
-	cache = PeopleCache()) {
-	...
+  fetcher = PeopleFetcher(),
+  cache = PeopleCache()) {
+  ...
 }
 ```
 Defines a store which will fetch using a fetcher based on the entity People, and it will cache it in a database using the same Entity.
@@ -81,12 +81,12 @@ Defines a store which will fetch using a fetcher based on the entity People, and
 As an alternative we also provide a functional builder for creating the store:
 ```kotlin
 fun providePersonStore(): Store<Key, People> {
-	return SimpleStoreBuilder.from(
-		fetcher = LimitedFetcher.of({ key ->
-			FetcherResult.Data(provideStarWarsService().getPerson(key.id))
-		}),
-		cache = SampleApplication.roomDb.personCache()
-	).build()
+  return SimpleStoreBuilder.from(
+    fetcher = LimitedFetcher.of({ key ->
+      FetcherResult.Data(provideStarWarsService().getPerson(key.id))
+    }),
+    cache = SampleApplication.roomDb.personCache()
+  ).build()
 }
 ```
 
@@ -106,7 +106,7 @@ This key should be referenced in the generic parameter K of the store definition
 The fetcher fetches data from an API and returns a FetcherResults.
 ```kotlin
 LimitedFetcher.of({ key ->
-    FetcherResult.Data(provideStarWarsService().getPerson(key.id).apply { parseId() })
+  FetcherResult.Data(provideStarWarsService().getPerson(key.id).apply { parseId() })
 })
 ```
 In this example `provideStarWarsService()` provides the retrofit service already configured.
@@ -114,11 +114,11 @@ In this example `provideStarWarsService()` provides the retrofit service already
 There is also a useful subclass if you want to build Retrofit services using a `RetrofitServiceProvider` (here `RetrofitManager`).
 ```kotlin
 class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
-	override suspend fun fetch(key: NoKey, service: StarWarsService): FetcherResult<List<People>> {
-		val people = service.getPeople()
-		// Make any changes to the entities before caching them
-		return FetcherResult.Data(people.results)
-	}
+  override suspend fun fetch(key: NoKey, service: StarWarsService): FetcherResult<List<People>> {
+    val people = service.getPeople()
+    // Make any changes to the entities before caching them
+    return FetcherResult.Data(people.results)
+  }
 }
 ```
 You can also use other libraries to fetch data, you just need to make the call in the fetch function or override and return the `FetcherResult`.
@@ -137,7 +137,7 @@ For example if we want to store a list of People we can do:
 ```kotlin
 @Dao
 abstract class PeopleCache: SimpleRoomListCache<NoKey, People>("people", SampleApplication.roomDb) {
-	override fun query(key: NoKey): String = ""
+  override fun query(key: NoKey): String = ""
 }
 ```
 The `query` is the filter to be used to retrieve the cached data which has been stored after the API call. It generally matches the parameters sent to the API.
@@ -145,7 +145,7 @@ For example if we are fetching an entity by id, our Cache class will look like t
 ```kotlin
 @Dao
 abstract class PersonCache: SimpleRoomCache<Key, People>("people", SampleApplication.roomDb) {
-	override fun query(key: Key): String = "id = ${key.id}"
+  override fun query(key: Key): String = "id = ${key.id}"
 }
 ```
 All created DAOs automatically generate the required methods for making it work with the Store, but you can also add your own methods for using the cache directly as a regular Room DAO.
@@ -154,8 +154,8 @@ The created DAOs should be connected with your Room Database implementation, for
 ```kotlin
 @Database(entities = [People::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
-	abstract fun peopleCache(): RoomPeopleStore.PeopleCache
-	abstract fun personCache(): RoomPersonStore.PersonCache
+  abstract fun peopleCache(): RoomPeopleStore.PeopleCache
+  abstract fun personCache(): RoomPersonStore.PersonCache
 }
 ```
 and you need to provide the DAO as the cache in the Store:
@@ -171,25 +171,25 @@ Please refer to the Room implementation for more details on the Database definit
 In case we are using `Realm` we can use:
 ```kotlin
 class PeopleCache: SimpleRealmListCache<NoKey, People>(People::class.java) {
-	override fun query(key: NoKey): (query: RealmQuery<People>) -> Unit = { }
+  override fun query(key: NoKey): (query: RealmQuery<People>) -> Unit = { }
 }
 ```
 The `query` is the filter to be used to retrieve the cached data which has been stored after the API call. It generally matches the parameters sent to the API.
 For example if we are fetching an entity by id, our Cache class will look like this one:
 ```kotlin
 class PersonCache: SimpleRealmCache<Key, People>(People::class.java) {
-	override fun query(key: Key): (query: RealmQuery<People>) -> Unit = {
- it.equalTo("id", key.id)
-	}
+  override fun query(key: Key): (query: RealmQuery<People>) -> Unit = {
+    it.equalTo("id", key.id)
+  }
 }
 ```
 Optionally you can provide a `storeInRealm` which implements a custom method to persist to the Realm cache.
 
 ```kotlin
 class PersonCache: SimpleRealmCache<Key, People>(People::class.java) {
-	override fun query(key: Key): (query: RealmQuery<People>) -> Unit = { it.equalTo("id", key.id) }
+  override fun query(key: Key): (query: RealmQuery<People>) -> Unit = { it.equalTo("id", key.id) }
   override fun storeInRealm(key: Key, bgRealm: Realm, entity: People) { bgRealm.copyToRealmOrUpdate(entity) // Custom code }
-}
+  }
 ```
 
 ## 6. Using the Store
@@ -203,22 +203,22 @@ val peopleStore = PeopleStore() // or injected using DI
 All operation with the store are usually tied to a scope, we can use the viewModelScope for example to launch a coroutine that listens for the incoming data.
 ```kotlin
 viewModelScope.launch {
-	val response = personStore.fetch(RealmPersonStore.Key("1")) 
-	...
+  val response = personStore.fetch(RealmPersonStore.Key("1"))
+  ...
 }
 ```
 With some databases like Realm we should close the opened resources when we are done with using the data. We have provided some extension functions for closing automatically the Realm instances.
 ```kotlin
 viewModelScope.launch(personStore) {
-	val response = personStore.fetch(RealmPersonStore.Key("1"))
-	...
+  val response = personStore.fetch(RealmPersonStore.Key("1"))
+  ...
 }
 ```
 Here in the launch we provide the store instance and it will close itself once the coroutine job is cancelled (finished).
 As an alternative, we have an additional method to close many stores.
 ```kotlin
 viewModelScope.launch {
-	... (use peopleStore and planetStore)
+  ... (use peopleStore and planetStore)
 }.autoClose(peopleStore, planetStore)
 ```
 ### Responses
@@ -241,13 +241,13 @@ The `stream` method does the following:
 For example, from your ViewModel
 ```kotlin
 viewModelScope.launch {
-	peopleStore.stream(refresh = true).collect { result ->
-		when (result) {
-			is StoreResponse.Data -> // Here you send it to the UI
-			is StoreResponse.Error -> // You can show an error 
-			else -> // You can also handle the NoData showing an error 
-		}
-	}
+  peopleStore.stream(refresh = true).collect { result ->
+    when (result) {
+      is StoreResponse.Data -> // Here you send it to the UI
+      is StoreResponse.Error -> // You can show an error 
+      else -> // You can also handle the NoData showing an error 
+    }
+  }
 }
 ```
 `stream` returns a `Flow`, and it can be combined and processed like any other `Flow`.
@@ -260,8 +260,8 @@ The `fetch` method makes an API call, caches the result and then it returns the 
 
 ```kotlin
 viewModelScope.launch {
-	val response = personStore.fetch(PersonStore.Key("1"))
-	Log.d(TAG, "Fetch response: ${response.value}")
+  val response = personStore.fetch(PersonStore.Key("1"))
+  Log.d(TAG, "Fetch response: ${response.value}")
 }
 ```
 
@@ -271,7 +271,7 @@ The `get` method gets the data from the cache, usually used in places when you k
 
 ```kotlin
 viewModelScope.launch {
-	val response = personStore.get(RoomPersonStore.Key("1"))
+  val response = personStore.get(RoomPersonStore.Key("1"))
 }
 ```
 
@@ -287,20 +287,20 @@ You can detect errors in different ways:
 ```kotlin
 viewModelScope.launch {
   val result = personStore.fetch(RoomPersonStore.Key("1"))
-	when (result) {
-		is StoreResponse.Data -> // UI work
-		is StoreResponse.Error -> // Handle the error here
-		else -> {}
-	}
+  when (result) {
+    is StoreResponse.Data -> // UI work
+    is StoreResponse.Error -> // Handle the error here
+    else -> {}
+  }
 }
 ```
 Another alternative is using the catch method after a `requireData()` call.
 ```kotlin
 viewModelScope.launch {
   personStore.stream(RoomPersonStore.Key("1"), refresh = true)
-		.map { it.requireData() }
-		.catch { /* Error handling */ }
-		.collect { result -> /* UI work */ }
+    .map { it.requireData() }
+    .catch { /* Error handling */ }
+    .collect { result -> /* UI work */ }
 }
 ```
 
@@ -314,7 +314,7 @@ The staleness strategy is configured in the Cache. For example using Room:
 abstract class PeopleCache: RoomListCache<NoKey, People>("people", SampleApplication.roomDb,
   stalenessPolicy = DeleteAllNotInFetchStalenessPolicy { people -> people.id } // Example of staleness settings.
 ) {
-	override fun query(key: NoKey): String = ""
+  override fun query(key: NoKey): String = ""
 }
 ```
 
@@ -326,7 +326,9 @@ abstract class PeopleCache: RoomListCache<NoKey, People>("people", SampleApplica
 
 ## Avoiding multiple repeated calls
 
-It is very common in a big application to request the same information from different locations. In order to avoid doing repeated API calls the `Store` implements a `RateLimiter`. The limiter will allow the first call, and then any subsequent call inside a time span provided will not be executed and a cached result will be returned instead until the time has elapsed.
+It is very common in big applications to request the same information from many different locations. In order to avoid doing repeated API calls the `Store` implements a `RateLimiter`.
+
+The limiter will allow the first call, and then any subsequent call inside a time span provided will not be executed. If the second call happens before the completion of the first call, that second call will wait for the result of the first one and it will return the same value for both. If the second call happens after the first call has arrived, a cached result will be returned instead until the time provided in the limiter has elapsed. Once the time has elapsed the store is able to call the API again.
 
 It is available a `LimitedFetcher` and provides a way to define a `rateLimitPolicy`:
 
@@ -353,11 +355,11 @@ The default implementation is `RateLimitPolicy(5, TimeUnit.SECONDS)`
 
 | rateLimitPolicy					| description |
 |------------------------------------|-------------|
-| RateLimitPolicy		 | It lets you define a timeout and time unit. The first time you make an API it will proceed, if you make a subsequent call inside this timeout period, it will NOT make an API call and it will try to fetch the data from the cache instead. Once the time has passed the timeout threshold, any subsequent calls will go to the API again with the same logic. Example: `RateLimitPolicy(10, TimeUnit.SECONDS)` |
+| RateLimitPolicy		 | It lets you define a timeout and time unit. The first time you make an API it will proceed, if you make a subsequent call inside this timeout period, it will NOT make an API call. Once the time has passed the timeout threshold, the next call will go to the API again with the same logic. Example: `RateLimitPolicy(10, TimeUnit.SECONDS)` |
 | FetchOnlyOnce		   | It calls the API only once in the app lifetime. Please note if you kill the app, this strategy will fetch again. |
 | FetchAlways | It does not limit the API calls in any way. |
 
-### Forcing a fetch
+### Forcing a fetch ignoring the rate limiter
 
 If you need to force a fetch to the API ignoring the rate limiter, you should send a parameter to the `fetch` call the following way:
 
@@ -367,11 +369,12 @@ val result = personStore.fetch(RoomPersonStore.Key("1"), forced = true)
 
 ### Disabling the Rate Limiter
 
-The Rate limiter is active by default, but you can disable it for debugging purposes with the code:
+The Rate limiter is active by default, but you can disable it with the code:
 
 ```kotlin
 StoreConfig.isRateLimiterEnabled = { // You can use a feature flag or a remote config here to return a Boolean }
 ```
+If you want to disable it for a specific call, you can set `rateLimitPolicy = FetchAlways`.
 
 ## Throttling
 
@@ -477,7 +480,6 @@ when (response) {
 
 ## Roadmap
 
-- Return the same fetcher response when a request is the same as one already sent
 - Publish the library
 - Add an optional memory cache
 - Investigate automatic retries on error
