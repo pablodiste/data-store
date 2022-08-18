@@ -41,3 +41,21 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     testImplementation "org.mockito.kotlin:mockito-kotlin:4.0.0"
 }
+
+ext {
+    PUBLISH_GROUP_ID = 'dev.pablodiste.datastore'
+    PUBLISH_VERSION = '0.1.0'
+    PUBLISH_ARTIFACT_ID = 'datastore'
+    PUBLISH_DESCRIPTION = 'Android library implementing a repository pattern allowing API calls and caching'
+    PUBLISH_URL = 'https://github.com/pablodiste/data-store'
+    PUBLISH_LICENSE_NAME = 'MIT License'
+    PUBLISH_LICENSE_URL = 'https://github.com/pablodiste/data-store/blob/main/LICENSE'
+    PUBLISH_DEVELOPER_ID = 'pablodiste'
+    PUBLISH_DEVELOPER_NAME = 'Pablo Distefano'
+    PUBLISH_DEVELOPER_EMAIL = 'pablodiste@gmail.com'
+    PUBLISH_SCM_CONNECTION = 'scm:git:github.com/pablodiste/data-store.git'
+    PUBLISH_SCM_DEVELOPER_CONNECTION = 'scm:git:ssh://github.com/pablodiste/data-store.git'
+    PUBLISH_SCM_URL = 'https://github.com/pablodiste/data-store/tree/main'
+}
+
+apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"

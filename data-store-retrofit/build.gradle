@@ -34,12 +34,26 @@ android {
 dependencies {
     implementation project(':data-store')
     implementation 'androidx.core:core-ktx:1.7.0'
-    implementation 'androidx.appcompat:appcompat:1.4.0'
-    implementation 'com.google.android.material:material:1.4.0'
-
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
-
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 }
+
+ext {
+    PUBLISH_GROUP_ID = 'dev.pablodiste.datastore'
+    PUBLISH_VERSION = '0.1.0'
+    PUBLISH_ARTIFACT_ID = 'datastore-retrofit'
+    PUBLISH_DESCRIPTION = 'DataStore integration plugin with Retrofit library'
+    PUBLISH_URL = 'https://github.com/pablodiste/data-store'
+    PUBLISH_LICENSE_NAME = 'MIT License'
+    PUBLISH_LICENSE_URL = 'https://github.com/pablodiste/data-store/blob/main/LICENSE'
+    PUBLISH_DEVELOPER_ID = 'pablodiste'
+    PUBLISH_DEVELOPER_NAME = 'Pablo Distefano'
+    PUBLISH_DEVELOPER_EMAIL = 'pablodiste@gmail.com'
+    PUBLISH_SCM_CONNECTION = 'scm:git:github.com/pablodiste/data-store.git'
+    PUBLISH_SCM_DEVELOPER_CONNECTION = 'scm:git:ssh://github.com/pablodiste/data-store.git'
+    PUBLISH_SCM_URL = 'https://github.com/pablodiste/data-store/tree/main'
+}
+
+apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"
