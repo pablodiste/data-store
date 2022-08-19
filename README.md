@@ -1,5 +1,7 @@
 
 # DataStore
+[![GitHub release](https://img.shields.io/maven-central/v/dev.pablodiste.datastore/datastore)](https://search.maven.org/search?q=g:dev.pablodiste.datastore)
+
 DataStore is an implementation of the Repository pattern in Android. This library allows async loading and caching data from different sources (API, databases).
 
 ## Basics
@@ -13,16 +15,16 @@ After you have configured your Store, you will be able to do from your ViewModel
 ```kotlin
 val peopleStore = PeopleStore(viewModelScope)
 viewModelScope.launch {
-  peopleStore.stream(refresh = true).collect { result ->
-    Log.d(TAG, "Hello ${result.value.name}")
-    uiState.value = result.value
+	peopleStore.stream(refresh = true).collect { result ->
+		Log.d(TAG, "Hello ${result.value.name}")
+		uiState.value = result.value
   }
 }
 ```
 This example will fetch a People list from an API, then store it in a local database and listen reactively for updates on that list.
 
 ## Sample Application
-You can see the features working cloning this repository and running the app project.
+You can see the features working cloning this repository and running the `app` module.
 
 ## Features
 
@@ -40,7 +42,19 @@ You can see the features working cloning this repository and running the app pro
 # Using DataStore
 ## Installation
 
-This software is still in beta and it is not available in any repository yet.
+Include the library in the dependencies section of your module configuration file. For example using Kotlin:
+
+```kotlin
+    implementation("dev.pablodiste.datastore:datastore:0.1.0")
+```
+
+Plugins for integrating DataStore with common libraries, you only need to include the ones you need
+
+```kotlin
+    implementation("dev.pablodiste.datastore:datastore-room:0.1.0")
+    implementation("dev.pablodiste.datastore:datastore-realm:0.1.0")
+    implementation("dev.pablodiste.datastore:datastore-retrofit:0.1.0")
+```
 
 ## 1. Defining your data classes
 
@@ -52,12 +66,12 @@ Here is a Room entity.
 ```kotlin
 @Entity(tableName = "people")
 data class People(
-  @PrimaryKey var id: String = "",
-  @ColumnInfo(name = "name") var name: String? = null,
-  @ColumnInfo(name = "height") var height: String? = null,
-  @ColumnInfo(name = "mass") var mass: String? = null,
-  @ColumnInfo(name = "gender") var gender: String? = null,
-  @ColumnInfo(name = "url") var url: String? = null,
+	@PrimaryKey var id: String = "",
+	@ColumnInfo(name = "name") var name: String? = null,
+	@ColumnInfo(name = "height") var height: String? = null,
+	@ColumnInfo(name = "mass") var mass: String? = null,
+	@ColumnInfo(name = "gender") var gender: String? = null,
+	@ColumnInfo(name = "url") var url: String? = null,
 )
 ```
 ## 2. Creating a Store
@@ -71,9 +85,9 @@ We have few base classes you can use for creating an Store:
 For example:
 ```kotlin
 class PeopleStore: NoKeySimpleStore<List<People>>(
-  fetcher = PeopleFetcher(),
-  cache = PeopleCache()) {
-  ...
+	fetcher = PeopleFetcher(),
+	cache = PeopleCache()) {
+	...
 }
 ```
 Defines a store which will fetch using a fetcher based on the entity People, and it will cache it in a database using the same Entity.
@@ -81,12 +95,12 @@ Defines a store which will fetch using a fetcher based on the entity People, and
 As an alternative we also provide a functional builder for creating the store:
 ```kotlin
 fun providePersonStore(): Store<Key, People> {
-  return SimpleStoreBuilder.from(
-    fetcher = LimitedFetcher.of({ key ->
-      FetcherResult.Data(provideStarWarsService().getPerson(key.id))
-    }),
-    cache = SampleApplication.roomDb.personCache()
-  ).build()
+	return SimpleStoreBuilder.from(
+		fetcher = LimitedFetcher.of({ key ->
+			FetcherResult.Data(provideStarWarsService().getPerson(key.id))
+		}),
+		cache = SampleApplication.roomDb.personCache()
+	).build()
 }
 ```
 
@@ -106,7 +120,7 @@ This key should be referenced in the generic parameter K of the store definition
 The fetcher fetches data from an API and returns a FetcherResults.
 ```kotlin
 LimitedFetcher.of({ key ->
-  FetcherResult.Data(provideStarWarsService().getPerson(key.id).apply { parseId() })
+    FetcherResult.Data(provideStarWarsService().getPerson(key.id).apply { parseId() })
 })
 ```
 In this example `provideStarWarsService()` provides the retrofit service already configured.
@@ -114,11 +128,11 @@ In this example `provideStarWarsService()` provides the retrofit service already
 There is also a useful subclass if you want to build Retrofit services using a `RetrofitServiceProvider` (here `RetrofitManager`).
 ```kotlin
 class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
-  override suspend fun fetch(key: NoKey, service: StarWarsService): FetcherResult<List<People>> {
-    val people = service.getPeople()
-    // Make any changes to the entities before caching them
-    return FetcherResult.Data(people.results)
-  }
+	override suspend fun fetch(key: NoKey, service: StarWarsService): FetcherResult<List<People>> {
+		val people = service.getPeople()
+		// Make any changes to the entities before caching them
+		return FetcherResult.Data(people.results)
+	}
 }
 ```
 You can also use other libraries to fetch data, you just need to make the call in the fetch function or override and return the `FetcherResult`.
@@ -137,7 +151,7 @@ For example if we want to store a list of People we can do:
 ```kotlin
 @Dao
 abstract class PeopleCache: SimpleRoomListCache<NoKey, People>("people", SampleApplication.roomDb) {
-  override fun query(key: NoKey): String = ""
+	override fun query(key: NoKey): String = ""
 }
 ```
 The `query` is the filter to be used to retrieve the cached data which has been stored after the API call. It generally matches the parameters sent to the API.
@@ -145,7 +159,7 @@ For example if we are fetching an entity by id, our Cache class will look like t
 ```kotlin
 @Dao
 abstract class PersonCache: SimpleRoomCache<Key, People>("people", SampleApplication.roomDb) {
-  override fun query(key: Key): String = "id = ${key.id}"
+	override fun query(key: Key): String = "id = ${key.id}"
 }
 ```
 All created DAOs automatically generate the required methods for making it work with the Store, but you can also add your own methods for using the cache directly as a regular Room DAO.
@@ -154,8 +168,8 @@ The created DAOs should be connected with your Room Database implementation, for
 ```kotlin
 @Database(entities = [People::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
-  abstract fun peopleCache(): RoomPeopleStore.PeopleCache
-  abstract fun personCache(): RoomPersonStore.PersonCache
+	abstract fun peopleCache(): RoomPeopleStore.PeopleCache
+	abstract fun personCache(): RoomPersonStore.PersonCache
 }
 ```
 and you need to provide the DAO as the cache in the Store:
@@ -171,25 +185,25 @@ Please refer to the Room implementation for more details on the Database definit
 In case we are using `Realm` we can use:
 ```kotlin
 class PeopleCache: SimpleRealmListCache<NoKey, People>(People::class.java) {
-  override fun query(key: NoKey): (query: RealmQuery<People>) -> Unit = { }
+	override fun query(key: NoKey): (query: RealmQuery<People>) -> Unit = { }
 }
 ```
 The `query` is the filter to be used to retrieve the cached data which has been stored after the API call. It generally matches the parameters sent to the API.
 For example if we are fetching an entity by id, our Cache class will look like this one:
 ```kotlin
 class PersonCache: SimpleRealmCache<Key, People>(People::class.java) {
-  override fun query(key: Key): (query: RealmQuery<People>) -> Unit = {
-    it.equalTo("id", key.id)
-  }
+	override fun query(key: Key): (query: RealmQuery<People>) -> Unit = {
+ it.equalTo("id", key.id)
+	}
 }
 ```
 Optionally you can provide a `storeInRealm` which implements a custom method to persist to the Realm cache.
 
 ```kotlin
 class PersonCache: SimpleRealmCache<Key, People>(People::class.java) {
-  override fun query(key: Key): (query: RealmQuery<People>) -> Unit = { it.equalTo("id", key.id) }
+	override fun query(key: Key): (query: RealmQuery<People>) -> Unit = { it.equalTo("id", key.id) }
   override fun storeInRealm(key: Key, bgRealm: Realm, entity: People) { bgRealm.copyToRealmOrUpdate(entity) // Custom code }
-  }
+}
 ```
 
 ## 6. Using the Store
@@ -203,26 +217,27 @@ val peopleStore = PeopleStore() // or injected using DI
 All operation with the store are usually tied to a scope, we can use the viewModelScope for example to launch a coroutine that listens for the incoming data.
 ```kotlin
 viewModelScope.launch {
-  val response = personStore.fetch(RealmPersonStore.Key("1"))
-  ...
+	val response = personStore.fetch(RealmPersonStore.Key("1")) 
+	...
 }
 ```
 With some databases like Realm we should close the opened resources when we are done with using the data. We have provided some extension functions for closing automatically the Realm instances.
 ```kotlin
 viewModelScope.launch(personStore) {
-  val response = personStore.fetch(RealmPersonStore.Key("1"))
-  ...
+	val response = personStore.fetch(RealmPersonStore.Key("1"))
+	...
 }
 ```
 Here in the launch we provide the store instance and it will close itself once the coroutine job is cancelled (finished).
 As an alternative, we have an additional method to close many stores.
 ```kotlin
 viewModelScope.launch {
-  ... (use peopleStore and planetStore)
+	... (use peopleStore and planetStore)
 }.autoClose(peopleStore, planetStore)
 ```
 ### Responses
 All responses coming from the store are based on StoreResponse classes. The subclasses are:
+
 | StoreResponse | Description |
 |---------------|-------------|
 | Data		  | When the request was successful it returns the parsed objects |
@@ -241,13 +256,13 @@ The `stream` method does the following:
 For example, from your ViewModel
 ```kotlin
 viewModelScope.launch {
-  peopleStore.stream(refresh = true).collect { result ->
-    when (result) {
-      is StoreResponse.Data -> // Here you send it to the UI
-      is StoreResponse.Error -> // You can show an error 
-      else -> // You can also handle the NoData showing an error 
-    }
-  }
+	peopleStore.stream(refresh = true).collect { result ->
+		when (result) {
+			is StoreResponse.Data -> // Here you send it to the UI
+			is StoreResponse.Error -> // You can show an error 
+			else -> // You can also handle the NoData showing an error 
+		}
+	}
 }
 ```
 `stream` returns a `Flow`, and it can be combined and processed like any other `Flow`.
@@ -260,8 +275,8 @@ The `fetch` method makes an API call, caches the result and then it returns the 
 
 ```kotlin
 viewModelScope.launch {
-  val response = personStore.fetch(PersonStore.Key("1"))
-  Log.d(TAG, "Fetch response: ${response.value}")
+	val response = personStore.fetch(PersonStore.Key("1"))
+	Log.d(TAG, "Fetch response: ${response.value}")
 }
 ```
 
@@ -271,7 +286,7 @@ The `get` method gets the data from the cache, usually used in places when you k
 
 ```kotlin
 viewModelScope.launch {
-  val response = personStore.get(RoomPersonStore.Key("1"))
+	val response = personStore.get(RoomPersonStore.Key("1"))
 }
 ```
 
@@ -287,20 +302,20 @@ You can detect errors in different ways:
 ```kotlin
 viewModelScope.launch {
   val result = personStore.fetch(RoomPersonStore.Key("1"))
-  when (result) {
-    is StoreResponse.Data -> // UI work
-    is StoreResponse.Error -> // Handle the error here
-    else -> {}
-  }
+	when (result) {
+		is StoreResponse.Data -> // UI work
+		is StoreResponse.Error -> // Handle the error here
+		else -> {}
+	}
 }
 ```
 Another alternative is using the catch method after a `requireData()` call.
 ```kotlin
 viewModelScope.launch {
-  personStore.stream(RoomPersonStore.Key("1"), refresh = true)
-    .map { it.requireData() }
-    .catch { /* Error handling */ }
-    .collect { result -> /* UI work */ }
+	personStore.stream(RoomPersonStore.Key("1"), refresh = true)
+		.map { it.requireData() }
+		.catch { /* Error handling */ }
+		.collect { result -> /* UI work */ }
 }
 ```
 
@@ -312,17 +327,17 @@ The staleness strategy is configured in the Cache. For example using Room:
 ```kotlin
 @Dao
 abstract class PeopleCache: RoomListCache<NoKey, People>("people", SampleApplication.roomDb,
-  stalenessPolicy = DeleteAllNotInFetchStalenessPolicy { people -> people.id } // Example of staleness settings.
+	stalenessPolicy = DeleteAllNotInFetchStalenessPolicy { people -> people.id } // Example of staleness settings.
 ) {
-  override fun query(key: NoKey): String = ""
+	override fun query(key: NoKey): String = ""
 }
 ```
 
 | stalenessPolicy					| description |
 |------------------------------------|-------------|
-| DoNotExpireStalenessPolicy		 | Avoids calling any DELETE on the database when new data arrives. No data is deleted, only updates are performed. |
-| DeleteAllStalenessPolicy		   | Calls DELETE doing a query using the query method of the Cache. |
-| DeleteAllNotInFetchStalenessPolicy | Calls DELETE on all database rows which are not in the API response. You should provide a function which indicates a way to compare the old and new items, usually a primary key. | 
+| `DoNotExpireStalenessPolicy`		 | Avoids calling any DELETE on the database when new data arrives. No data is deleted, only updates are performed. |
+| `DeleteAllStalenessPolicy`		   | Calls DELETE doing a query using the query method of the Cache. |
+| `DeleteAllNotInFetchStalenessPolicy` | Calls DELETE on all database rows which are not in the API response. You should provide a function which indicates a way to compare the old and new items, usually a primary key. | 
 
 ## Avoiding multiple repeated calls
 
@@ -355,9 +370,9 @@ The default implementation is `RateLimitPolicy(5, TimeUnit.SECONDS)`
 
 | rateLimitPolicy					| description |
 |------------------------------------|-------------|
-| RateLimitPolicy		 | It lets you define a timeout and time unit. The first time you make an API it will proceed, if you make a subsequent call inside this timeout period, it will NOT make an API call. Once the time has passed the timeout threshold, the next call will go to the API again with the same logic. Example: `RateLimitPolicy(10, TimeUnit.SECONDS)` |
-| FetchOnlyOnce		   | It calls the API only once in the app lifetime. Please note if you kill the app, this strategy will fetch again. |
-| FetchAlways | It does not limit the API calls in any way. |
+| `RateLimitPolicy`		 | It lets you define a timeout and time unit. The first time you make an API it will proceed, if you make a subsequent call inside this timeout period, it will NOT make an API call. Once the time has passed the timeout threshold, the next call will go to the API again with the same logic. Example: `RateLimitPolicy(10, TimeUnit.SECONDS)` |
+| `FetchOnlyOnce`		   | It calls the API only once in the app lifetime. Please note if you kill the app, this strategy will fetch again. |
+| `FetchAlways` | It does not limit the API calls in any way. |
 
 ### Forcing a fetch ignoring the rate limiter
 
@@ -478,9 +493,16 @@ when (response) {
 }
 ```
 
+## Contributions
+
+Any suggestion and bug report is welcome, you can create issues in the github page.
+Feel free to fork it and send a pull request in case you want to make fixes or add any additional feature or change.
+
 ## Roadmap
 
-- Publish the library
-- Add an optional memory cache
+- Add more testing coverage
 - Investigate automatic retries on error
+- Integration with ktor
+- Analyze making it available for KMM
+- Add an optional memory cache
 
