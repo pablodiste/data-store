@@ -14,7 +14,7 @@ import dev.pablodiste.datastore.sample.network.RoomStarWarsService
 
 class RoomPeopleStore: NoKeySimpleStore<List<People>>(
     fetcher = PeopleFetcher(),
-    cache = dev.pablodiste.datastore.sample.SampleApplication.roomDb.peopleCache()
+    cache = SampleApplication.roomDb.peopleCache()
 ) {
 
     class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, RoomStarWarsService>(RoomStarWarsService::class.java, RetrofitManager) {

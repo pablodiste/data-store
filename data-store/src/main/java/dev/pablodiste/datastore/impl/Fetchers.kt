@@ -11,8 +11,8 @@ abstract class LimitedFetcher<K: Any, I: Any>(
 
     companion object {
         fun <K: Any, I: Any> of(
+            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS),
             fetch: suspend (K) -> FetcherResult<I>,
-            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS)
         ): Fetcher<K, I> {
             return object: LimitedFetcher<K, I>(rateLimitPolicy) {
                 override suspend fun fetch(key: K): FetcherResult<I> = fetch(key)
