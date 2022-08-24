@@ -26,13 +26,13 @@ class StoreTest {
         val fetcher = mock<Fetcher<Key, Entity>>() {
             onBlocking { fetch(any()) } doReturn FetcherResult.Data(Entity("Test 1"))
         }
-        val cache = mock<Cache<Key, Entity>>() {
+        val sourceOfTruth = mock<SourceOfTruth<Key, Entity>>() {
             onBlocking { exists(any()) } doReturn true
             onBlocking { get(any()) } doReturn Entity("Test 1")
         }
 
         runBlockingTest {
-            val store = SimpleStoreImpl(fetcher, cache)
+            val store = SimpleStoreImpl(fetcher, sourceOfTruth)
             val result = store.get(Key("1"))
             assertNotNull(result)
         }

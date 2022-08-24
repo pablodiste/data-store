@@ -4,11 +4,11 @@ import dev.pablodiste.datastore.*
 
 open class CrudStoreImpl<K: Any, I: Any, T: Any>(
     fetcher: CrudFetcher<K, I>,
-    cache: Cache<K, T>,
+    sourceOfTruth: SourceOfTruth<K, T>,
     mapper: Mapper<I, T>,
     private val keyBuilder: ((T) -> K)? = null
 ):
-    StoreImpl<K, I, T>(fetcher, cache, mapper), CrudStore<K, T> {
+    StoreImpl<K, I, T>(fetcher, sourceOfTruth, mapper), CrudStore<K, T> {
 
     protected val crudFetcher get() = fetcher as CrudFetcher
 
@@ -35,7 +35,7 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
     override suspend fun delete(key: K, entity: T): Boolean {
         return try {
             crudFetcher.delete(key, mapper.toFetcherEntity(entity))
-            pausableCache.delete(key)
+            pausableSourceOfTruth.delete(key)
             true
         } catch (e: Exception) {
             false
@@ -45,8 +45,8 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
     private suspend fun storeFetcherResult(result: FetcherResult<I>): T {
         return when (result) {
             is FetcherResult.Data -> {
-                val entityToSave = mapper.toCacheEntity(result.value)
-                pausableCache.store(buildKey(entityToSave), entityToSave)
+                val entityToSave = mapper.toSourceOfTruthEntity(result.value)
+                pausableSourceOfTruth.store(buildKey(entityToSave), entityToSave)
             }
             is FetcherResult.Error -> throw result.error
             else -> throw Throwable("Error creating entity, invalid state")
@@ -61,10 +61,10 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
 }
 
 /**
- * Simple CRUD store where the parsed fetcher entity type is the same as the cached entity type.
+ * Simple CRUD store where the parsed fetcher entity type is the same as the source of truth entity type.
  */
 open class SimpleCrudStoreImpl<K: Any, T: Any>(
     fetcher: CrudFetcher<K, T>,
-    cache: Cache<K, T>,
+    sourceOfTruth: SourceOfTruth<K, T>,
     keyBuilder: ((T) -> K)? = null
-): CrudStoreImpl<K, T, T>(fetcher, cache, SameEntityMapper(), keyBuilder)
+): CrudStoreImpl<K, T, T>(fetcher, sourceOfTruth, SameEntityMapper(), keyBuilder)

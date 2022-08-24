@@ -2,11 +2,10 @@ package dev.pablodiste.datastore.sample.repositories.store.room;
 
 import androidx.room.Dao
 import dev.pablodiste.datastore.FetcherResult
-import dev.pablodiste.datastore.adapters.room.RoomCache
+import dev.pablodiste.datastore.adapters.room.RoomSourceOfTruth
 import dev.pablodiste.datastore.impl.LimitedCrudFetcher
 import dev.pablodiste.datastore.impl.SimpleCrudStoreBuilder
 import dev.pablodiste.datastore.impl.SimpleCrudStoreImpl
-import dev.pablodiste.datastore.sample.SampleApplication
 import dev.pablodiste.datastore.sample.models.room.Post
 import dev.pablodiste.datastore.sample.network.JsonPlaceholderService
 import dev.pablodiste.datastore.sample.network.RetrofitManager
@@ -21,7 +20,7 @@ fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
             update = { key, post -> FetcherResult.Data(provideService().updatePost(key.id, post)) },
             delete = { key, post -> provideService().deletePost(key.id); true },
         ),
-        cache = dev.pablodiste.datastore.sample.SampleApplication.roomDb.postCache(),
+        sourceOfTruth = dev.pablodiste.datastore.sample.SampleApplication.roomDb.postSourceOfTruth(),
         keyBuilder = { entity -> PostKey(entity.id) }
     ).build() as SimpleCrudStoreImpl
 }
@@ -29,6 +28,6 @@ fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
 private fun provideService() = RetrofitManager.createService(JsonPlaceholderService::class.java)
 
 @Dao
-abstract class PostCache: RoomCache<PostKey, Post>("posts", dev.pablodiste.datastore.sample.SampleApplication.roomDb) {
+abstract class PostSourceOfTruth: RoomSourceOfTruth<PostKey, Post>("posts", dev.pablodiste.datastore.sample.SampleApplication.roomDb) {
     override fun query(key: PostKey): String = "id = ${key.id}"
 }

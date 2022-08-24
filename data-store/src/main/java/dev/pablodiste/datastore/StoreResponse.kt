@@ -1,7 +1,7 @@
 package dev.pablodiste.datastore
 
 enum class ResponseOrigin {
-    CACHE,
+    SOURCE_OF_TRUTH,
     FETCHER
 }
 

@@ -5,18 +5,18 @@ import io.realm.Realm
 import io.realm.RealmObject
 
 interface StalenessPolicy<K: Any, T: RealmObject> {
-    fun removeStaleEntityInRealm(bgRealm: Realm, cache: dev.pablodiste.datastore.adapters.realm.RealmCache<K, T>, key: K, entity: T)
-    fun removeStaleListInRealm(bgRealm: Realm, cache: dev.pablodiste.datastore.adapters.realm.RealmListCache<K, T>, key: K, entity: List<T>)
+    fun removeStaleEntityInRealm(bgRealm: Realm, sourceOfTruth: RealmSourceOfTruth<K, T>, key: K, entity: T)
+    fun removeStaleListInRealm(bgRealm: Realm, sourceOfTruth: RealmListSourceOfTruth<K, T>, key: K, entity: List<T>)
 }
 
 /**
  * This staleness policy does not delete any entity.
  */
 class DoNotExpireStalenessPolicy<K: Any, T: RealmObject>: StalenessPolicy<K, T> {
-    override fun removeStaleEntityInRealm(bgRealm: Realm, cache: dev.pablodiste.datastore.adapters.realm.RealmCache<K, T>, key: K, entity: T) {
+    override fun removeStaleEntityInRealm(bgRealm: Realm, sourceOfTruth: RealmSourceOfTruth<K, T>, key: K, entity: T) {
     }
 
-    override fun removeStaleListInRealm(bgRealm: Realm, cache: dev.pablodiste.datastore.adapters.realm.RealmListCache<K, T>, key: K, entity: List<T>) {
+    override fun removeStaleListInRealm(bgRealm: Realm, sourceOfTruth: RealmListSourceOfTruth<K, T>, key: K, entity: List<T>) {
     }
 }
 
@@ -25,15 +25,15 @@ class DoNotExpireStalenessPolicy<K: Any, T: RealmObject>: StalenessPolicy<K, T> 
  */
 class DeleteAllStalenessPolicy<K: Any, T: RealmObject>: StalenessPolicy<K, T> {
 
-    override fun removeStaleListInRealm(bgRealm: Realm, cache: dev.pablodiste.datastore.adapters.realm.RealmListCache<K, T>, key: K, entity: List<T>) {
-        val where = bgRealm.where(cache.klass)
-        cache.query(key).invoke(where)
+    override fun removeStaleListInRealm(bgRealm: Realm, sourceOfTruth: RealmListSourceOfTruth<K, T>, key: K, entity: List<T>) {
+        val where = bgRealm.where(sourceOfTruth.klass)
+        sourceOfTruth.query(key).invoke(where)
         where.findAll().deleteAllFromRealm()
     }
 
-    override fun removeStaleEntityInRealm(bgRealm: Realm, cache: dev.pablodiste.datastore.adapters.realm.RealmCache<K, T>, key: K, entity: T) {
-        val where = bgRealm.where(cache.klass)
-        cache.query(key).invoke(where)
+    override fun removeStaleEntityInRealm(bgRealm: Realm, sourceOfTruth: RealmSourceOfTruth<K, T>, key: K, entity: T) {
+        val where = bgRealm.where(sourceOfTruth.klass)
+        sourceOfTruth.query(key).invoke(where)
         where.findFirst()?.deleteFromRealm()
     }
 }
@@ -45,11 +45,11 @@ class DeleteAllStalenessPolicy<K: Any, T: RealmObject>: StalenessPolicy<K, T> {
 class DeleteAllNotInFetchStalenessPolicy<K: Any, T: RealmObject, PK: Any>(
     private val keyBuilder: ((T) -> PK)): StalenessPolicy<K, T> {
 
-    override fun removeStaleListInRealm(bgRealm: Realm, cache: dev.pablodiste.datastore.adapters.realm.RealmListCache<K, T>, key: K, entity: List<T>) {
+    override fun removeStaleListInRealm(bgRealm: Realm, sourceOfTruth: RealmListSourceOfTruth<K, T>, key: K, entity: List<T>) {
         // Collects all keys from API call
         val inputKeys = entity.mapTo(HashSet()) { keyBuilder(it) }
-        val where = bgRealm.where(cache.klass)
-        cache.query(key).invoke(where)
+        val where = bgRealm.where(sourceOfTruth.klass)
+        sourceOfTruth.query(key).invoke(where)
         val results = where.findAll()
         results.forEach { storedEntity ->
             if (storedEntity is HasKey) {
@@ -61,9 +61,9 @@ class DeleteAllNotInFetchStalenessPolicy<K: Any, T: RealmObject, PK: Any>(
         }
     }
 
-    override fun removeStaleEntityInRealm(bgRealm: Realm, cache: dev.pablodiste.datastore.adapters.realm.RealmCache<K, T>, key: K, entity: T) {
-        val where = bgRealm.where(cache.klass)
-        cache.query(key).invoke(where)
+    override fun removeStaleEntityInRealm(bgRealm: Realm, sourceOfTruth: RealmSourceOfTruth<K, T>, key: K, entity: T) {
+        val where = bgRealm.where(sourceOfTruth.klass)
+        sourceOfTruth.query(key).invoke(where)
         where.findFirst()?.deleteFromRealm()
     }
 }

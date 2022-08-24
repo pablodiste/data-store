@@ -10,7 +10,7 @@ import io.realm.RealmQuery
 
 class RealmPersonStore: ScopedSimpleStoreImpl<RealmPersonStore.Key, People>(
     fetcher = PersonFetcher(),
-    cache = PersonCache()
+    sourceOfTruth = PersonSourceOfTruth()
 ) {
 
     data class Key(val id: String)
@@ -23,7 +23,7 @@ class RealmPersonStore: ScopedSimpleStoreImpl<RealmPersonStore.Key, People>(
         }
     }
 
-    class PersonCache: dev.pablodiste.datastore.adapters.realm.SimpleRealmCache<Key, People>(People::class.java) {
+    class PersonSourceOfTruth: dev.pablodiste.datastore.adapters.realm.SimpleRealmSourceOfTruth<Key, People>(People::class.java) {
         override fun query(key: Key): (query: RealmQuery<People>) -> Unit = { it.equalTo("id", key.id) }
     }
 }

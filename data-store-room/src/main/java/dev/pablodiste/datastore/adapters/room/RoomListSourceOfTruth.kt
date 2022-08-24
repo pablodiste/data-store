@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.room.*
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQuery
-import dev.pablodiste.datastore.Cache
+import dev.pablodiste.datastore.SourceOfTruth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -17,11 +17,11 @@ import kotlinx.coroutines.withContext
 /**
  * Database cache based on Room (DAO), list version
  */
-abstract class RoomListCache<K: Any, T: Any>(
+abstract class RoomListSourceOfTruth<K: Any, T: Any>(
     private val tableName: String,
     private val database: RoomDatabase,
     private val stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
-): Cache<K, List<T>> {
+): SourceOfTruth<K, List<T>> {
 
     override suspend fun get(key: K): List<T> {
         val query = baseSelectQuery(key)
@@ -134,15 +134,15 @@ abstract class RoomListCache<K: Any, T: Any>(
     abstract fun delete(entities: List<T>)
 
     companion object {
-        const val TAG: String = "RoomCache"
+        const val TAG: String = "RoomSourceOfTruth"
     }
 
 }
 
 /*
-abstract class SimpleRoomListCache<K: Any, T: Any>(
+abstract class SimpleRoomListSourceOfTruth<K: Any, T: Any>(
     private val tableName: String,
     private val database: RoomDatabase,
     stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
-): RoomListCache<K, T>(tableName, database, stalenessPolicy)
+): RoomListSourceOfTruth<K, T>(tableName, database, stalenessPolicy)
  */

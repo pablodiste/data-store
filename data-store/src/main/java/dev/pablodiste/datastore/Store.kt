@@ -9,7 +9,7 @@ interface Store<K: Any, T: Any> {
     suspend fun fetch(key: K, forced: Boolean = true): StoreResponse<T>
 }
 
-interface Cache<K: Any, T: Any> {
+interface SourceOfTruth<K: Any, T: Any> {
     suspend fun exists(key: K): Boolean
     fun listen(key: K): Flow<@JvmWildcard T>
     suspend fun store(key: K, entity: T, removeStale: Boolean = false): T

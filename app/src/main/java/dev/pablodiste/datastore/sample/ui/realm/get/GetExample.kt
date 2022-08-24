@@ -20,7 +20,7 @@ fun GetExample(viewModel: GetExampleViewModel, openDrawer: () -> Unit) {
 fun GetExamplePerson(viewModel: GetExampleViewModel) {
     val uiState = viewModel.uiState.collectAsState()
     Column(modifier = Modifier.padding(10.dp)) {
-        Text(text = "This information was obtained from the cache",
+        Text(text = "This information was obtained from the source of truth",
             modifier = Modifier.padding(bottom = 10.dp))
         Text(text = "Name: ${uiState.value.name.orEmpty()}")
         Text(text = "Height: ${uiState.value.height.orEmpty()}")

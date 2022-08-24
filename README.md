@@ -6,10 +6,10 @@ DataStore is an implementation of the Repository pattern in Android. This librar
 
 ## Basics
 
-A Store is composed of two main objects, a fetcher, and a cache.
+A Store is composed of two main objects, a fetcher, and a source of truth.
 
 * **Fetcher**: In charge of calling the API and getting the result in the form of a `FetcherResult<Entity>`.
-* **Cache**: In charge of storing the result locally and making queries, usually backed by a local database.
+* **Source of Truth**: In charge of storing the result locally and making queries, usually backed by a local database.
 
 ## Example of Usage
 
@@ -32,7 +32,7 @@ viewModelScope.launch {
 ```
 This example will fetch a People list from an API, then store it in a local database and listen reactively for updates on that list.
 
-Please see the documentation below about how to provide a fetcher and a cache using your preferred libraries.
+Please see the documentation below about how to provide a fetcher and a source of truth using your preferred libraries.
 
 ## Sample Application
 You can see the features working by cloning this repository and running the `app` module.
@@ -40,15 +40,15 @@ You can see the features working by cloning this repository and running the `app
 ## Features
 
 - Handles caching of fetched data automatically.
-- Allows listening to changes on the cache and making queries.
+- Allows listening to changes on the source of truth and making queries.
 - It is built on coroutines.
 - Allows the integration of different fetcher sources and libraries.
-- Includes support for caches based on Room and Realm libraries but you can plug in other ones too.
+- Includes support for source of truth based on Room and Realm libraries but you can plug in other ones too.
 - Allows configuration of custom database queries (like DAOs)
-- Allows per-request cache expiration configuration.
+- Allows per-request source of truth expiration configuration.
 - Implements a way to limit multiple repeated calls to the same API.
 - Implements throttling on API errors. You can be notified if throttling is activated and show proper error messaging in the UI.
-- Implements CRUDStores, a very simple interface to make Create, Read, Update and Delete operations over APIs and reflect the state updates automatically in the cache.
+- Implements CRUDStores, a very simple interface to make Create, Read, Update and Delete operations over APIs and reflect the state updates automatically in the source of truth.
 
 ## Using DataStore
 ### Installation
@@ -89,7 +89,7 @@ data class People(
 
 We have few base classes you can use for creating an Store:
 
-- `StoreImpl<K: Any, I: Any, T: Any>` is the main implementation, it requires you to provide K a key for the request, I the class to be used by the fetcher and T the class to be used by the cache.
+- `StoreImpl<K: Any, I: Any, T: Any>` is the main implementation, it requires you to provide K a key for the request, I the class to be used by the fetcher and T the class to be used by the source of truth.
 - `SimpleStoreImpl` is a helper class where I = T, we are going to be using the same data class for fetching and storing.
 - `NoKeySimpleStore` is a `SimpleStoreImpl` where the Key is NoKey. Please read the Key section for more information on Keys.
 
@@ -97,18 +97,18 @@ For example:
 ```kotlin
 class PeopleStore: NoKeySimpleStore<List<People>>(
     fetcher = PeopleFetcher(),
-    cache = PeopleCache()) {
+    sourceOfTruth = PeopleSourceOfTruth()) {
     ...
 }
 ```
-Defines a store which will fetch using a fetcher based on the entity People, and it will cache it in a database using the same Entity.
+Defines a store which will fetch using a fetcher based on the entity People, and it will store it in a source of truth database using the same Entity.
 
 As an alternative we also provide a functional builder for creating the store:
 ```kotlin
 fun providePersonStore(): Store<RoomPersonStore.Key, People> =
     SimpleStoreBuilder.from(
         fetcher = LimitedFetcher.of { key -> FetcherResult.Data(provideStarWarsService().getPerson(key.id)) },
-        cache = SampleApplication.roomDb.personCache()
+        sourceOfTruth = SampleApplication.roomDb.personSourceOfTruth()
     ).build()
 ```
 
@@ -147,13 +147,13 @@ You can also use other libraries to fetch data, you just need to make the call i
 - `RetrofitManager` is a `RetrofitServiceProvider` implementation that manages the creation of the retrofit service.
 - `StarWarsService` is a Retrofit service definition class.
 
-### 5. Implement the Cache
+### 5. Implement the Source of Truth
 
 #### Using Room
 We have provided base DAOs for using with Room:
 
-- `RoomListCache` and `SimpleRoomListCache`, store a list of entities.
-- `RoomCache` and `SimpleRoomCache` store individual objects.
+- `RoomListSourceOfTruth` and `SimpleRoomListSourceOfTruth`, store a list of entities.
+- `RoomSourceOfTruth` and `SimpleRoomSourceOfTruth` store individual objects.
 
 For example if we want to store a list of People we can do:
 ```kotlin
@@ -162,29 +162,29 @@ abstract class PeopleCache: SimpleRoomListCache<NoKey, People>("people", SampleA
     override fun query(key: NoKey): String = ""
 }
 ```
-The `query` is the filter to be used to retrieve the cached data which has been stored after the API call. It generally matches the parameters sent to the API.
-For example if we are fetching an entity by id, our Cache class will look like this one:
+The `query` is the filter to be used to retrieve the stored data which has been stored after the API call. It generally matches the parameters sent to the API.
+For example if we are fetching an entity by id, our SourceOfTruth class will look like this one:
 ```kotlin
 @Dao
-abstract class PersonCache: SimpleRoomCache<Key, People>("people", SampleApplication.roomDb) {
+abstract class PersonSourceOfTruth: SimpleRoomSourceOfTruth<Key, People>("people", SampleApplication.roomDb) {
     override fun query(key: Key): String = "id = ${key.id}"
 }
 ```
-All created DAOs automatically generate the required methods for making it work with the Store, but you can also add your own methods for using the cache directly as a regular Room DAO.
+All created DAOs automatically generate the required methods for making it work with the Store, but you can also add your own methods for using the source of truth directly as a regular Room DAO.
 
 The created DAOs should be connected with your Room Database implementation, for example:
 ```kotlin
 @Database(entities = [People::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun peopleCache(): RoomPeopleStore.PeopleCache
-    abstract fun personCache(): RoomPersonStore.PersonCache
+    abstract fun peopleSourceOfTruth(): RoomPeopleStore.PeopleSourceOfTruth
+    abstract fun personSourceOfTruth(): RoomPersonStore.PersonSourceOfTruth
 }
 ```
-and you need to provide the DAO as the cache in the Store:
+and you need to provide the DAO as the source of truth in the Store:
 ```kotlin 
 class RoomPersonStore: SimpleStoreImpl<RoomPersonStore.Key, People>(
 	fetcher = PersonFetcher(),
-	cache = SampleApplication.roomDb.personCache()
+	sourceOfTruth = SampleApplication.roomDb.personSourceOfTruth()
 )
 ```
 Please refer to the Room implementation for more details on the Database definition.
@@ -192,23 +192,23 @@ Please refer to the Room implementation for more details on the Database definit
 #### Using Realm database
 In case we are using `Realm` we can use:
 ```kotlin
-class PeopleCache: SimpleRealmListCache<NoKey, People>(People::class.java) {
+class PeopleSourceOfTruth: SimpleRealmListSourceOfTruth<NoKey, People>(People::class.java) {
     override fun query(key: NoKey): (query: RealmQuery<People>) -> Unit = { }
 }
 ```
-The `query` is the filter to be used to retrieve the cached data which has been stored after the API call. It generally matches the parameters sent to the API.
-For example if we are fetching an entity by id, our Cache class will look like this one:
+The `query` is the filter to be used to retrieve the stored data which has been stored after the API call. It generally matches the parameters sent to the API.
+For example if we are fetching an entity by id, our SourceOfTruth class will look like this one:
 ```kotlin
-class PersonCache: SimpleRealmCache<Key, People>(People::class.java) {
+class PersonSourceOfTruth: SimpleRealmSourceOfTruth<Key, People>(People::class.java) {
     override fun query(key: Key): (query: RealmQuery<People>) -> Unit = {
         it.equalTo("id", key.id)
     }
 }
 ```
-Optionally you can provide a `storeInRealm` which implements a custom method to persist to the Realm cache.
+Optionally you can provide a `storeInRealm` which implements a custom method to persist to the Realm source of truth.
 
 ```kotlin
-class PersonCache: SimpleRealmCache<Key, People>(People::class.java) {
+class PersonCache: SimpleRealmSourceOfTruth<Key, People>(People::class.java) {
     override fun query(key: Key): (query: RealmQuery<People>) -> Unit = { it.equalTo("id", key.id) }
     override fun storeInRealm(key: Key, bgRealm: Realm, entity: People) { bgRealm.copyToRealmOrUpdate(entity) // Custom code }
     }
@@ -265,10 +265,10 @@ All responses coming from the store are based on StoreResponse classes. The subc
 #### Stream data
 
 The `stream` method does the following:
-1. Checks the cache looking for any cached data, if there is any, it is emitted immediately.
-2. If the `refresh` parameter is `true`, it calls the Fetcher for new data from the API and caches them. Then it will emit the new data. If cached data existed before the fetch, you will receive **two emissions**: one for the previously cached data and another one for the new data after the fetch has completed.
-3. If initially there was no data on the cache, it performs the API call. Then its result gets stored in the cache and emitted to the client.
-4. Stream keeps listening and emitting any update in the cached data.
+1. Checks the source of truth looking for any stored data, if there is any, it is emitted immediately.
+2. If the `refresh` parameter is `true`, it calls the Fetcher for new data from the API and stores them. Then it will emit the new data. If stored data existed before the fetch, you will receive **two emissions**: one for the previously stored data and another one for the new data after the fetch has completed.
+3. If initially there was no data on the source of truth, it performs the API call. Then its result gets stored in the source of truth and emitted to the client.
+4. Stream keeps listening and emitting any update in the stored data.
 
 For example, from your ViewModel
 ```kotlin
@@ -288,7 +288,7 @@ You can also add `.map { it.requireData() }` in case you want the errors to be t
 
 #### Making an API call directly
 
-The `fetch` method makes an API call, caches the result and then it returns the new data. It does not check the cache for any previously existing data.
+The `fetch` method makes an API call, stores the result and then it returns the new data. It does not check the source of truth for any previously existing data.
 
 ```kotlin
 viewModelScope.launch {
@@ -297,9 +297,9 @@ viewModelScope.launch {
 }
 ```
 
-#### Getting the data from cache (no API)
+#### Getting the data from source of truth (no API)
 
-The `get` method gets the data from the cache, usually used in places when you know the data should be already cached. If there is no data in the cache, it automatically tries to fetch the data from API. `get` is a suspend function and it does not keep listening for changes, it returns the current status of cached data.
+The `get` method gets the data from the source of truth, usually used in places when you know the data should be already stored. If there is no data in the source of truth, it automatically tries to fetch the data from API. `get` is a suspend function and it does not keep listening for changes, it returns the current status of the stored data.
 
 ```kotlin
 viewModelScope.launch {
@@ -311,9 +311,9 @@ viewModelScope.launch {
 
 | method | feature |
 |--------|---------|
-| stream | Gets the data first from the cache, then from the API and listens for cache updates. It usually emits twice or more times (old and new data) |
-| fetch | Gets the data from the API and caches it. |
-| get | Gets the data from the cache. It does not listen for updates. |
+| stream | Gets the data first from the source of truth, then from the API and listens for source of truth updates. It usually emits twice or more times (old and new data) |
+| fetch | Gets the data from the API and stores it. |
+| get | Gets the data from the source of truth. It does not listen for updates. |
 
 #### Error handling
 You can detect errors in different ways:
@@ -339,12 +339,12 @@ viewModelScope.launch {
 
 ### Staleness Settings
 
-When we are calling the API to fetch a list of resources, we usually perform a GET call and the returned items are stored in the cache. If there are entities that were deleted in the backend, the API response will not contain them anymore, and the cache will still have them stored -and they will appear in local cache queries-. In order to sync the data and delete the cache items properly we have different strategies.
+When we are calling the API to fetch a list of resources, we usually perform a GET call and the returned items are stored in the source of truth. If there are entities that were deleted in the backend, the API response will not contain them anymore, and the source of truth will still have them stored -and they will appear in local queries-. In order to sync the data and delete the source of truth items properly we have different strategies.
 
-The staleness strategy is configured in the Cache. For example using Room:
+The staleness strategy is configured in the SourceOfTruth. For example using Room:
 ```kotlin
 @Dao
-abstract class PeopleCache: RoomListCache<NoKey, People>("people", SampleApplication.roomDb,
+abstract class PeopleSourceOfTruth: RoomListSourceOfTruth<NoKey, People>("people", SampleApplication.roomDb,
     stalenessPolicy = DeleteAllNotInFetchStalenessPolicy { people -> people.id } // Example of staleness settings.
 ) {
     override fun query(key: NoKey): String = ""
@@ -354,14 +354,14 @@ abstract class PeopleCache: RoomListCache<NoKey, People>("people", SampleApplica
 | stalenessPolicy					| description |
 |------------------------------------|-------------|
 | `DoNotExpireStalenessPolicy`		 | Avoids calling any DELETE on the database when new data arrives. No data is deleted, only updates are performed. |
-| `DeleteAllStalenessPolicy`		   | Calls DELETE doing a query using the query method of the Cache. |
+| `DeleteAllStalenessPolicy`		   | Calls DELETE doing a query using the query method of the SourceOfTruth. |
 | `DeleteAllNotInFetchStalenessPolicy` | Calls DELETE on all database rows which are not in the API response. You should provide a function which indicates a way to compare the old and new items, usually a primary key. | 
 
 ### Avoiding multiple repeated calls
 
 It is very common in big applications to request the same information from many different locations. In order to avoid doing repeated API calls the `Store` implements a `RateLimiter`.
 
-The limiter will allow the first call, and then any subsequent call inside a time span provided will not be executed. If the second call happens before the completion of the first call, that second call will wait for the result of the first one and it will return the same value for both. If the second call happens after the first call has arrived, a cached result will be returned instead until the time provided in the limiter has elapsed. Once the time has elapsed the store is able to call the API again.
+The limiter will allow the first call, and then any subsequent call inside a time span provided will not be executed. If the second call happens before the completion of the first call, that second call will wait for the result of the first one and it will return the same value for both. If the second call happens after the first call has arrived, a stored result will be returned instead until the time provided in the limiter has elapsed. Once the time has elapsed the store is able to call the API again.
 
 It is available a `LimitedFetcher` and provides a way to define a `rateLimitPolicy`:
 
@@ -372,7 +372,7 @@ fun providePostsStore(): SimpleStoreImpl<NoKey, List<Post>> {
             fetch = { FetcherResult.Data(provideService().getPosts()) },
             rateLimitPolicy = RateLimitPolicy(10, TimeUnit.SECONDS)
         ),
-        cache = SampleApplication.roomDb.postsCache()
+        sourceOfTruth = SampleApplication.roomDb.postsSourceOfTruth()
     ).build() as SimpleStoreImpl
 }
 ```
@@ -452,7 +452,8 @@ val throttlingState = viewModel.throttlingState.collectAsState()
 ### CRUD Stores
 
 A CrudStore is a Store which also implements create, update and delete methods.
-These operations are reflected in API calls (POST, PUT and DELETE REST calls for example), and the new/updated/deleted entities are also created/updated/deleted from the cache when the API call succeeds.
+These operations are reflected in API calls (POST, PUT and DELETE REST calls for example), and the new/updated/deleted entities are also created/updated/deleted from the source of truth when the API call succeeds.
+This is a very simple implementation and it does not consider yet making changes on a working thread.
 
 Example of definition:
 
@@ -467,7 +468,7 @@ fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
             update = { key, post -> FetcherResult.Data(provideService().updatePost(key.id, post)) },
             delete = { key, post -> provideService().deletePost(key.id); true },
         ),
-        cache = SampleApplication.roomDb.postCache(),
+        sourceOfTruth = SampleApplication.roomDb.postSourceOfTruth(),
         keyBuilder = { entity -> PostKey(entity.id) }
     ).build() as SimpleCrudStoreImpl
 }
@@ -483,7 +484,7 @@ Some details:
 
 - `PostKey` is the key used to identify each request, in this example the id is used to distinguish between different entities.
 - `providePostsCRUDStore` creates the CRUD Store, we provide one method for each CRUD operation: `create`, `update`, `delete`, and `fetch`. We also need to provide a `keyBuilder` function used to generate a new key for the new stored data.
-- The cache in this case is a Room Dao with a query using the key provided.
+- The source of truth in this case is a Room Dao with a query using the key provided.
 
 The usage is simple:
 
@@ -497,7 +498,7 @@ fun create() {
   }
 }
 ```
-And similar for `update` and `delete`. The cache is updated as soon the response is received.
+And similar for `update` and `delete`. The source of truth is updated as soon the response is received.
 In general this CRUD requests assumes an API expecting POST and PUT operations which returns the created/updated object with the generated/edited id as a result.
 
 ### Error handling
@@ -513,12 +514,14 @@ when (response) {
 ## Contributions
 
 Any suggestion and bug report is welcome, you can create issues in the github page.
-Feel free to fork it and send a pull request in case you want to make fixes or add any additional feature or change.
+Feel free to fork it and/or send a pull request in case you want to make fixes or add any additional feature or change. Please create an issue in github so we can discuss the idea and collaborate.
 
 ## Roadmap
 
-- Add more testing coverage
-- Investigate automatic retries on error
-- Integration with ktor
-- Analyze making it available for KMM
-- Add an optional memory cache
+- Review namings.
+- Add testing coverage.
+- Analyze making it available for KMM.
+- Integration with ktor (fetcher).
+- Investigate automatic retries on error.
+- Improve CRUD solution, current one is naive, implement one with a working thread and a queue of updates.
+- Add an optional memory cache.

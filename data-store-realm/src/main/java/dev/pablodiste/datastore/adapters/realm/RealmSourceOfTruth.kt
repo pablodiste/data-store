@@ -1,20 +1,20 @@
 package dev.pablodiste.datastore.adapters.realm
 
-import dev.pablodiste.datastore.closable.ClosableCache
+import dev.pablodiste.datastore.closable.ClosableSourceOfTruth
 import io.realm.Realm
 import io.realm.RealmObject
 import io.realm.RealmQuery
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Database cache based on Realm.
- * K: Class used for a key, used by the cache to find entities. For example: TeamDataStore.Key(teamId)
+ * Database source of truth based on Realm.
+ * K: Class used for a key, used by the source of truth to find entities. For example: TeamDataStore.Key(teamId)
  * T: Class of the RealmObject to be stored. For example: Team : RealmObject
  */
-abstract class RealmCache<K: Any, T: RealmObject>(
+abstract class RealmSourceOfTruth<K: Any, T: RealmObject>(
     val klass: Class<T>,
     private val stalenessPolicy: dev.pablodiste.datastore.adapters.realm.StalenessPolicy<K, T> = dev.pablodiste.datastore.adapters.realm.DoNotExpireStalenessPolicy()
-    ): ClosableCache<K, T>() {
+    ): ClosableSourceOfTruth<K, T>() {
 
     abstract fun query(key: K): (query: RealmQuery<T>) -> Unit
 
@@ -59,21 +59,21 @@ abstract class RealmCache<K: Any, T: RealmObject>(
 }
 
 /**
- * Simple cache where the fetcher entity is the same as the entity stored in the cache.
- * Useful when we parse jsons over the same entities that are stored in the cache.
+ * Simple source of truth where the fetcher entity is the same as the entity stored in the source of truth.
+ * Useful when we parse jsons over the same entities that are stored in the source of truth.
  */
-abstract class SimpleRealmCache<K: Any, T: RealmObject>(
+abstract class SimpleRealmSourceOfTruth<K: Any, T: RealmObject>(
     klass: Class<T>,
     stalenessPolicy: dev.pablodiste.datastore.adapters.realm.StalenessPolicy<K, T> = dev.pablodiste.datastore.adapters.realm.DoNotExpireStalenessPolicy()
-): dev.pablodiste.datastore.adapters.realm.RealmCache<K, T>(klass, stalenessPolicy)
+): dev.pablodiste.datastore.adapters.realm.RealmSourceOfTruth<K, T>(klass, stalenessPolicy)
 
 /**
- * Database cache based on Realm, lists version
+ * Database source of truth based on Realm, lists version
  */
-abstract class RealmListCache<K: Any, T: RealmObject>(
+abstract class RealmListSourceOfTruth<K: Any, T: RealmObject>(
     val klass: Class<T>,
     private val stalenessPolicy: dev.pablodiste.datastore.adapters.realm.StalenessPolicy<K, T> = dev.pablodiste.datastore.adapters.realm.DoNotExpireStalenessPolicy()
-    ): ClosableCache<K, List<T>>() {
+    ): ClosableSourceOfTruth<K, List<T>>() {
 
     abstract fun query(key: K): (query: RealmQuery<T>) -> Unit
 
@@ -118,11 +118,11 @@ abstract class RealmListCache<K: Any, T: RealmObject>(
 
 
 /**
- * Simple cache where the fetcher entity is the same as the entity stored in the cache. (list version)
- * Useful when we parse jsons over the same entities that are stored in the cache.
+ * Simple source of truth where the fetcher entity is the same as the entity stored in the source of truth. (list version)
+ * Useful when we parse jsons over the same entities that are stored in the source of truth.
  */
-abstract class SimpleRealmListCache<K: Any, T: RealmObject>(
+abstract class SimpleRealmListSourceOfTruth<K: Any, T: RealmObject>(
     klass: Class<T>,
     stalenessPolicy: dev.pablodiste.datastore.adapters.realm.StalenessPolicy<K, T> = dev.pablodiste.datastore.adapters.realm.DoNotExpireStalenessPolicy()
-): dev.pablodiste.datastore.adapters.realm.RealmListCache<K, T>(klass, stalenessPolicy)
+): dev.pablodiste.datastore.adapters.realm.RealmListSourceOfTruth<K, T>(klass, stalenessPolicy)
 

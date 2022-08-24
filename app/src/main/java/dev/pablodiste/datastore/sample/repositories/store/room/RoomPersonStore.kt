@@ -3,8 +3,7 @@ package dev.pablodiste.datastore.sample.repositories.store.room
 import androidx.room.Dao
 import dev.pablodiste.datastore.adapters.retrofit.RetrofitFetcher
 import dev.pablodiste.datastore.FetcherResult
-import dev.pablodiste.datastore.adapters.room.DeleteAllNotInFetchStalenessPolicy
-import dev.pablodiste.datastore.adapters.room.RoomCache
+import dev.pablodiste.datastore.adapters.room.RoomSourceOfTruth
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
 import dev.pablodiste.datastore.sample.SampleApplication
 import dev.pablodiste.datastore.sample.models.room.People
@@ -13,7 +12,7 @@ import dev.pablodiste.datastore.sample.network.RoomStarWarsService
 
 class RoomPersonStore: SimpleStoreImpl<RoomPersonStore.Key, People>(
     fetcher = PersonFetcher(),
-    cache = dev.pablodiste.datastore.sample.SampleApplication.roomDb.personCache()
+    sourceOfTruth = SampleApplication.roomDb.personSourceOfTruth()
 ) {
 
     data class Key(val id: String)
@@ -27,7 +26,7 @@ class RoomPersonStore: SimpleStoreImpl<RoomPersonStore.Key, People>(
     }
 
     @Dao
-    abstract class PersonCache: RoomCache<Key, People>("people", dev.pablodiste.datastore.sample.SampleApplication.roomDb) {
+    abstract class PersonSourceOfTruth: RoomSourceOfTruth<Key, People>("people", SampleApplication.roomDb) {
         override fun query(key: Key): String = "id = ${key.id}"
     }
 }

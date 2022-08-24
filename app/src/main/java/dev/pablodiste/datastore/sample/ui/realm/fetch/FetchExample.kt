@@ -20,7 +20,7 @@ fun FetchExample(viewModel: FetchExampleViewModel, openDrawer: () -> Unit) {
 fun FetchExamplePerson(viewModel: FetchExampleViewModel) {
     val uiState = viewModel.uiState.collectAsState()
     Column(modifier = Modifier.padding(10.dp)) {
-        Text(text = "This information is fetched from the API and then cached",
+        Text(text = "This information is fetched from the API and then stored in the source of truth",
              modifier = Modifier.padding(bottom = 10.dp))
         Text(text = "Name: ${uiState.value.name.orEmpty()}")
         Text(text = "Height: ${uiState.value.height.orEmpty()}")

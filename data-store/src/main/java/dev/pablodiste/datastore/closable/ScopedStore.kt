@@ -1,7 +1,7 @@
 package dev.pablodiste.datastore.closable
 
 import android.util.Log
-import dev.pablodiste.datastore.Cache
+import dev.pablodiste.datastore.SourceOfTruth
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.Mapper
 import dev.pablodiste.datastore.SameEntityMapper
@@ -13,9 +13,9 @@ import kotlin.coroutines.EmptyCoroutineContext
 
 open class ScopedStore<K: Any, I: Any, T: Any>(
     fetcher: Fetcher<K, I>,
-    private val cache: ClosableCache<K, T>,
+    private val sourceOfTruth: ClosableSourceOfTruth<K, T>,
     mapper: Mapper<I, T>
-): StoreImpl<K, I, T>(fetcher, cache, mapper) {
+): StoreImpl<K, I, T>(fetcher, sourceOfTruth, mapper) {
 
     fun autoClose(coroutineScope: CoroutineScope) {
         autoClose(coroutineScope.coroutineContext)
@@ -31,7 +31,7 @@ open class ScopedStore<K: Any, I: Any, T: Any>(
 
     fun close() {
         Log.d("ScopedStore", "Releasing resources")
-        cache.closeableResourceManager.close()
+        sourceOfTruth.closeableResourceManager.close()
     }
 }
 
@@ -49,7 +49,7 @@ fun <K: Any, I: Any, T: Any> CoroutineScope.launch(
     return launch(context, start, block)
 }
 
-abstract class ClosableCache<K: Any, T: Any>(val closeableResourceManager: CloseableResourceManager = CloseableResourceManager()): Cache<K, T>
+abstract class ClosableSourceOfTruth<K: Any, T: Any>(val closeableResourceManager: CloseableResourceManager = CloseableResourceManager()): SourceOfTruth<K, T>
 
 typealias CloseableResourceListener = () -> Unit
 
@@ -70,9 +70,9 @@ class CloseableResourceManager {
 }
 
 /**
- * Simple store where the parsed fetcher entity type is the same as the cached entity type.
+ * Simple store where the parsed fetcher entity type is the same as the source of truth entity type.
  * Useful when parsing json over the DB objects directly.
  */
 open class ScopedSimpleStoreImpl<K: Any, T: Any>(fetcher: Fetcher<K, T>,
-                                                 cache: ClosableCache<K, T>):
-    ScopedStore<K, T, T>(fetcher, cache, SameEntityMapper())
+                                                 sourceOfTruth: ClosableSourceOfTruth<K, T>):
+    ScopedStore<K, T, T>(fetcher, sourceOfTruth, SameEntityMapper())

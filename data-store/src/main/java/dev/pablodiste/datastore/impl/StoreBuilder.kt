@@ -4,7 +4,7 @@ import dev.pablodiste.datastore.*
 
 open class StoreBuilder<K: Any, I: Any, T: Any>(
     protected var fetcher: Fetcher<K, I>,
-    protected var cache: Cache<K, T>,
+    protected var sourceOfTruth: SourceOfTruth<K, T>,
     protected var mapper: Mapper<I, T>
 ) {
 
@@ -13,8 +13,8 @@ open class StoreBuilder<K: Any, I: Any, T: Any>(
         return this
     }
 
-    fun cache(cache: Cache<K, T>): StoreBuilder<K, I, T> {
-        this.cache = cache
+    fun sourceOfTruth(sourceOfTruth: SourceOfTruth<K, T>): StoreBuilder<K, I, T> {
+        this.sourceOfTruth = sourceOfTruth
         return this
     }
 
@@ -24,69 +24,69 @@ open class StoreBuilder<K: Any, I: Any, T: Any>(
     }
 
     open fun build(): Store<K, T> {
-        return StoreImpl(fetcher, cache, mapper)
+        return StoreImpl(fetcher, sourceOfTruth, mapper)
     }
 
     companion object {
         fun <K: Any, I: Any, T: Any> from(fetcher: Fetcher<K, I>,
-                                          cache: Cache<K, T>,
+                                          sourceOfTruth: SourceOfTruth<K, T>,
                                           mapper: Mapper<I, T>): StoreBuilder<K, I, T> =
-            StoreBuilder(fetcher, cache, mapper)
+            StoreBuilder(fetcher, sourceOfTruth, mapper)
     }
 }
 
 class SimpleStoreBuilder<K: Any, T: Any>(
     fetcher: Fetcher<K, T>,
-    cache: Cache<K, T>
-): StoreBuilder<K, T, T>(fetcher, cache, SameEntityMapper()) {
+    sourceOfTruth: SourceOfTruth<K, T>
+): StoreBuilder<K, T, T>(fetcher, sourceOfTruth, SameEntityMapper()) {
 
     override fun build(): Store<K, T> {
-        return SimpleStoreImpl(fetcher, cache)
+        return SimpleStoreImpl(fetcher, sourceOfTruth)
     }
 
     companion object {
-        fun <K: Any, T: Any> from(fetcher: Fetcher<K, T>, cache: Cache<K, T>): SimpleStoreBuilder<K, T> =
-            SimpleStoreBuilder(fetcher, cache)
+        fun <K: Any, T: Any> from(fetcher: Fetcher<K, T>, sourceOfTruth: SourceOfTruth<K, T>): SimpleStoreBuilder<K, T> =
+            SimpleStoreBuilder(fetcher, sourceOfTruth)
     }
 }
 
 open class CrudStoreBuilder<K: Any, I: Any, T: Any>(
     protected val crudFetcher: CrudFetcher<K, I>,
-    cache: Cache<K, T>,
+    sourceOfTruth: SourceOfTruth<K, T>,
     mapper: Mapper<I, T>,
     protected val keyBuilder: (T) -> K
-): StoreBuilder<K, I, T>(crudFetcher, cache, mapper) {
+): StoreBuilder<K, I, T>(crudFetcher, sourceOfTruth, mapper) {
 
     override fun build(): Store<K, T> {
-        return CrudStoreImpl(crudFetcher, cache, mapper, keyBuilder)
+        return CrudStoreImpl(crudFetcher, sourceOfTruth, mapper, keyBuilder)
     }
 
     companion object {
         fun <K: Any, I: Any, T: Any> from(
             crudFetcher: CrudFetcher<K, I>,
-            cache: Cache<K, T>,
+            sourceOfTruth: SourceOfTruth<K, T>,
             mapper: Mapper<I, T>,
             keyBuilder: (T) -> K
         ): CrudStoreBuilder<K, I, T> =
-            CrudStoreBuilder(crudFetcher, cache, mapper, keyBuilder)
+            CrudStoreBuilder(crudFetcher, sourceOfTruth, mapper, keyBuilder)
     }
 }
 
 class SimpleCrudStoreBuilder<K: Any, T: Any>(
     fetcher: CrudFetcher<K, T>,
-    cache: Cache<K, T>,
+    sourceOfTruth: SourceOfTruth<K, T>,
     keyBuilder: (T) -> K
-): CrudStoreBuilder<K, T, T>(fetcher, cache, SameEntityMapper(), keyBuilder) {
+): CrudStoreBuilder<K, T, T>(fetcher, sourceOfTruth, SameEntityMapper(), keyBuilder) {
 
     override fun build(): Store<K, T> {
-        return SimpleCrudStoreImpl(crudFetcher, cache, keyBuilder)
+        return SimpleCrudStoreImpl(crudFetcher, sourceOfTruth, keyBuilder)
     }
 
     companion object {
         fun <K: Any, T: Any> from(
             fetcher: CrudFetcher<K, T>,
-            cache: Cache<K, T>,
+            sourceOfTruth: SourceOfTruth<K, T>,
             keyBuilder: (T) -> K
-        ): SimpleCrudStoreBuilder<K, T> = SimpleCrudStoreBuilder(fetcher, cache, keyBuilder)
+        ): SimpleCrudStoreBuilder<K, T> = SimpleCrudStoreBuilder(fetcher, sourceOfTruth, keyBuilder)
     }
 }

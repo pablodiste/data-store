@@ -1,16 +1,16 @@
 package dev.pablodiste.datastore.adapters.room
 
 interface StalenessPolicy<K: Any, T: Any> {
-    suspend fun removeStaleEntity(cache: RoomCache<K, T>, key: K, entity: T)
-    suspend fun removeStaleList(cache: RoomListCache<K, T>, key: K, entity: List<T>)
+    suspend fun removeStaleEntity(sourceOfTruth: RoomSourceOfTruth<K, T>, key: K, entity: T)
+    suspend fun removeStaleList(sourceOfTruth: RoomListSourceOfTruth<K, T>, key: K, entity: List<T>)
 }
 
 /**
  * This staleness policy does not delete any entity.
  */
 class DoNotExpireStalenessPolicy<K: Any, T: Any>: StalenessPolicy<K, T> {
-    override suspend fun removeStaleList(cache: RoomListCache<K, T>, key: K, entity: List<T>) {}
-    override suspend fun removeStaleEntity(cache: RoomCache<K, T>, key: K, entity: T) {}
+    override suspend fun removeStaleList(sourceOfTruth: RoomListSourceOfTruth<K, T>, key: K, entity: List<T>) {}
+    override suspend fun removeStaleEntity(sourceOfTruth: RoomSourceOfTruth<K, T>, key: K, entity: T) {}
 }
 
 /**
@@ -18,12 +18,12 @@ class DoNotExpireStalenessPolicy<K: Any, T: Any>: StalenessPolicy<K, T> {
  */
 class DeleteAllStalenessPolicy<K: Any, T: Any>: StalenessPolicy<K, T> {
 
-    override suspend fun removeStaleEntity(cache: RoomCache<K, T>, key: K, entity: T) {
-        cache.delete(key)
+    override suspend fun removeStaleEntity(sourceOfTruth: RoomSourceOfTruth<K, T>, key: K, entity: T) {
+        sourceOfTruth.delete(key)
     }
 
-    override suspend fun removeStaleList(cache: RoomListCache<K, T>, key: K, entity: List<T>) {
-        cache.delete(key)
+    override suspend fun removeStaleList(sourceOfTruth: RoomListSourceOfTruth<K, T>, key: K, entity: List<T>) {
+        sourceOfTruth.delete(key)
     }
 }
 
@@ -34,18 +34,18 @@ class DeleteAllStalenessPolicy<K: Any, T: Any>: StalenessPolicy<K, T> {
 class DeleteAllNotInFetchStalenessPolicy<K: Any, T: Any, PK: Any>(
     private val keyBuilder: ((T) -> PK)): StalenessPolicy<K, T> {
 
-    override suspend fun removeStaleEntity(cache: RoomCache<K, T>, key: K, entity: T) {
-        cache.delete(key)
+    override suspend fun removeStaleEntity(sourceOfTruth: RoomSourceOfTruth<K, T>, key: K, entity: T) {
+        sourceOfTruth.delete(key)
     }
 
-    override suspend fun removeStaleList(cache: RoomListCache<K, T>, key: K, entity: List<T>) {
+    override suspend fun removeStaleList(sourceOfTruth: RoomListSourceOfTruth<K, T>, key: K, entity: List<T>) {
         // Collects all keys from API call
         val inputKeys = entity.mapTo(HashSet()) { i -> keyBuilder(i) }
-        val cached = cache.get(key)
+        val cached = sourceOfTruth.get(key)
         cached.forEach { storedEntity ->
             // if the store contains an entity not in the API response, it gets deleted
             if (!inputKeys.contains(keyBuilder(storedEntity))) {
-                cache.delete(storedEntity)
+                sourceOfTruth.delete(storedEntity)
             }
         }
     }

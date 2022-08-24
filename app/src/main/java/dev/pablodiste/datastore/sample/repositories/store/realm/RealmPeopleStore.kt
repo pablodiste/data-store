@@ -12,7 +12,7 @@ import io.realm.RealmQuery
 
 class RealmPeopleStore: NoKeyScopedSimpleStore<List<People>>(
     fetcher = PeopleFetcher(),
-    cache = PeopleCache()
+    sourceOfTruth = PeopleSourceOfTruth()
 ) {
 
     class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
@@ -23,7 +23,7 @@ class RealmPeopleStore: NoKeyScopedSimpleStore<List<People>>(
         }
     }
 
-    class PeopleCache: dev.pablodiste.datastore.adapters.realm.SimpleRealmListCache<NoKey, People>(People::class.java) {
+    class PeopleSourceOfTruth: dev.pablodiste.datastore.adapters.realm.SimpleRealmListSourceOfTruth<NoKey, People>(People::class.java) {
         override fun query(key: NoKey): (query: RealmQuery<People>) -> Unit = { }
     }
 

@@ -3,7 +3,7 @@ package dev.pablodiste.datastore.adapters.room
 import androidx.room.*
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQuery
-import dev.pablodiste.datastore.Cache
+import dev.pablodiste.datastore.SourceOfTruth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -17,11 +17,11 @@ import kotlinx.coroutines.withContext
 /**
  * Database cache based on Room (DAO), list version
  */
-abstract class RoomCache<K: Any, T: Any>(
+abstract class RoomSourceOfTruth<K: Any, T: Any>(
     private val tableName: String,
     private val database: RoomDatabase,
     private val stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
-): Cache<K, T> {
+): SourceOfTruth<K, T> {
 
     override suspend fun get(key: K): T {
         val query = baseSelectQuery(key)
@@ -115,9 +115,9 @@ abstract class RoomCache<K: Any, T: Any>(
 }
 
 /*
-abstract class SimpleRoomCache<K: Any, T: Any>(
+abstract class SimpleRoomSourceOfTruth<K: Any, T: Any>(
     private val tableName: String,
     private val database: RoomDatabase,
     stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
-): RoomCache<K, T>(tableName, database, stalenessPolicy)
+): RoomSourceOfTruth<K, T>(tableName, database, stalenessPolicy)
  */

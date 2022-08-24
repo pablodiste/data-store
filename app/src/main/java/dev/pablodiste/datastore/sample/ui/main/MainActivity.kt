@@ -26,6 +26,8 @@ import dev.pablodiste.datastore.sample.ui.room.concurrent.RoomConcurrentExample
 import dev.pablodiste.datastore.sample.ui.room.concurrent.RoomConcurrentExampleViewModel
 import dev.pablodiste.datastore.sample.ui.room.crud.RoomCrudExample
 import dev.pablodiste.datastore.sample.ui.room.crud.RoomCrudExampleViewModel
+import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamDTOExample
+import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamDTOExampleViewModel
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamExample
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamExampleViewModel
 import kotlinx.coroutines.launch
@@ -103,6 +105,10 @@ fun AppMainScreen() {
                     val viewModel = viewModel<RoomStreamExampleViewModel>()
                     RoomStreamExample(viewModel, openDrawer = { openDrawer() })
                 }
+                composable(DrawerScreens.RoomStreamDTOExample.route) {
+                    val viewModel = viewModel<RoomStreamDTOExampleViewModel>()
+                    RoomStreamDTOExample(viewModel, openDrawer = { openDrawer() })
+                }
                 composable(DrawerScreens.RealmFetchExample.route) {
                     val viewModel = viewModel<FetchExampleViewModel>()
                     FetchExample(viewModel, openDrawer = { openDrawer() })
@@ -142,6 +148,7 @@ sealed class DrawerScreens(val title: String, val route: String) {
     object RoomErrorExample : DrawerScreens("Error Handling Example (Room)", "room_error")
     object RoomConcurrentExample : DrawerScreens("Concurrent Example (Room)", "room_concurrent")
     object RoomCrudExample : DrawerScreens("Crud Example (Room)", "room_crud")
+    object RoomStreamDTOExample : DrawerScreens("Stream Example (DTO + Room)", "room_stream_dto")
     object RealmStreamExample : DrawerScreens("Stream Example (Realm)", "realm_stream")
     object RealmFetchExample : DrawerScreens("Fetch Example (Realm)", "realm_fetch")
     object RealmGetExample : DrawerScreens("Get Example (Realm)", "realm_get")
@@ -154,6 +161,7 @@ private val screens = listOf(
     DrawerScreens.RoomErrorExample,
     DrawerScreens.RoomConcurrentExample,
     DrawerScreens.RoomCrudExample,
+    DrawerScreens.RoomStreamDTOExample,
     DrawerScreens.RealmStreamExample,
     DrawerScreens.RealmFetchExample,
     DrawerScreens.RealmGetExample,

@@ -13,13 +13,13 @@ import dev.pablodiste.datastore.sample.network.RoomStarWarsService
 fun providePersonStore(): Store<RoomPersonStore.Key, People> =
     SimpleStoreBuilder.from(
         fetcher = LimitedFetcher.of { key -> FetcherResult.Data(provideStarWarsService().getPerson(key.id).apply { parseId() }) },
-        cache = SampleApplication.roomDb.personCache()
+        sourceOfTruth = SampleApplication.roomDb.personSourceOfTruth()
     ).build()
 
 fun providePeopleStore(): Store<NoKey, List<People>> =
     SimpleStoreBuilder.from(
         fetcher = LimitedFetcher.of { key -> FetcherResult.Data(provideStarWarsService().getPeople().results) },
-        cache = SampleApplication.roomDb.peopleCache()
+        sourceOfTruth = SampleApplication.roomDb.peopleSourceOfTruth()
     ).build()
 
 private fun provideStarWarsService() = RetrofitManager.createService(RoomStarWarsService::class.java)
