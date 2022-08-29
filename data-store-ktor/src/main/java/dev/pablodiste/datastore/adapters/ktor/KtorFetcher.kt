@@ -33,13 +33,12 @@ abstract class KtorFetcher<K: Any, I: Any, S: Any>(
     override suspend fun fetch(key: K): FetcherResult<I> = fetch(key, service)
 
     companion object {
-        fun <K: Any, I: Any, S: Any> of(
-            serviceClass: Class<S>,
+        inline fun <K: Any, I: Any, reified S: Any> of(
             serviceProvider: FetcherServiceProvider,
             rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS),
-            fetch: suspend (K, S) -> FetcherResult<I>,
+            noinline fetch: suspend (K, S) -> FetcherResult<I>,
         ): Fetcher<K, I> {
-            return object: KtorFetcher<K, I, S>(serviceClass, serviceProvider, rateLimitPolicy) {
+            return object: KtorFetcher<K, I, S>(S::class.java, serviceProvider, rateLimitPolicy) {
                 override suspend fun fetch(key: K, service: S): FetcherResult<I> = fetch(key, service)
             }
         }

@@ -32,9 +32,7 @@ private fun provideStarWarsService() = RetrofitManager.createService(RoomStarWar
 
 fun provideStarshipStoreKtor(): Store<NoKey, List<Starship>> =
     StoreBuilder.from(
-        fetcher = KtorFetcher.of(KtorStarWarsService::class.java, KtorManager) { key, service ->
-            FetcherResult.Data(service.getStarships().results)
-        },
+        fetcher = KtorFetcher.of(KtorManager) { key, service: KtorStarWarsService -> FetcherResult.Data(service.getStarships().results) },
         sourceOfTruth = SampleApplication.roomDb.starshipSourceOfTruth(),
         mapper = StarshipMapper()
     ).build()
