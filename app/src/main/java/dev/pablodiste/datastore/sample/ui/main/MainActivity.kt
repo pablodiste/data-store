@@ -148,7 +148,7 @@ sealed class DrawerScreens(val title: String, val route: String) {
     object RoomErrorExample : DrawerScreens("Error Handling Example (Room)", "room_error")
     object RoomConcurrentExample : DrawerScreens("Concurrent Example (Room)", "room_concurrent")
     object RoomCrudExample : DrawerScreens("Crud Example (Room)", "room_crud")
-    object RoomStreamDTOExample : DrawerScreens("Stream Example (DTO + Room)", "room_stream_dto")
+    object RoomStreamDTOExample : DrawerScreens("Stream Example (DTO + Room + Ktor)", "room_stream_dto")
     object RealmStreamExample : DrawerScreens("Stream Example (Realm)", "realm_stream")
     object RealmFetchExample : DrawerScreens("Fetch Example (Realm)", "realm_fetch")
     object RealmGetExample : DrawerScreens("Get Example (Realm)", "realm_get")

@@ -19,8 +19,7 @@ interface RetrofitServiceProvider {
 abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
     serviceClass: Class<S>,
     serviceProvider: RetrofitServiceProvider,
-    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS)
-    )
+    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS))
     : LimitedFetcher<K, I>(rateLimitPolicy) {
 
     init {
@@ -34,13 +33,12 @@ abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
     override suspend fun fetch(key: K): FetcherResult<I> = fetch(key, service)
 
     companion object {
-        fun <K: Any, I: Any, S: Any> of(
-            serviceClass: Class<S>,
+        inline fun <K: Any, I: Any, reified S: Any> of(
             serviceProvider: RetrofitServiceProvider,
-            fetch: suspend (K, S) -> FetcherResult<I>,
-            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS)
+            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS),
+            noinline fetch: suspend (K, S) -> FetcherResult<I>,
         ): Fetcher<K, I> {
-            return object: RetrofitFetcher<K, I, S>(serviceClass, serviceProvider, rateLimitPolicy) {
+            return object: RetrofitFetcher<K, I, S>(S::class.java, serviceProvider, rateLimitPolicy) {
                 override suspend fun fetch(key: K, service: S): FetcherResult<I> = fetch(key, service)
             }
         }
