@@ -1,13 +1,7 @@
 package dev.pablodiste.datastore.sample.network
 
 import android.util.Log
-import dev.pablodiste.datastore.Fetcher
-import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.FetcherServiceProvider
-import dev.pablodiste.datastore.StoreConfig
-import dev.pablodiste.datastore.adapters.retrofit.RetrofitServiceProvider
-import dev.pablodiste.datastore.impl.LimitedFetcher
-import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import io.ktor.client.*
 import io.ktor.client.engine.android.*
 import io.ktor.client.plugins.*
@@ -17,8 +11,6 @@ import io.ktor.client.plugins.observer.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.gson.*
-import retrofit2.HttpException
-import java.util.concurrent.TimeUnit
 
 private const val TIME_OUT = 60_000
 

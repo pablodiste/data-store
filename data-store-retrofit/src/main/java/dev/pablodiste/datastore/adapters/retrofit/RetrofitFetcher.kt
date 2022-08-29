@@ -3,22 +3,19 @@ package dev.pablodiste.datastore.adapters.retrofit
 import dev.pablodiste.datastore.CrudFetcher
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
+import dev.pablodiste.datastore.FetcherServiceProvider
 import dev.pablodiste.datastore.StoreConfig.throttlingDetectedExceptions
 import dev.pablodiste.datastore.impl.LimitedFetcher
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import retrofit2.HttpException
 import java.util.concurrent.TimeUnit
 
-interface RetrofitServiceProvider {
-    fun <T> createService(service: Class<T>): T
-}
-
 /**
  * Implements a retrofit service call, K = key, I: entity DTO class, S: Retrofit service class
  */
 abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
     serviceClass: Class<S>,
-    serviceProvider: RetrofitServiceProvider,
+    serviceProvider: FetcherServiceProvider,
     override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS))
     : LimitedFetcher<K, I>(rateLimitPolicy) {
 
@@ -34,7 +31,7 @@ abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
 
     companion object {
         inline fun <K: Any, I: Any, reified S: Any> of(
-            serviceProvider: RetrofitServiceProvider,
+            serviceProvider: FetcherServiceProvider,
             rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS),
             noinline fetch: suspend (K, S) -> FetcherResult<I>,
         ): Fetcher<K, I> {
@@ -52,7 +49,7 @@ abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
  */
 abstract class RetrofitCrudFetcher<K: Any, I: Any, S: Any>(
     serviceClass: Class<S>,
-    serviceProvider: RetrofitServiceProvider,
+    serviceProvider: FetcherServiceProvider,
     override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS)
 ): RetrofitFetcher<K, I, S>(serviceClass, serviceProvider, rateLimitPolicy), CrudFetcher<K, I> {
 

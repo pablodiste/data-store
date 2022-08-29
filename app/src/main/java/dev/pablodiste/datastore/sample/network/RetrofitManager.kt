@@ -2,12 +2,12 @@ package dev.pablodiste.datastore.sample.network
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import dev.pablodiste.datastore.adapters.retrofit.RetrofitServiceProvider
+import dev.pablodiste.datastore.FetcherServiceProvider
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-object RetrofitManager : RetrofitServiceProvider {
+object RetrofitManager : FetcherServiceProvider {
 
     private val retrofitSW: Retrofit
     private val retrofitJP: Retrofit
