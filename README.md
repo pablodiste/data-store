@@ -42,7 +42,7 @@ You can see the features working by cloning this repository and running the `app
 - Handles caching of fetched data automatically.
 - Allows listening to changes on the source of truth and making queries.
 - It is built on coroutines.
-- Allows the integration of different fetcher sources and libraries.
+- Allows the integration of different fetcher sources and libraries (Retrofit, Ktor).
 - Includes support for source of truth based on Room and Realm libraries but you can plug in other ones too.
 - Allows configuration of custom database queries (like DAOs)
 - Allows per-request source of truth expiration configuration.
@@ -65,6 +65,7 @@ Plugins for integrating DataStore with common libraries, you only need to includ
 implementation("dev.pablodiste.datastore:datastore-room:0.1.0")
 implementation("dev.pablodiste.datastore:datastore-realm:0.1.0")
 implementation("dev.pablodiste.datastore:datastore-retrofit:0.1.0")
+implementation("dev.pablodiste.datastore:datastore-ktor:0.1.0")
 ```
 
 ### 1. Defining your data classes
@@ -125,27 +126,72 @@ This key should be referenced in the generic parameter K of the store definition
 
 ### 4. Implement the Fetcher
 
-The fetcher fetches data from an API and returns a FetcherResults.
+The fetcher fetches data from an API and returns a FetcherResults. You can provide a fetcher to the store this way:
 ```kotlin
-LimitedFetcher.of({ key ->
-    FetcherResult.Data(provideStarWarsService().getPerson(key.id).apply { parseId() })
-})
+LimitedFetcher.of { key -> FetcherResult.Data(provideStarWarsService().getPerson(key.id)) }
 ```
-In this example `provideStarWarsService()` provides the retrofit service already configured.
+In this example `provideStarWarsService()` provides the API service which makes the call to the server.
 
-There is also a useful subclass if you want to build Retrofit services using a `RetrofitServiceProvider` (here `RetrofitManager`).
+We have available a couple of helper integrations to most common libraries too.
+The advantage of using these helpers is not only less boilerplate code but also they handle the specific library errors.
+
+#### Retrofit Fetcher
+
+Including the retrofit integration, you can use the following code to create a Retrofit fetcher.
+
+```kotlin
+RetrofitFetcher.of(RetrofitManager) { key, service: RoomStarWarsService ->
+    FetcherResult.Data(service.getStarships().results)
+}
+```
+
+Here `RetrofitManager` implements `FetcherServiceProvider` interface including a method used to create a Retrofit service. You can find more details in the sample application source code.
+
+```kotlin
+object RetrofitManager : FetcherServiceProvider {
+
+    private val retrofit: Retrofit
+    // Setup retrofit instance...
+    
+    override fun <T> createService(service: Class<T>): T {
+        retrofit.create(service)
+    }
+}
+```
+
+There is also a helper class you can use if you do not want to build Retrofit services using the functional approach.
+
 ```kotlin
 class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
     override suspend fun fetch(key: NoKey, service: StarWarsService): FetcherResult<List<People>> {
         val people = service.getPeople()
-        // Make any changes to the entities before caching them
         return FetcherResult.Data(people.results)
     }
 }
 ```
-You can also use other libraries to fetch data, you just need to make the call in the fetch function or override and return the `FetcherResult`.
-- `RetrofitManager` is a `RetrofitServiceProvider` implementation that manages the creation of the retrofit service.
-- `StarWarsService` is a Retrofit service definition class.
+
+- As we mentioned `RetrofitManager` is a `FetcherServiceProvider` implementation that manages the creation of the retrofit service.
+- `StarWarsService` is a Retrofit service definition interface.
+
+#### Ktor Fetcher
+
+Similar to the Retrofit integration you can use Ktor as HTTP client.
+
+```kotlin
+KtorFetcher.of(KtorManager) { key, service: KtorStarWarsService ->
+    FetcherResult.Data(service.getStarships().results)
+}
+```
+
+It works the same way as Retrofit, please check the sample project for the implementation details.
+
+#### Other fetcher libraries
+
+You can also use other libraries or provide your own code to fetch data, you just need to make the call in the fetch function and return a `FetcherResult`.
+
+```kotlin
+LimitedFetcher.of { key -> FetcherResult.Data(provideAPIService().getPerson(key.id)) }
+```
 
 ### 5. Implement the Source of Truth
 
@@ -519,10 +565,9 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
 ## Roadmap
 
 - Add testing coverage.
-- Integration with ktor (fetcher).
+- In-memory source of truth.
+- Improve CRUD solution, current one is naive, implement one with a working thread and a queue of updates.
 - Investigate automatic retries on error.
 - Helpers for pagination.
-- In-memory source of truth.
 - Analyze making it available for KMM.
-- Improve CRUD solution, current one is naive, implement one with a working thread and a queue of updates.
 - Add an optional memory cache.
