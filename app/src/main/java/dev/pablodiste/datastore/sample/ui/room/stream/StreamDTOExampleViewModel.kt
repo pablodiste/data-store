@@ -6,12 +6,13 @@ import androidx.lifecycle.viewModelScope
 import dev.pablodiste.datastore.impl.NoKey
 import dev.pablodiste.datastore.sample.models.room.Starship
 import dev.pablodiste.datastore.sample.repositories.store.room.provideStarshipStore
+import dev.pablodiste.datastore.sample.repositories.store.room.provideStarshipStoreKtor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class RoomStreamDTOExampleViewModel : ViewModel() {
 
-    private val starshipStore = provideStarshipStore()
+    private val starshipStore = provideStarshipStoreKtor()
     val uiState = MutableStateFlow<List<Starship>>(listOf())
 
     init {

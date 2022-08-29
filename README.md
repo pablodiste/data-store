@@ -518,10 +518,11 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
 
 ## Roadmap
 
-- Review namings.
 - Add testing coverage.
-- Analyze making it available for KMM.
 - Integration with ktor (fetcher).
 - Investigate automatic retries on error.
+- Helpers for pagination.
+- In-memory source of truth.
+- Analyze making it available for KMM.
 - Improve CRUD solution, current one is naive, implement one with a working thread and a queue of updates.
 - Add an optional memory cache.

@@ -21,3 +21,7 @@ interface Fetcher<K: Any, I: Any> {
     val rateLimitPolicy: RateLimitPolicy
     suspend fun fetch(key: K): FetcherResult<I>
 }
+
+interface FetcherServiceProvider {
+    fun <T> createService(service: Class<T>): T
+}
