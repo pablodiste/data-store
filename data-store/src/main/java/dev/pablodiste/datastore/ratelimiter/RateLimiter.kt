@@ -37,12 +37,17 @@ class RateLimiter<I: Any>(timeout: Int, timeUnit: TimeUnit) {
         return false
     }
 
+    fun onRequest() {
+        completed = false
+    }
+
     fun onResult(result: FetcherResult<I>) {
         _onCompletionFlow.tryEmit(result)
+        completed = true
     }
 
     private fun nowTimestamp(): Long {
-        return SystemClock.uptimeMillis()
+        return System.currentTimeMillis()
     }
 
 }

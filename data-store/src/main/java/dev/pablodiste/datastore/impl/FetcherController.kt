@@ -41,6 +41,7 @@ class FetcherController<K: Any, I: Any>(
             if (isThrottlingDisabled || !throttlingController.isThrottling()) {
                 try {
                     val response = withContext(Dispatchers.IO) {
+                        rateLimiter.onRequest()
                         return@withContext fetcher.fetch(key)
                     }
                     // We offer the result to any other duplicate request
