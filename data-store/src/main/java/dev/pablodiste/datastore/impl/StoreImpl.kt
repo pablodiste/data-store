@@ -34,6 +34,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
                             // We do not emit the fetched data because we are listening reactively for updates in the streamFlow.
                             // We only emit errors
                             if (fetched !is StoreResponse.Data) {
+                                Log.d(TAG, "Emitting from fetcher flow")
                                 emit(fetched)
                             } else {
                                 Log.d(TAG, "Received data from fetcher, not emitting it")
@@ -56,7 +57,8 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
      */
     private fun fetchAndStream(key: K): Flow<StoreResponse<T>> {
         return flow {
-            emit(fetch(key, forced = false))
+            fetch(key, forced = false)
+            // The result is not emitted directly but as a consequence of caching it.
             emitAll(streamFromSourceOfTruth(key))
         }
     }
@@ -76,7 +78,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
     private fun streamFromSourceOfTruth(key: K) = pausableSourceOfTruth.listenWithResponse(key)
 
     /**
-     * Fetches an entity from the fetcher. This call forces the API call.
+     * Fetches an entity from the fetcher and stores it in the source of truth.
      */
     override suspend fun fetch(key: K, forced: Boolean): StoreResponse<T> {
 
@@ -85,6 +87,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
         return withContext(Dispatchers.Main) {
             return@withContext when (fetcherResult) {
                 is FetcherResult.Data -> {
+                    Log.d(TAG, "Received Data")
                     if (fetcherResult.cacheable) {
                         val fetched = pausableSourceOfTruth.storeAfterFetch(key, mapper.toSourceOfTruthEntity(fetcherResult.value), true)
                         StoreResponse.Data(fetched, ResponseOrigin.FETCHER)
@@ -95,8 +98,13 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
                 }
                 is FetcherResult.NoData -> {
                     Log.d(TAG, "Received No Data")
+                    StoreResponse.NoData(fetcherResult.message)
+                    /*
+                    // Returning cached data when the call is not made
                     val sourceOfTruthResponse = pausableSourceOfTruth.get(key)
+                    Log.d(TAG, "Emitting cached data when there is no data")
                     StoreResponse.Data(sourceOfTruthResponse, ResponseOrigin.SOURCE_OF_TRUTH)
+                    */
                 }
                 is FetcherResult.Error -> StoreResponse.Error(fetcherResult.error)
             }

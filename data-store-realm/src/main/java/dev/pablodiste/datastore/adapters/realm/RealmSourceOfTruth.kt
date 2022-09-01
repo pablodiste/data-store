@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
  */
 abstract class RealmSourceOfTruth<K: Any, T: RealmObject>(
     val klass: Class<T>,
-    private val stalenessPolicy: dev.pablodiste.datastore.adapters.realm.StalenessPolicy<K, T> = dev.pablodiste.datastore.adapters.realm.DoNotExpireStalenessPolicy()
+    private val stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
     ): ClosableSourceOfTruth<K, T>() {
 
     abstract fun query(key: K): (query: RealmQuery<T>) -> Unit
@@ -21,20 +21,20 @@ abstract class RealmSourceOfTruth<K: Any, T: RealmObject>(
     open fun storeInRealm(key: K, bgRealm: Realm, entity: T) { bgRealm.copyToRealmOrUpdate(entity) }
 
     open fun deleteFromRealm(key: K, bgRealm: Realm) =
-        dev.pablodiste.datastore.adapters.realm.deleteAll(klass, bgRealm, query(key))
+        deleteAll(klass, bgRealm, query(key))
 
     override suspend fun get(key: K): T =
-        dev.pablodiste.datastore.adapters.realm.findFirst(klass, query(key), closeableResourceManager)
+        findFirst(klass, query(key), closeableResourceManager)
 
     override suspend fun exists(key: K): Boolean =
-        dev.pablodiste.datastore.adapters.realm.exists(klass, query(key))
+        exists(klass, query(key))
 
     override fun listen(key: K): Flow<T> =
-        dev.pablodiste.datastore.adapters.realm.findFirstAsFlow(klass, query(key))
+        findFirstAsFlow(klass, query(key))
 
     override suspend fun store(key: K, entity: T, removeStale: Boolean): T {
-        dev.pablodiste.datastore.adapters.realm.executeRealmTransactionAwait { bgRealm ->
-            if (removeStale && stalenessPolicy !is dev.pablodiste.datastore.adapters.realm.DoNotExpireStalenessPolicy) removeStale(
+        executeRealmTransactionAwait { bgRealm ->
+            if (removeStale && stalenessPolicy !is DoNotExpireStalenessPolicy) removeStale(
                 bgRealm,
                 key,
                 entity
@@ -45,7 +45,7 @@ abstract class RealmSourceOfTruth<K: Any, T: RealmObject>(
     }
 
     override suspend fun delete(key: K): Boolean =
-        dev.pablodiste.datastore.adapters.realm.executeRealmTransactionAwait { bgRealm ->
+        executeRealmTransactionAwait { bgRealm ->
             deleteFromRealm(
                 key,
                 bgRealm
@@ -64,15 +64,15 @@ abstract class RealmSourceOfTruth<K: Any, T: RealmObject>(
  */
 abstract class SimpleRealmSourceOfTruth<K: Any, T: RealmObject>(
     klass: Class<T>,
-    stalenessPolicy: dev.pablodiste.datastore.adapters.realm.StalenessPolicy<K, T> = dev.pablodiste.datastore.adapters.realm.DoNotExpireStalenessPolicy()
-): dev.pablodiste.datastore.adapters.realm.RealmSourceOfTruth<K, T>(klass, stalenessPolicy)
+    stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
+): RealmSourceOfTruth<K, T>(klass, stalenessPolicy)
 
 /**
  * Database source of truth based on Realm, lists version
  */
 abstract class RealmListSourceOfTruth<K: Any, T: RealmObject>(
     val klass: Class<T>,
-    private val stalenessPolicy: dev.pablodiste.datastore.adapters.realm.StalenessPolicy<K, T> = dev.pablodiste.datastore.adapters.realm.DoNotExpireStalenessPolicy()
+    private val stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
     ): ClosableSourceOfTruth<K, List<T>>() {
 
     abstract fun query(key: K): (query: RealmQuery<T>) -> Unit
@@ -80,20 +80,20 @@ abstract class RealmListSourceOfTruth<K: Any, T: RealmObject>(
     open fun storeInRealm(key: K, bgRealm: Realm, entity: List<T>) { bgRealm.copyToRealmOrUpdate(entity) }
 
     open fun deleteFromRealm(key: K, bgRealm: Realm) =
-        dev.pablodiste.datastore.adapters.realm.deleteAll(klass, bgRealm, query(key))
+        deleteAll(klass, bgRealm, query(key))
 
     override suspend fun get(key: K): List<T> =
-        dev.pablodiste.datastore.adapters.realm.findAll(klass, query(key), closeableResourceManager)
+        findAll(klass, query(key), closeableResourceManager)
 
     override suspend fun exists(key: K): Boolean =
-        dev.pablodiste.datastore.adapters.realm.exists(klass, query(key))
+        exists(klass, query(key))
 
     override fun listen(key: K): Flow<List<T>> =
-        dev.pablodiste.datastore.adapters.realm.findAllAsFlow(klass, query(key))
+        findAllAsFlow(klass, query(key))
 
     override suspend fun store(key: K, entity: List<T>, removeStale: Boolean): List<T> {
-        dev.pablodiste.datastore.adapters.realm.executeRealmTransactionAwait { bgRealm ->
-            if (removeStale && stalenessPolicy !is dev.pablodiste.datastore.adapters.realm.DoNotExpireStalenessPolicy) removeStale(
+        executeRealmTransactionAwait { bgRealm ->
+            if (removeStale && stalenessPolicy !is DoNotExpireStalenessPolicy) removeStale(
                 bgRealm,
                 key,
                 entity
@@ -104,7 +104,7 @@ abstract class RealmListSourceOfTruth<K: Any, T: RealmObject>(
     }
 
     override suspend fun delete(key: K): Boolean =
-        dev.pablodiste.datastore.adapters.realm.executeRealmTransactionAwait { bgRealm ->
+        executeRealmTransactionAwait { bgRealm ->
             deleteFromRealm(
                 key,
                 bgRealm
@@ -123,6 +123,6 @@ abstract class RealmListSourceOfTruth<K: Any, T: RealmObject>(
  */
 abstract class SimpleRealmListSourceOfTruth<K: Any, T: RealmObject>(
     klass: Class<T>,
-    stalenessPolicy: dev.pablodiste.datastore.adapters.realm.StalenessPolicy<K, T> = dev.pablodiste.datastore.adapters.realm.DoNotExpireStalenessPolicy()
-): dev.pablodiste.datastore.adapters.realm.RealmListSourceOfTruth<K, T>(klass, stalenessPolicy)
+    stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
+): RealmListSourceOfTruth<K, T>(klass, stalenessPolicy)
 
