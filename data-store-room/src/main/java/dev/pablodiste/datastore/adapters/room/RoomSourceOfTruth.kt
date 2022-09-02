@@ -66,7 +66,7 @@ abstract class RoomSourceOfTruth<K: Any, T: Any>(
     override suspend fun store(key: K, entity: T, removeStale: Boolean): T {
         withContext(Dispatchers.IO) {
             database.withTransaction {
-                if (removeStale && stalenessPolicy !is DoNotExpireStalenessPolicy) removeStale(key, entity)
+                if (removeStale) stalenessPolicy.removeStaleEntity( this@RoomSourceOfTruth, key, entity)
                 upsert(entity)
             }
         }
@@ -98,8 +98,6 @@ abstract class RoomSourceOfTruth<K: Any, T: Any>(
 
     abstract fun query(key: K): String
 
-    private suspend fun removeStale(key: K, entity: T) = stalenessPolicy.removeStaleEntity( this, key, entity)
-
     @RawQuery
     protected abstract suspend fun getEntitySync(query: SupportSQLiteQuery): T?
 
@@ -112,12 +110,16 @@ abstract class RoomSourceOfTruth<K: Any, T: Any>(
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract fun upsert(entity: T)
 
+    @Update
+    abstract fun update(entity: T)
+
+    @Delete
+    abstract fun delete(entity: T)
 }
 
-/*
-abstract class SimpleRoomSourceOfTruth<K: Any, T: Any>(
-    private val tableName: String,
-    private val database: RoomDatabase,
-    stalenessPolicy: StalenessPolicy<K, T> = DoNotExpireStalenessPolicy()
-): RoomSourceOfTruth<K, T>(tableName, database, stalenessPolicy)
- */
+abstract class RoomListSourceOfTruth<K: Any, T: Any>(
+    tableName: String,
+    database: RoomDatabase,
+    stalenessPolicy: StalenessPolicy<K, List<T>> = DoNotExpireStalenessPolicy()
+): RoomSourceOfTruth<K, List<T>>(tableName, database, stalenessPolicy)
+

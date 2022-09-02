@@ -1,8 +1,8 @@
 package dev.pablodiste.datastore.sample.repositories.store.room
 
 import androidx.room.Dao
-import dev.pablodiste.datastore.adapters.retrofit.RetrofitFetcher
 import dev.pablodiste.datastore.FetcherResult
+import dev.pablodiste.datastore.adapters.retrofit.RetrofitFetcher
 import dev.pablodiste.datastore.adapters.room.DeleteAllNotInFetchStalenessPolicy
 import dev.pablodiste.datastore.adapters.room.RoomListSourceOfTruth
 import dev.pablodiste.datastore.impl.NoKey
