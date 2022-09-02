@@ -198,8 +198,8 @@ LimitedFetcher.of { key -> FetcherResult.Data(provideAPIService().getPerson(key.
 #### Using Room
 We have provided base DAOs for using with Room:
 
-- `RoomSourceOfTruth` stores individual objects.
-- `RoomListSourceOfTruth` stores a list of entities.
+- `RoomSourceOfTruth` stores individual objects. This type of source of truth is used, for example, when fetching data from APIs which return a single entity in the response.
+- `RoomListSourceOfTruth` stores a list of entities. This type of source of truth is used, for example, when fetching data from APIs which return a list of entities as a response.
 
 For example if we want to store a list of People we can do:
 ```kotlin
@@ -259,6 +259,22 @@ class PersonCache: RealmSourceOfTruth<Key, People>(People::class.java) {
     override fun storeInRealm(key: Key, bgRealm: Realm, entity: People) { bgRealm.copyToRealmOrUpdate(entity) } // Custom code
 }
 ```
+
+#### In-memory source of truth
+
+It is available an implementation of the source of truth which stores the data in-memory. The data is not persisted to disk, it will not be available after restarting the app. It is useful for storing temporary or short lived information.
+
+```kotlin
+    data class Key(val cid: Int)
+    data class Entity(val id: Int, val cid: Int, val name: String)
+
+    class InMemoryEntityListSOT: InMemoryListSourceOfTruth<Key, Entity>() {
+        override fun predicate(key: Key): (key: Key, value: Entity) -> Boolean = { key, value -> value.cid == key.cid }
+    }
+```
+
+This example shows a version storing a list of fetcher results. You can also use `InMemorySourceOfTruth` for storing single values.
+The predicate is a function you provide to filter out the data in relation to key, similar to the query in the other source of truth implementations. When requesting data with `get` or `stream` only the items matching the provided predicate are returned. 
 
 ### 6. Using the Store
 
