@@ -265,12 +265,12 @@ class PersonCache: RealmSourceOfTruth<Key, People>(People::class.java) {
 It is available an implementation of the source of truth which stores the data in-memory. The data is not persisted to disk, it will not be available after restarting the app. It is useful for storing temporary or short lived information.
 
 ```kotlin
-    data class Key(val cid: Int)
-    data class Entity(val id: Int, val cid: Int, val name: String)
+data class Key(val cid: Int)
+data class Entity(val id: Int, val cid: Int, val name: String)
 
-    class InMemoryEntityListSOT: InMemoryListSourceOfTruth<Key, Entity>() {
-        override fun predicate(key: Key): (key: Key, value: Entity) -> Boolean = { key, value -> value.cid == key.cid }
-    }
+class InMemoryEntityListSOT: InMemoryListSourceOfTruth<Key, Entity>() {
+    override fun predicate(key: Key): (key: Key, value: Entity) -> Boolean = { key, value -> value.cid == key.cid }
+}
 ```
 
 This example shows a version storing a list of fetcher results. You can also use `InMemorySourceOfTruth` for storing single values.
@@ -484,6 +484,7 @@ You can also configure a base timeframe until a next call is allowed. If the tim
 #### Throttling configuration
 
 You can configure the throttling setting `StoreConfig.throttlingConfiguration`.
+
 |Property  | Description  |
 |--|--|
 |errorCountThreshold  |  Amount of errors in a row since the throttling is activated. |
@@ -580,8 +581,7 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
 
 ## Roadmap
 
-- Add testing coverage.
-- In-memory source of truth.
+- Add additional testing coverage.
 - Improve CRUD solution, current one is naive, implement one with a working thread and a queue of updates.
 - Investigate automatic retries on error.
 - Helpers for pagination.
