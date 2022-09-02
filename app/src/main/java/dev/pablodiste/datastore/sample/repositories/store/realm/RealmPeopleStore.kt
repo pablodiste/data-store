@@ -3,6 +3,7 @@ package dev.pablodiste.datastore.sample.repositories.store.realm
 import android.util.Log
 import dev.pablodiste.datastore.adapters.retrofit.RetrofitFetcher
 import dev.pablodiste.datastore.FetcherResult
+import dev.pablodiste.datastore.adapters.realm.RealmListSourceOfTruth
 import dev.pablodiste.datastore.closable.NoKeyScopedSimpleStore
 import dev.pablodiste.datastore.impl.NoKey
 import dev.pablodiste.datastore.sample.models.realm.People
@@ -23,7 +24,7 @@ class RealmPeopleStore: NoKeyScopedSimpleStore<List<People>>(
         }
     }
 
-    class PeopleSourceOfTruth: dev.pablodiste.datastore.adapters.realm.SimpleRealmListSourceOfTruth<NoKey, People>(People::class.java) {
+    class PeopleSourceOfTruth: RealmListSourceOfTruth<NoKey, People>(People::class.java) {
         override fun query(key: NoKey): (query: RealmQuery<People>) -> Unit = { }
     }
 

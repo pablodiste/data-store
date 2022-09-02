@@ -1,7 +1,8 @@
 package dev.pablodiste.datastore.sample.repositories.store.realm
 
-import dev.pablodiste.datastore.adapters.retrofit.RetrofitFetcher
 import dev.pablodiste.datastore.FetcherResult
+import dev.pablodiste.datastore.adapters.realm.RealmSourceOfTruth
+import dev.pablodiste.datastore.adapters.retrofit.RetrofitFetcher
 import dev.pablodiste.datastore.closable.ScopedSimpleStoreImpl
 import dev.pablodiste.datastore.sample.models.realm.People
 import dev.pablodiste.datastore.sample.network.RetrofitManager
@@ -23,7 +24,7 @@ class RealmPersonStore: ScopedSimpleStoreImpl<RealmPersonStore.Key, People>(
         }
     }
 
-    class PersonSourceOfTruth: dev.pablodiste.datastore.adapters.realm.SimpleRealmSourceOfTruth<Key, People>(People::class.java) {
+    class PersonSourceOfTruth: RealmSourceOfTruth<Key, People>(People::class.java) {
         override fun query(key: Key): (query: RealmQuery<People>) -> Unit = { it.equalTo("id", key.id) }
     }
 }

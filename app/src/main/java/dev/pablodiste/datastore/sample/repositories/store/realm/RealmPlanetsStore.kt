@@ -1,8 +1,9 @@
 package dev.pablodiste.datastore.sample.repositories.store.realm
 
 import android.util.Log
-import dev.pablodiste.datastore.adapters.retrofit.RetrofitFetcher
 import dev.pablodiste.datastore.FetcherResult
+import dev.pablodiste.datastore.adapters.realm.RealmListSourceOfTruth
+import dev.pablodiste.datastore.adapters.retrofit.RetrofitFetcher
 import dev.pablodiste.datastore.closable.NoKeyScopedSimpleStore
 import dev.pablodiste.datastore.impl.NoKey
 import dev.pablodiste.datastore.sample.models.realm.Planet
@@ -22,7 +23,7 @@ class RealmPlanetsStore: NoKeyScopedSimpleStore<List<Planet>>(
         }
     }
 
-    class PlanetSourceOfTruth: dev.pablodiste.datastore.adapters.realm.SimpleRealmListSourceOfTruth<NoKey, Planet>(Planet::class.java) {
+    class PlanetSourceOfTruth: RealmListSourceOfTruth<NoKey, Planet>(Planet::class.java) {
         override fun query(key: NoKey): (query: RealmQuery<Planet>) -> Unit = { }
     }
 

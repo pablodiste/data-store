@@ -198,13 +198,13 @@ LimitedFetcher.of { key -> FetcherResult.Data(provideAPIService().getPerson(key.
 #### Using Room
 We have provided base DAOs for using with Room:
 
-- `RoomListSourceOfTruth` and `SimpleRoomListSourceOfTruth`, store a list of entities.
-- `RoomSourceOfTruth` and `SimpleRoomSourceOfTruth` store individual objects.
+- `RoomSourceOfTruth` stores individual objects.
+- `RoomListSourceOfTruth` stores a list of entities.
 
 For example if we want to store a list of People we can do:
 ```kotlin
 @Dao
-abstract class PeopleCache: SimpleRoomListCache<NoKey, People>("people", SampleApplication.roomDb) {
+abstract class PeopleSourceOfTruth: RoomListSourceOfTruth<NoKey, People>("people", SampleApplication.roomDb) {
     override fun query(key: NoKey): String = ""
 }
 ```
@@ -212,7 +212,7 @@ The `query` is the filter to be used to retrieve the stored data which has been 
 For example if we are fetching an entity by id, our SourceOfTruth class will look like this one:
 ```kotlin
 @Dao
-abstract class PersonSourceOfTruth: SimpleRoomSourceOfTruth<Key, People>("people", SampleApplication.roomDb) {
+abstract class PersonSourceOfTruth: RoomSourceOfTruth<Key, People>("people", SampleApplication.roomDb) {
     override fun query(key: Key): String = "id = ${key.id}"
 }
 ```
@@ -238,14 +238,14 @@ Please refer to the Room implementation for more details on the Database definit
 #### Using Realm database
 In case we are using `Realm` we can use:
 ```kotlin
-class PeopleSourceOfTruth: SimpleRealmListSourceOfTruth<NoKey, People>(People::class.java) {
+class PeopleSourceOfTruth: RealmListSourceOfTruth<NoKey, People>(People::class.java) {
     override fun query(key: NoKey): (query: RealmQuery<People>) -> Unit = { }
 }
 ```
 The `query` is the filter to be used to retrieve the stored data which has been stored after the API call. It generally matches the parameters sent to the API.
 For example if we are fetching an entity by id, our SourceOfTruth class will look like this one:
 ```kotlin
-class PersonSourceOfTruth: SimpleRealmSourceOfTruth<Key, People>(People::class.java) {
+class PersonSourceOfTruth: RealmSourceOfTruth<Key, People>(People::class.java) {
     override fun query(key: Key): (query: RealmQuery<People>) -> Unit = {
         it.equalTo("id", key.id)
     }
@@ -254,10 +254,10 @@ class PersonSourceOfTruth: SimpleRealmSourceOfTruth<Key, People>(People::class.j
 Optionally you can provide a `storeInRealm` which implements a custom method to persist to the Realm source of truth.
 
 ```kotlin
-class PersonCache: SimpleRealmSourceOfTruth<Key, People>(People::class.java) {
+class PersonCache: RealmSourceOfTruth<Key, People>(People::class.java) {
     override fun query(key: Key): (query: RealmQuery<People>) -> Unit = { it.equalTo("id", key.id) }
-    override fun storeInRealm(key: Key, bgRealm: Realm, entity: People) { bgRealm.copyToRealmOrUpdate(entity) // Custom code }
-    }
+    override fun storeInRealm(key: Key, bgRealm: Realm, entity: People) { bgRealm.copyToRealmOrUpdate(entity) } // Custom code
+}
 ```
 
 ### 6. Using the Store
@@ -304,8 +304,8 @@ All responses coming from the store are based on StoreResponse classes. The subc
 | StoreResponse | Description |
 |---------------|-------------|
 | Data		  | When the request was successful it returns the parsed objects |
-| Error		 | It is returned when there was a network or parsing error. It includes the exception that generated it. Please note Store will not throw the exception |
-| NoData		| When there is no data returned |
+| Error		 | This is returned when there was a network or parsing error. It includes the exception that generated it. Please note Store will not throw the exception |
+| NoData		| This is returned when there is no data to return, for example when the fetch operation has not been executed. Please note NoData is not returned when the API returns an empty result set.  |
 
 
 #### Stream data
@@ -407,7 +407,7 @@ abstract class PeopleSourceOfTruth: RoomListSourceOfTruth<NoKey, People>("people
 
 It is very common in big applications to request the same information from many different locations. In order to avoid doing repeated API calls the `Store` implements a `RateLimiter`.
 
-The limiter will allow the first call, and then any subsequent call inside a time span provided will not be executed. If the second call happens before the completion of the first call, that second call will wait for the result of the first one and it will return the same value for both. If the second call happens after the first call has arrived, a stored result will be returned instead until the time provided in the limiter has elapsed. Once the time has elapsed the store is able to call the API again.
+The limiter will allow the first call, and then any subsequent call inside a time span provided will not be executed. If the second call happens before the completion of the first call, that second call will wait for the result of the first one and it will return the same value for both. If the second call happens after the first call has arrived, `NoData` is returned instead until the time provided in the limiter has elapsed. Once the time has elapsed the store is able to call the API again.
 
 It is available a `LimitedFetcher` and provides a way to define a `rateLimitPolicy`:
 

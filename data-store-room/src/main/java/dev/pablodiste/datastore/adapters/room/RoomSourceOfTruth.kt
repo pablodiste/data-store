@@ -13,9 +13,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-
 /**
- * Database cache based on Room (DAO), list version
+ * Database cache based on Room (DAO)
  */
 abstract class RoomSourceOfTruth<K: Any, T: Any>(
     private val tableName: String,
