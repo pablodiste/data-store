@@ -9,3 +9,9 @@ First release
 - Allows CRUD implementation using the same data stores.
 - Sample project
 - Release configuration for Maven Central
+
+v0.1.1
+- Memory source of truth
+- Ktor integration
+- Bugfixes
+- Adding some tests to repositories
