@@ -5,11 +5,13 @@ import dev.pablodiste.datastore.SourceOfTruth
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 
 abstract class InMemoryListSourceOfTruth<K: Any, T: Any>: SourceOfTruth<K, List<T>> {
 
     private val data: MutableList<T> = mutableListOf()
-    private val internalFlow: MutableSharedFlow<List<T>> = MutableSharedFlow(replay = 1,
+    private val internalFlow: MutableSharedFlow<Boolean> = MutableSharedFlow(replay = 1,
         onBufferOverflow = BufferOverflow.SUSPEND,
         extraBufferCapacity = 0)
 
@@ -17,11 +19,12 @@ abstract class InMemoryListSourceOfTruth<K: Any, T: Any>: SourceOfTruth<K, List<
 
     override suspend fun exists(key: K): Boolean = data.any { predicate(key)(key, it) }
 
-    override fun listen(key: K): Flow<List<T>> = internalFlow
+    override fun listen(key: K): Flow<List<T>> = internalFlow.map { data.filter { predicate(key)(key, it) } }
 
     override suspend fun store(key: K, entity: List<T>, removeStale: Boolean): List<T> {
+        data.removeAll { predicate(key)(key, it) }
         data.addAll(entity)
-        emit(key)
+        emit()
         return entity
     }
 
@@ -29,13 +32,12 @@ abstract class InMemoryListSourceOfTruth<K: Any, T: Any>: SourceOfTruth<K, List<
 
     override suspend fun delete(key: K): Boolean {
         val removed = data.removeAll { predicate(key)(key, it) }
-        emit(key)
+        emit()
         return removed
     }
 
-    private fun emit(key: K) {
+    private fun emit() {
         Log.d("SOT", "Emitting changes")
-        val dataFound = data.filter { predicate(key)(key, it) }
-        internalFlow.tryEmit(dataFound)
+        internalFlow.tryEmit(true)
     }
 }
