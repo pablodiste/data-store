@@ -30,14 +30,14 @@ abstract class LimitedCrudFetcher<K: Any, I: Any>(
             fetch: suspend (K) -> FetcherResult<I> = { FetcherResult.NoData("NOOP") },
             create: suspend (K, I) -> FetcherResult<I> = { _, _ -> FetcherResult.NoData("NOOP") },
             update: suspend (K, I) -> FetcherResult<I> = { _, _ -> FetcherResult.NoData("NOOP") },
-            delete: suspend (K, I) -> Boolean = { _, _ -> false },
+            delete: suspend (K, I) -> FetcherResult<I> = { _, _ -> FetcherResult.NoData("NOOP") },
             rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS)
         ): CrudFetcher<K, I> {
             return object: LimitedCrudFetcher<K, I>(rateLimitPolicy) {
                 override suspend fun fetch(key: K): FetcherResult<I> = fetch(key)
                 override suspend fun create(key: K, entity: I): FetcherResult<I> = create(key, entity)
                 override suspend fun update(key: K, entity: I): FetcherResult<I> = update(key, entity)
-                override suspend fun delete(key: K, entity: I): Boolean = delete(key, entity)
+                override suspend fun delete(key: K, entity: I): FetcherResult<I> = delete(key, entity)
             }
         }
     }

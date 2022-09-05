@@ -19,15 +19,11 @@ interface CrudStore<K: Any, T: Any>: Store<K, T> {
      */
     suspend fun delete(key: K, entity: T): Boolean
 
-    /**
-     * Provides a way to extract the key from a just created entity, in order to save it in the store
-     */
-    fun buildKey(entity: T): K
-
+    fun dispose()
 }
 
 interface CrudFetcher<K: Any, I: Any>: Fetcher<K, I> {
     suspend fun create(key: K, entity: I): FetcherResult<I>
     suspend fun update(key: K, entity: I): FetcherResult<I>
-    suspend fun delete(key: K, entity: I): Boolean
+    suspend fun delete(key: K, entity: I): FetcherResult<I>
 }

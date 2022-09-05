@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
+import java.lang.IllegalStateException
 
 open class StoreImpl<K: Any, I: Any, T: Any>(
     protected open val fetcher: Fetcher<K, I>,
@@ -107,6 +108,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
                     */
                 }
                 is FetcherResult.Error -> StoreResponse.Error(fetcherResult.error)
+                is FetcherResult.Success -> StoreResponse.Error(IllegalStateException("Unexpected fetcher result"))
             }
         }
     }
