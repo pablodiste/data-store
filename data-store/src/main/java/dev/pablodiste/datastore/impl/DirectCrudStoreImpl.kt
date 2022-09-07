@@ -35,7 +35,7 @@ open class DirectCrudStoreImpl<K: Any, I: Any, T: Any>(
     override suspend fun delete(key: K, entity: T): Boolean {
         return try {
             crudFetcher.delete(key, mapper.toFetcherEntity(entity))
-            pausableSourceOfTruth.delete(key)
+            sourceOfTruth.delete(key)
             true
         } catch (e: Exception) {
             false
@@ -46,7 +46,7 @@ open class DirectCrudStoreImpl<K: Any, I: Any, T: Any>(
         return when (result) {
             is FetcherResult.Data -> {
                 val entityToSave = mapper.toSourceOfTruthEntity(result.value)
-                pausableSourceOfTruth.store(keyBuilder(entityToSave), entityToSave)
+                sourceOfTruth.store(keyBuilder(entityToSave), entityToSave)
             }
             is FetcherResult.Error -> throw result.error
             else -> throw Throwable("Error creating entity, invalid state")

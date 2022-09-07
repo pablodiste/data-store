@@ -18,6 +18,8 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
     private val TAG = this.javaClass.simpleName
     private val fetcherController = FetcherController(fetcher)
 
+    protected val sourceOfTruth: SourceOfTruth<K, T> get() = pausableSourceOfTruth
+
     /**
      * Finds and listen the source of truth for a entity. If the entity is not in source of truth if fetches it using the fetcher.
      * If there is anything in the source of truth, it emits it, otherwise it calls the fetcher.

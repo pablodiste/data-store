@@ -1,42 +1,50 @@
-package dev.pablodiste.datastore.crud
+package dev.pablodiste.datastore.writable
 
-import dev.pablodiste.datastore.CrudFetcher
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.Mapper
+import dev.pablodiste.datastore.Sender
 import dev.pablodiste.datastore.SourceOfTruth
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 
-class PendingWorker<K: Any, T: Any, I: Any>(
+data class PendingChange<K: Any, T: Any>(
+    val key: K,
+    val entity: T,
+    val change: EntityChange<T>,
+    val changeOperation: ChangeOperation,
+)
+
+class PendingChangesWorker<K: Any, T: Any, I: Any>(
     applicationScope: CoroutineScope,
-    pendingWorkerFetcher: CrudFetcher<K, I>,
+    pendingWorkerSender: Sender<K, I>,
     sourceOfTruth: SourceOfTruth<K, T>,
     mapper: Mapper<I, T>,
     private val keyBuilder: ((T) -> K)
 ) {
 
-    private val pendingItems = MutableSharedFlow<PendingCrudJob<K, I>>(replay = 0, extraBufferCapacity = 100, onBufferOverflow = BufferOverflow.SUSPEND)
+    private val pendingItemsFlow = MutableSharedFlow<PendingChange<K, T>>(replay = 0, extraBufferCapacity = 100, onBufferOverflow = BufferOverflow.SUSPEND)
+    private val pendingItems = mutableListOf<PendingChange<K, T>>()
     private val workerJob: Job
 
     init {
         workerJob = applicationScope.launch(Dispatchers.IO) {
-            pendingItems.collect {
+            pendingItemsFlow.collect {
                 var success = false
                 while (!success) {
-                    val result = when (it.crudOperation) {
-                        CrudOperation.CREATE -> pendingWorkerFetcher.create(it.key, it.entity)
-                        CrudOperation.UPDATE -> pendingWorkerFetcher.update(it.key, it.entity)
-                        CrudOperation.DELETE -> pendingWorkerFetcher.delete(it.key, it.entity)
-                    }
+                    val entityToSend = mapper.toFetcherEntity(it.change(it.entity))
+                    val result = pendingWorkerSender.send(it.key, entityToSend, it.changeOperation)
+
                     if (result is FetcherResult.Data || (result is FetcherResult.Success && result.success)) {
                         if (result is FetcherResult.Data) {
-                            if (it.crudOperation == CrudOperation.CREATE) sourceOfTruth.delete(it.key)
+                            if (it.changeOperation == ChangeOperation.CREATE) sourceOfTruth.delete(it.key)
                             val newData = mapper.toSourceOfTruthEntity(result.value)
                             sourceOfTruth.store(keyBuilder(newData), newData)
                         }
                         success = true
+                        pendingItems.remove(it)
                     } else {
+                        // Implement failure strategy
                         delay(1000)
                     }
                 }
@@ -44,8 +52,9 @@ class PendingWorker<K: Any, T: Any, I: Any>(
         }
     }
 
-    fun submitChange(crudOperation: CrudOperation, key: K, entity: I) {
-        pendingItems.tryEmit(PendingCrudJob(crudOperation, key, entity))
+    fun queueChange(pendingChange: PendingChange<K, T>) {
+        pendingItems.add(pendingChange)
+        pendingItemsFlow.tryEmit(pendingChange)
     }
 
     fun dispose() {

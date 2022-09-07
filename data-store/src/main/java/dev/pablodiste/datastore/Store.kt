@@ -1,6 +1,7 @@
 package dev.pablodiste.datastore
 
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
+import dev.pablodiste.datastore.writable.ChangeOperation
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -72,6 +73,21 @@ interface Fetcher<K: Any, I: Any> {
      * Fetches data from the remote source.
      */
     suspend fun fetch(key: K): FetcherResult<I>
+}
+
+/**
+ * Sends data to a remote source, like an API
+ */
+interface Sender<K: Any, I: Any> {
+    /**
+     * Policy to limit the number of consecutive or concurrent calls
+     */
+    val rateLimitPolicy: RateLimitPolicy
+
+    /**
+     * Sends data to the remote source.
+     */
+    suspend fun send(key: K, entity: I, changeOperation: ChangeOperation): FetcherResult<I>
 }
 
 interface FetcherServiceProvider {
