@@ -5,14 +5,14 @@ import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.adapters.room.RoomSourceOfTruth
 import dev.pablodiste.datastore.impl.LimitedCrudFetcher
 import dev.pablodiste.datastore.impl.SimpleDirectCrudStoreBuilder
-import dev.pablodiste.datastore.impl.SimpleCrudStoreImpl
+import dev.pablodiste.datastore.impl.SimpleDirectCrudStoreImpl
 import dev.pablodiste.datastore.sample.models.room.Post
 import dev.pablodiste.datastore.sample.network.JsonPlaceholderService
 import dev.pablodiste.datastore.sample.network.RetrofitManager
 
 data class PostKey(val id: Int)
 
-fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
+fun providePostsCRUDStore(): SimpleDirectCrudStoreImpl<PostKey, Post> {
     return SimpleDirectCrudStoreBuilder.from(
         fetcher = LimitedCrudFetcher.of(
             fetch = { post -> FetcherResult.Data(provideService().getPost(post.id)) },
@@ -22,7 +22,7 @@ fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
         ),
         sourceOfTruth = dev.pablodiste.datastore.sample.SampleApplication.roomDb.postSourceOfTruth(),
         keyBuilder = { entity -> PostKey(entity.id) }
-    ).build() as SimpleCrudStoreImpl
+    ).build() as SimpleDirectCrudStoreImpl
 }
 
 private fun provideService() = RetrofitManager.createService(JsonPlaceholderService::class.java)
