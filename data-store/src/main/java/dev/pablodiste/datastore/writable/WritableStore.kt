@@ -16,20 +16,21 @@ interface WritableStore<K: Any, T: Any>: Store<K, T> {
 }
 
 open class WritableStoreImpl<K: Any, I: Any, T: Any>(
+    clazz: Class<T>,
     applicationScope: CoroutineScope,
     fetcher: Fetcher<K, I>,
-    sender: Sender<K, I>,
+    val sender: Sender<K, I>,
     sourceOfTruth: SourceOfTruth<K, T>,
     mapper: Mapper<I, T>,
     val keyBuilder: (T) -> K
 ): StoreImpl<K, I, T>(fetcher, sourceOfTruth, mapper), WritableStore<K, T> {
 
-    protected val worker = PendingChangesWorker(applicationScope, sender, sourceOfTruth, mapper, keyBuilder)
+    protected val worker = WorkerManager.getOrCreateWorker(clazz, applicationScope, sourceOfTruth, mapper, keyBuilder)
 
     override suspend fun put(key: K, entity: T, change: EntityChange<T>, operation: ChangeOperation): StoreResponse<T> {
         val updatedEntity = change(entity)
         val stored = sourceOfTruth.store(key, updatedEntity)
-        worker.queueChange(PendingChange(key, entity, change, operation))
+        worker.queueChange(PendingChange(key, entity, change, operation, sender))
         return StoreResponse.Data(stored, ResponseOrigin.SOURCE_OF_TRUTH)
     }
 
@@ -40,12 +41,13 @@ open class WritableStoreImpl<K: Any, I: Any, T: Any>(
 }
 
 class SimpleWritableStoreImpl<K: Any, T: Any>(
+    clazz: Class<T>,
     applicationScope: CoroutineScope,
     fetcher: Fetcher<K, T>,
     sender: Sender<K, T>,
     sourceOfTruth: SourceOfTruth<K, T>,
     keyBuilder: (T) -> K
-): WritableStoreImpl<K, T, T>(applicationScope, fetcher, sender, sourceOfTruth, SameEntityMapper(), keyBuilder)
+): WritableStoreImpl<K, T, T>(clazz, applicationScope, fetcher, sender, sourceOfTruth, SameEntityMapper(), keyBuilder)
 
 
 suspend fun <K: Any, T: Any> WritableStore<K, T>.create(key: K, entity: T): StoreResponse<T> = put(

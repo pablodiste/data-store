@@ -4,7 +4,7 @@ import app.cash.turbine.test
 import dev.pablodiste.datastore.inmemory.InMemorySourceOfTruth
 import dev.pablodiste.datastore.ratelimiter.FetchAlways
 import dev.pablodiste.datastore.writable.ChangeOperation
-import dev.pablodiste.datastore.writable.SimpleWritableStoreImpl
+import dev.pablodiste.datastore.writable.SimpleWritableStoreBuilder
 import dev.pablodiste.datastore.writable.WritableStore
 import dev.pablodiste.datastore.writable.create
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -45,7 +45,7 @@ class WritableStoreImplTest: CoroutineTest() {
 
     @Test
     fun storeCreate() = runTest {
-        store = SimpleWritableStoreImpl(this, fetcher, sender, sourceOfTruth) { entity -> Key(entity.id) }
+        store = SimpleWritableStoreBuilder.from(this, fetcher, sender, sourceOfTruth) { entity -> Key(entity.id) }.build()
         val stream = store.stream(Key(1000), refresh = false)
         val streamNew = store.stream(Key(3), refresh = false)
         val three = Entity(1000, "Three")

@@ -8,23 +8,23 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 
-data class PendingChange<K: Any, T: Any>(
+data class PendingChange<K: Any, T: Any, I: Any>(
     val key: K,
     val entity: T,
     val change: EntityChange<T>,
     val changeOperation: ChangeOperation,
+    val pendingWorkerSender: Sender<K, I>,
 )
 
 class PendingChangesWorker<K: Any, T: Any, I: Any>(
     applicationScope: CoroutineScope,
-    pendingWorkerSender: Sender<K, I>,
     sourceOfTruth: SourceOfTruth<K, T>,
     mapper: Mapper<I, T>,
     private val keyBuilder: ((T) -> K)
 ) {
 
-    private val pendingItemsFlow = MutableSharedFlow<PendingChange<K, T>>(replay = 0, extraBufferCapacity = 100, onBufferOverflow = BufferOverflow.SUSPEND)
-    private val pendingItems = mutableListOf<PendingChange<K, T>>()
+    private val pendingItemsFlow = MutableSharedFlow<PendingChange<K, T, I>>(replay = 0, extraBufferCapacity = 100, onBufferOverflow = BufferOverflow.SUSPEND)
+    private val pendingItems = mutableListOf<PendingChange<K, T, I>>()
     private val workerJob: Job
 
     init {
@@ -33,7 +33,7 @@ class PendingChangesWorker<K: Any, T: Any, I: Any>(
                 var success = false
                 while (!success) {
                     val entityToSend = mapper.toFetcherEntity(it.change(it.entity))
-                    val result = pendingWorkerSender.send(it.key, entityToSend, it.changeOperation)
+                    val result = it.pendingWorkerSender.send(it.key, entityToSend, it.changeOperation)
 
                     if (result is FetcherResult.Data || (result is FetcherResult.Success && result.success)) {
                         if (result is FetcherResult.Data) {
@@ -52,7 +52,7 @@ class PendingChangesWorker<K: Any, T: Any, I: Any>(
         }
     }
 
-    fun queueChange(pendingChange: PendingChange<K, T>) {
+    fun queueChange(pendingChange: PendingChange<K, T, I>) {
         pendingItems.add(pendingChange)
         pendingItemsFlow.tryEmit(pendingChange)
     }
