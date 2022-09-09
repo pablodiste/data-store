@@ -3,10 +3,7 @@ package dev.pablodiste.datastore
 import app.cash.turbine.test
 import dev.pablodiste.datastore.inmemory.InMemorySourceOfTruth
 import dev.pablodiste.datastore.ratelimiter.FetchAlways
-import dev.pablodiste.datastore.writable.ChangeOperation
-import dev.pablodiste.datastore.writable.SimpleWritableStoreBuilder
-import dev.pablodiste.datastore.writable.WritableStore
-import dev.pablodiste.datastore.writable.create
+import dev.pablodiste.datastore.writable.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -58,8 +55,22 @@ class WritableStoreImplTest: CoroutineTest() {
             assertEquals(StoreResponse.Data(three, origin = ResponseOrigin.SOURCE_OF_TRUTH), temporaryData)
         }
         streamNew.test {
-            val finalData = awaitItem() as StoreResponse.Data
+            val finalData = awaitItem().requireData()
             assertEquals(StoreResponse.Data(Entity(3, "Three"), origin = ResponseOrigin.SOURCE_OF_TRUTH), finalData)
+        }
+        store.dispose()
+    }
+
+    @Test
+    fun storeUpdate() = runTest {
+        store = SimpleWritableStoreBuilder.from(this, fetcher, sender, sourceOfTruth) { entity -> Key(entity.id) }.build()
+        store.stream(Key(2), refresh = false).test {
+            val fetchFromStream = awaitItem() as StoreResponse.Data
+            assertEquals(StoreResponse.Data(Entity(2, "Two"), origin = ResponseOrigin.FETCHER), fetchFromStream)
+
+            store.update(Key(2), fetchFromStream.requireData()) { it.copy(name = "Two Updated") }
+            val update = awaitItem() as StoreResponse.Data
+            assertEquals(StoreResponse.Data(Entity(2, "Two Updated"), origin = ResponseOrigin.SOURCE_OF_TRUTH), update)
         }
         store.dispose()
     }

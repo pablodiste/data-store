@@ -21,6 +21,7 @@ abstract class InMemorySourceOfTruth<K: Any, T: Any>: SourceOfTruth<K, T> {
     override fun listen(key: K): Flow<T> = internalFlow.mapNotNull { data.firstOrNull { predicate(key)(key, it) } }
 
     override suspend fun store(key: K, entity: T, removeStale: Boolean): T {
+        data.removeAll { predicate(key)(key, it) }
         data.add(entity)
         emit()
         return entity
