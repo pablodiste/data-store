@@ -6,6 +6,7 @@ import dev.pablodiste.datastore.ratelimiter.FetchAlways
 import dev.pablodiste.datastore.writable.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -30,39 +31,45 @@ class WritableStoreImplTest: CoroutineTest() {
             onBlocking { fetch(Key(1)) } doReturn FetcherResult.Data(Entity(1, "One"))
             onBlocking { fetch(Key(2)) } doReturn FetcherResult.Data(Entity(2, "Two"))
         }
-        sender = mock {
-            on { rateLimitPolicy } doReturn FetchAlways
-            onBlocking { send(Key(1000), Entity(1000, "Three"), ChangeOperation.CREATE) } doReturn
-                FetcherResult.Data(Entity(3, "Three"))
-        }
         sourceOfTruth = object: InMemorySourceOfTruth<Key, Entity>() {
             override fun predicate(key: Key): (key: Key, value: Entity) -> Boolean = { _, value -> value.id == key.id }
         }
     }
 
+     @After
+     fun after() {
+         WorkerManager.dispose()
+     }
+
     @Test
     fun storeCreate() = runTest {
+        sender = mock {
+            on { rateLimitPolicy } doReturn FetchAlways
+            onBlocking { send(Key(1000), Entity(1000, "Three"), ChangeOperation.CREATE) } doReturn
+                    FetcherResult.Data(Entity(3, "Three"))
+        }
         store = SimpleWritableStoreBuilder.from(this, fetcher, sender, sourceOfTruth) { entity -> Key(entity.id) }.build()
-        val stream = store.stream(Key(1000), refresh = false)
-        val streamNew = store.stream(Key(3), refresh = false)
         val three = Entity(1000, "Three")
 
-        val created = store.create(Key(1000), three)
-        assertEquals(created, StoreResponse.Data(three, origin = ResponseOrigin.SOURCE_OF_TRUTH))
+        store.stream(StoreRequest(key = Key(3), refresh = false, fetchWhenNoDataFound = false)).test {
+            val created = store.create(Key(1000), three)
+            assertEquals(StoreResponse.Data(three, origin = ResponseOrigin.SOURCE_OF_TRUTH), created)
 
-        stream.test {
-            val temporaryData = awaitItem() as StoreResponse.Data
-            assertEquals(StoreResponse.Data(three, origin = ResponseOrigin.SOURCE_OF_TRUTH), temporaryData)
+            val createdFromAPI = awaitItem()
+            assertEquals(StoreResponse.Data(Entity(3, "Three"), origin = ResponseOrigin.SOURCE_OF_TRUTH), createdFromAPI)
+
+            cancelAndIgnoreRemainingEvents()
         }
-        streamNew.test {
-            val finalData = awaitItem().requireData()
-            assertEquals(StoreResponse.Data(Entity(3, "Three"), origin = ResponseOrigin.SOURCE_OF_TRUTH), finalData)
-        }
-        store.dispose()
+        WorkerManager.dispose()
     }
 
     @Test
     fun storeUpdate() = runTest {
+        sender = mock {
+            on { rateLimitPolicy } doReturn FetchAlways
+            onBlocking { send(Key(2), Entity(2, "Two"), ChangeOperation.UPDATE) } doReturn
+                    FetcherResult.Data(Entity(2, "Two Updated"))
+        }
         store = SimpleWritableStoreBuilder.from(this, fetcher, sender, sourceOfTruth) { entity -> Key(entity.id) }.build()
         store.stream(Key(2), refresh = false).test {
             val fetchFromStream = awaitItem() as StoreResponse.Data
@@ -71,8 +78,27 @@ class WritableStoreImplTest: CoroutineTest() {
             store.update(Key(2), fetchFromStream.requireData()) { it.copy(name = "Two Updated") }
             val update = awaitItem() as StoreResponse.Data
             assertEquals(StoreResponse.Data(Entity(2, "Two Updated"), origin = ResponseOrigin.SOURCE_OF_TRUTH), update)
+
+            cancelAndIgnoreRemainingEvents()
         }
-        store.dispose()
+        WorkerManager.dispose()
     }
 
+
+    @Test
+    fun storeDelete() = runTest {
+        sender = mock {
+            on { rateLimitPolicy } doReturn FetchAlways
+            onBlocking { send(Key(2), Entity(2, "Two"), ChangeOperation.DELETE) } doReturn FetcherResult.Success(true)
+        }
+        store = SimpleWritableStoreBuilder.from(this, fetcher, sender, sourceOfTruth) { entity -> Key(entity.id) }.build()
+        store.stream(Key(2), refresh = false).test {
+            val fetchFromStream = awaitItem() as StoreResponse.Data
+            assertEquals(StoreResponse.Data(Entity(2, "Two"), origin = ResponseOrigin.FETCHER), fetchFromStream)
+
+            store.remove(Key(2), fetchFromStream.requireData())
+            expectNoEvents()
+        }
+        WorkerManager.dispose()
+    }
 }

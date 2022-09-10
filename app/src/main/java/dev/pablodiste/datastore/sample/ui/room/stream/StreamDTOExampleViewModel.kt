@@ -7,6 +7,7 @@ import dev.pablodiste.datastore.impl.NoKey
 import dev.pablodiste.datastore.sample.models.room.Starship
 import dev.pablodiste.datastore.sample.repositories.store.room.provideStarshipStore
 import dev.pablodiste.datastore.sample.repositories.store.room.provideStarshipStoreKtor
+import dev.pablodiste.datastore.stream
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 

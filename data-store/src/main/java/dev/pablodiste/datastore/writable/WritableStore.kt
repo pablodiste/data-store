@@ -12,6 +12,7 @@ enum class ChangeOperation {
 
 interface WritableStore<K: Any, T: Any>: Store<K, T> {
     suspend fun put(key: K, entity: T, change: EntityChange<T>, operation: ChangeOperation): StoreResponse<T>
+    suspend fun remove(key: K, entity: T): StoreResponse<Boolean>
     fun dispose()
 }
 
@@ -25,7 +26,7 @@ open class WritableStoreImpl<K: Any, I: Any, T: Any>(
     val keyBuilder: (T) -> K
 ): StoreImpl<K, I, T>(fetcher, sourceOfTruth, mapper), WritableStore<K, T> {
 
-    protected val worker = WorkerManager.getOrCreateWorker(clazz, applicationScope, sourceOfTruth, mapper, keyBuilder)
+    protected val worker = WorkerManager.getOrCreateWorker(this, clazz, applicationScope, sourceOfTruth, mapper, keyBuilder)
 
     override suspend fun put(key: K, entity: T, change: EntityChange<T>, operation: ChangeOperation): StoreResponse<T> {
         val updatedEntity = change(entity)
@@ -34,8 +35,14 @@ open class WritableStoreImpl<K: Any, I: Any, T: Any>(
         return StoreResponse.Data(stored, ResponseOrigin.SOURCE_OF_TRUTH)
     }
 
+    override suspend fun remove(key: K, entity: T): StoreResponse<Boolean> {
+        sourceOfTruth.delete(key)
+        worker.queueChange(PendingChange(key, entity, { entity }, ChangeOperation.DELETE, sender))
+        return StoreResponse.Data(true, origin = ResponseOrigin.SOURCE_OF_TRUTH)
+    }
+
     override fun dispose() {
-        worker.dispose()
+        //worker.disconnect(this)
     }
 
 }
@@ -62,11 +69,4 @@ suspend fun <K: Any, T: Any> WritableStore<K, T>.update(key: K, entity: T, chang
     entity = entity,
     change = change,
     operation = ChangeOperation.UPDATE
-)
-
-suspend fun <K: Any, T: Any> WritableStore<K, T>.delete(key: K, entity: T): StoreResponse<T> = put(
-    key = key,
-    entity = entity,
-    change = { entity },
-    operation = ChangeOperation.DELETE
 )

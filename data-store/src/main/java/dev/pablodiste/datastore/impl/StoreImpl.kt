@@ -6,7 +6,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
-import java.lang.IllegalStateException
 
 open class StoreImpl<K: Any, I: Any, T: Any>(
     protected open val fetcher: Fetcher<K, I>,
@@ -25,15 +24,15 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
      * If there is anything in the source of truth, it emits it, otherwise it calls the fetcher.
      * @param refresh when true, if performs the fetch operation anyways in parallel, even if the data is in the source of truth.
      */
-    override fun stream(key: K, refresh: Boolean): Flow<StoreResponse<T>> {
+    override fun stream(request: StoreRequest<K>): Flow<StoreResponse<T>> {
         return flow {
             coroutineScope {
-                if (pausableSourceOfTruth.exists(key)) {
-                    val streamFlow = streamFromSourceOfTruth(key)
+                if (pausableSourceOfTruth.exists(request.key)) {
+                    val streamFlow = streamFromSourceOfTruth(request.key)
                     streamFlow.onEach { Log.d(TAG, "Coming from source of truth") }
-                    if (refresh) {
+                    if (request.refresh) {
                         val fetcherFlow = flow {
-                            val fetched = performFetch(key)
+                            val fetched = performFetch(request.key)
                             // We do not emit the fetched data because we are listening reactively for updates in the streamFlow.
                             // We only emit errors
                             if (fetched !is StoreResponse.Data) {
@@ -48,7 +47,11 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
                         emitAll(streamFlow)
                     }
                 } else {
-                    emitAll(fetchAndStream(key))
+                    if (request.fetchWhenNoDataFound) {
+                        emitAll(fetchAndStream(request.key))
+                    } else {
+                        emitAll(streamFromSourceOfTruth(request.key))
+                    }
                 }
             }
         }
@@ -69,12 +72,16 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
     /**
      * Loads an entity from source of truth (simple query), if it is not in source of truth, it calls the fetcher for it.
      */
-    override suspend fun get(key: K): StoreResponse<T> {
-        return if (pausableSourceOfTruth.exists(key)) {
-            val cached = pausableSourceOfTruth.get(key)
+    override suspend fun get(request: StoreRequest<K>): StoreResponse<T> {
+        return if (pausableSourceOfTruth.exists(request.key)) {
+            val cached = pausableSourceOfTruth.get(request.key)
             StoreResponse.Data(cached, ResponseOrigin.SOURCE_OF_TRUTH)
         } else {
-            fetch(key, forced = true)
+            if (request.fetchWhenNoDataFound) {
+                fetch(request.key, forced = true)
+            } else {
+                StoreResponse.Error(IllegalStateException("No data found"))
+            }
         }
     }
 
@@ -83,19 +90,19 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
     /**
      * Fetches an entity from the fetcher and stores it in the source of truth.
      */
-    override suspend fun fetch(key: K, forced: Boolean): StoreResponse<T> {
+    override suspend fun fetch(request: StoreRequest<K>): StoreResponse<T> {
 
-        val fetcherResult = fetcherController.fetch(key, forced)
+        val fetcherResult = fetcherController.fetch(request.key, request.refresh)
 
         return withContext(Dispatchers.Main) {
             return@withContext when (fetcherResult) {
                 is FetcherResult.Data -> {
                     Log.d(TAG, "Received Data")
                     if (fetcherResult.cacheable) {
-                        val fetched = pausableSourceOfTruth.storeAfterFetch(key, mapper.toSourceOfTruthEntity(fetcherResult.value), true)
+                        val fetched = pausableSourceOfTruth.storeAfterFetch(request.key, mapper.toSourceOfTruthEntity(fetcherResult.value), true)
                         StoreResponse.Data(fetched, ResponseOrigin.FETCHER)
                     } else {
-                        val sourceOfTruthResponse = pausableSourceOfTruth.get(key)
+                        val sourceOfTruthResponse = pausableSourceOfTruth.get(request.key)
                         StoreResponse.Data(sourceOfTruthResponse, ResponseOrigin.SOURCE_OF_TRUTH)
                     }
                 }

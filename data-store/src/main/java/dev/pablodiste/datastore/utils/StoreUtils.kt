@@ -1,6 +1,7 @@
 package dev.pablodiste.datastore.utils
 
 import dev.pablodiste.datastore.Store
+import dev.pablodiste.datastore.fetch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

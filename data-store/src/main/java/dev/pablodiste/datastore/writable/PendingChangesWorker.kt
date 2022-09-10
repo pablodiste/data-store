@@ -1,9 +1,6 @@
 package dev.pablodiste.datastore.writable
 
-import dev.pablodiste.datastore.FetcherResult
-import dev.pablodiste.datastore.Mapper
-import dev.pablodiste.datastore.Sender
-import dev.pablodiste.datastore.SourceOfTruth
+import dev.pablodiste.datastore.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -17,17 +14,21 @@ data class PendingChange<K: Any, T: Any, I: Any>(
 )
 
 class PendingChangesWorker<K: Any, T: Any, I: Any>(
-    applicationScope: CoroutineScope,
-    sourceOfTruth: SourceOfTruth<K, T>,
-    mapper: Mapper<I, T>,
+    private val applicationScope: CoroutineScope,
+    private val sourceOfTruth: SourceOfTruth<K, T>,
+    private val mapper: Mapper<I, T>,
     private val keyBuilder: ((T) -> K)
 ) {
 
     private val pendingItemsFlow = MutableSharedFlow<PendingChange<K, T, I>>(replay = 0, extraBufferCapacity = 100, onBufferOverflow = BufferOverflow.SUSPEND)
     private val pendingItems = mutableListOf<PendingChange<K, T, I>>()
-    private val workerJob: Job
+    private var workerJob: Job? = null
 
     init {
+        startJob()
+    }
+
+    private fun startJob() {
         workerJob = applicationScope.launch(Dispatchers.IO) {
             pendingItemsFlow.collect {
                 var success = false
@@ -58,6 +59,6 @@ class PendingChangesWorker<K: Any, T: Any, I: Any>(
     }
 
     fun dispose() {
-        workerJob.cancel()
+        workerJob?.cancel()
     }
 }

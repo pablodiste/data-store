@@ -14,18 +14,18 @@ interface Store<K: Any, T: Any> {
      * @param key Key to identify the request
      * @param refresh When true it fetches data from the fetcher to update the source of truth
      */
-    fun stream(key: K, refresh: Boolean): Flow<StoreResponse<T>>
+    fun stream(request: StoreRequest<K>): Flow<StoreResponse<T>>
 
     /**
      * Returns data from the single source of truth using the given key.
      */
-    suspend fun get(key: K): StoreResponse<T>
+    suspend fun get(request: StoreRequest<K>): StoreResponse<T>
 
     /**
      * Tries to fetch data from the fetcher.
      * @param forced When true it always request new data from the fetcher.
      */
-    suspend fun fetch(key: K, forced: Boolean = true): StoreResponse<T>
+    suspend fun fetch(request: StoreRequest<K>): StoreResponse<T>
 }
 
 /**

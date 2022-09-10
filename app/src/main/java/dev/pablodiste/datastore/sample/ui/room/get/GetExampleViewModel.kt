@@ -3,6 +3,7 @@ package dev.pablodiste.datastore.sample.ui.room.get
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.pablodiste.datastore.get
 import dev.pablodiste.datastore.sample.models.room.People
 import dev.pablodiste.datastore.sample.repositories.store.room.RoomPersonStore
 import kotlinx.coroutines.flow.MutableStateFlow
