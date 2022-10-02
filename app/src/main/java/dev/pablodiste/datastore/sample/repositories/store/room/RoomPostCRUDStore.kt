@@ -18,7 +18,7 @@ fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
             fetch = { post -> FetcherResult.Data(provideService().getPost(post.id)) },
             create = { key, post -> FetcherResult.Data(provideService().createPost(post)) },
             update = { key, post -> FetcherResult.Data(provideService().updatePost(key.id, post)) },
-            delete = { key, post -> provideService().deletePost(key.id); true },
+            delete = { key, post -> provideService().deletePost(key.id); FetcherResult.Success(true) },
         ),
         sourceOfTruth = dev.pablodiste.datastore.sample.SampleApplication.roomDb.postSourceOfTruth(),
         keyBuilder = { entity -> PostKey(entity.id) }

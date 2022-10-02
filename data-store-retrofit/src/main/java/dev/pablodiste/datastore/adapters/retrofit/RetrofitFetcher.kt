@@ -55,11 +55,11 @@ abstract class RetrofitCrudFetcher<K: Any, I: Any, S: Any>(
 
     abstract suspend fun create(key: K, entity: I, service: S): FetcherResult<I>
     abstract suspend fun update(key: K, entity: I, service: S): FetcherResult<I>
-    abstract suspend fun delete(key: K, entity: I, service: S): Boolean
+    abstract suspend fun delete(key: K, entity: I, service: S): FetcherResult<I>
 
     override suspend fun fetch(key: K): FetcherResult<I> = fetch(key, service)
     override suspend fun create(key: K, entity: I): FetcherResult<I> = create(key, entity, service)
     override suspend fun update(key: K, entity: I): FetcherResult<I> = update(key, entity, service)
-    override suspend fun delete(key: K, entity: I): Boolean = delete(key, entity, service)
+    override suspend fun delete(key: K, entity: I): FetcherResult<I> = delete(key, entity, service)
 
 }

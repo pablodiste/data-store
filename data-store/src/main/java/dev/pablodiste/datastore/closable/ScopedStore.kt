@@ -13,9 +13,9 @@ import kotlin.coroutines.EmptyCoroutineContext
 
 open class ScopedStore<K: Any, I: Any, T: Any>(
     fetcher: Fetcher<K, I>,
-    private val sourceOfTruth: ClosableSourceOfTruth<K, T>,
+    private val closableSourceOfTruth: ClosableSourceOfTruth<K, T>,
     mapper: Mapper<I, T>
-): StoreImpl<K, I, T>(fetcher, sourceOfTruth, mapper) {
+): StoreImpl<K, I, T>(fetcher, closableSourceOfTruth, mapper) {
 
     fun autoClose(coroutineScope: CoroutineScope) {
         autoClose(coroutineScope.coroutineContext)
@@ -31,7 +31,7 @@ open class ScopedStore<K: Any, I: Any, T: Any>(
 
     fun close() {
         Log.d("ScopedStore", "Releasing resources")
-        sourceOfTruth.closeableResourceManager.close()
+        closableSourceOfTruth.closeableResourceManager.close()
     }
 }
 

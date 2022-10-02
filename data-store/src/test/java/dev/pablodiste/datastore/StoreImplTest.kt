@@ -3,20 +3,14 @@ package dev.pablodiste.datastore
 import app.cash.turbine.test
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
 import dev.pablodiste.datastore.inmemory.InMemoryListSourceOfTruth
-import dev.pablodiste.datastore.inmemory.InMemorySourceOfTruth
 import dev.pablodiste.datastore.ratelimiter.FetchAlways
-import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
-import java.util.concurrent.TimeUnit
 
 @ExperimentalCoroutinesApi
 class StoreImplTest: CoroutineTest() {

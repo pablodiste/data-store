@@ -1,7 +1,10 @@
 package dev.pablodiste.datastore.closable
 
 import dev.pablodiste.datastore.StoreResponse
+import dev.pablodiste.datastore.fetch
+import dev.pablodiste.datastore.get
 import dev.pablodiste.datastore.impl.NoKey
+import dev.pablodiste.datastore.stream
 import kotlinx.coroutines.flow.Flow
 import kotlin.reflect.typeOf
 

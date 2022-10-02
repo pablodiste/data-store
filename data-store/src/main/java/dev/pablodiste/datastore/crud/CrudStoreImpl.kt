@@ -6,7 +6,7 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
     fetcher: CrudFetcher<K, I>,
     sourceOfTruth: SourceOfTruth<K, T>,
     mapper: Mapper<I, T>,
-    private val keyBuilder: ((T) -> K)? = null
+    private val keyBuilder: ((T) -> K)
 ):
     StoreImpl<K, I, T>(fetcher, sourceOfTruth, mapper), CrudStore<K, T> {
 
@@ -35,7 +35,7 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
     override suspend fun delete(key: K, entity: T): Boolean {
         return try {
             crudFetcher.delete(key, mapper.toFetcherEntity(entity))
-            pausableSourceOfTruth.delete(key)
+            sourceOfTruth.delete(key)
             true
         } catch (e: Exception) {
             false
@@ -46,17 +46,14 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
         return when (result) {
             is FetcherResult.Data -> {
                 val entityToSave = mapper.toSourceOfTruthEntity(result.value)
-                pausableSourceOfTruth.store(buildKey(entityToSave), entityToSave)
+                sourceOfTruth.store(keyBuilder(entityToSave), entityToSave)
             }
             is FetcherResult.Error -> throw result.error
             else -> throw Throwable("Error creating entity, invalid state")
         }
     }
 
-    override fun buildKey(entity: T): K {
-        return keyBuilder?.let { it(entity) } ?:
-            throw IllegalStateException("Override this method or provide a keyBuilder to build the Key for CRUD operations")
-    }
+    override fun dispose() { }
 
 }
 
@@ -66,5 +63,5 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
 open class SimpleCrudStoreImpl<K: Any, T: Any>(
     fetcher: CrudFetcher<K, T>,
     sourceOfTruth: SourceOfTruth<K, T>,
-    keyBuilder: ((T) -> K)? = null
+    keyBuilder: ((T) -> K)
 ): CrudStoreImpl<K, T, T>(fetcher, sourceOfTruth, SameEntityMapper(), keyBuilder)

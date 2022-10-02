@@ -7,6 +7,7 @@ import dev.pablodiste.datastore.StoreConfig
 import dev.pablodiste.datastore.sample.models.room.People
 import dev.pablodiste.datastore.sample.repositories.store.room.RoomPersonStore
 import dev.pablodiste.datastore.sample.repositories.store.room.RoomPersonStoreWithError
+import dev.pablodiste.datastore.stream
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
