@@ -15,3 +15,11 @@ v0.1.1
 - Ktor integration
 - Bugfixes
 - Adding some tests to repositories
+
+v0.1.2
+- Fix bug for in memory store
+- Adding StoreRequest with additional configurations to main store implementation
+- Initial implementation of WritableStore
+    - Basic pending operation worker job for sending changes.
+    - Connecting stores. Reapplying changes when fetching data from other stores.
+    - Tests for basic operations, create, update, delete
