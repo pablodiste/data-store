@@ -516,7 +516,7 @@ val throttlingState = viewModel.throttlingState.collectAsState()
 
 A CrudStore is a Store which also implements create, update and delete methods.
 These operations are reflected in API calls (POST, PUT and DELETE REST calls for example), and the new/updated/deleted entities are also created/updated/deleted from the source of truth when the API call succeeds.
-This is a very simple implementation and it does not consider yet making changes on a working thread.
+This is a very simple implementation and it does not consider making changes on a working thread.
 
 Example of definition:
 
@@ -562,7 +562,7 @@ fun create() {
 }
 ```
 And similar for `update` and `delete`. The source of truth is updated as soon the response is received.
-In general this CRUD requests assumes an API expecting POST and PUT operations which returns the created/updated object with the generated/edited id as a result.
+In general this CRUD requests assumes an API expecting POST/PUT/PATCH operations returning the created/updated object with the generated/edited id as a result.
 
 ### Error handling
 The CRUD operations returns a `StoreResponse` object which can be an `Error`. None of the operations are throwing exceptions.
@@ -582,7 +582,15 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
 ## Roadmap
 
 - Add additional testing coverage.
-- Improve CRUD solution, current one is naive, implement one with a working thread and a queue of updates.
+- Work in progress: Writeable Store
+  - Helpers for Senders
+  - More testing
+  - Detect changes on same entity id and process only one
+  - Error handling / Undo
+  - On delete operation remove pending updates for that id
+  - Provide a way for clients to store pending updates
+  - Provide a way for clients to enable and disable worker, for example for not sending when not logged in to API.
+  - Documentation
 - Investigate automatic retries on error.
 - Helpers for pagination.
 - Analyze making it available for KMM.

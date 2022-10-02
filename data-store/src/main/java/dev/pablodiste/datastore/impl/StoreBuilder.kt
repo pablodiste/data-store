@@ -40,7 +40,7 @@ class SimpleStoreBuilder<K: Any, T: Any>(
     sourceOfTruth: SourceOfTruth<K, T>
 ): StoreBuilder<K, T, T>(fetcher, sourceOfTruth, SameEntityMapper()) {
 
-    override fun build(): Store<K, T> {
+    override fun build(): SimpleStoreImpl<K, T> {
         return SimpleStoreImpl(fetcher, sourceOfTruth)
     }
 

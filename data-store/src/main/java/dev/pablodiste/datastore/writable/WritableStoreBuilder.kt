@@ -39,7 +39,7 @@ class SimpleWritableStoreBuilder<K: Any, T: Any>(
     keyBuilder: (T) -> K
 ): WritableStoreBuilder<K, T, T>(clazz, applicationScope, fetcher, sender, sourceOfTruth, SameEntityMapper(), keyBuilder) {
 
-    override fun build(): WritableStore<K, T> {
+    override fun build(): SimpleWritableStoreImpl<K, T> {
         return SimpleWritableStoreImpl(clazz, applicationScope, fetcher, sender, sourceOfTruth, keyBuilder)
     }
 

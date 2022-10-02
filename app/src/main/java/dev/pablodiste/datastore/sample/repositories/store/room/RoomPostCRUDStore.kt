@@ -4,16 +4,16 @@ import androidx.room.Dao
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.adapters.room.RoomSourceOfTruth
 import dev.pablodiste.datastore.impl.LimitedCrudFetcher
-import dev.pablodiste.datastore.impl.SimpleDirectCrudStoreBuilder
-import dev.pablodiste.datastore.impl.SimpleDirectCrudStoreImpl
+import dev.pablodiste.datastore.impl.SimpleCrudStoreBuilder
+import dev.pablodiste.datastore.impl.SimpleCrudStoreImpl
 import dev.pablodiste.datastore.sample.models.room.Post
 import dev.pablodiste.datastore.sample.network.JsonPlaceholderService
 import dev.pablodiste.datastore.sample.network.RetrofitManager
 
 data class PostKey(val id: Int)
 
-fun providePostsCRUDStore(): SimpleDirectCrudStoreImpl<PostKey, Post> {
-    return SimpleDirectCrudStoreBuilder.from(
+fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
+    return SimpleCrudStoreBuilder.from(
         fetcher = LimitedCrudFetcher.of(
             fetch = { post -> FetcherResult.Data(provideService().getPost(post.id)) },
             create = { key, post -> FetcherResult.Data(provideService().createPost(post)) },
@@ -22,7 +22,7 @@ fun providePostsCRUDStore(): SimpleDirectCrudStoreImpl<PostKey, Post> {
         ),
         sourceOfTruth = dev.pablodiste.datastore.sample.SampleApplication.roomDb.postSourceOfTruth(),
         keyBuilder = { entity -> PostKey(entity.id) }
-    ).build() as SimpleDirectCrudStoreImpl
+    ).build() as SimpleCrudStoreImpl
 }
 
 private fun provideService() = RetrofitManager.createService(JsonPlaceholderService::class.java)

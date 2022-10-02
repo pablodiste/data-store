@@ -2,6 +2,9 @@ package dev.pablodiste.datastore.impl
 
 import android.util.Log
 import dev.pablodiste.datastore.*
+import dev.pablodiste.datastore.writable.EntityStoreGroup
+import dev.pablodiste.datastore.writable.GroupableStore
+import dev.pablodiste.datastore.writable.WorkerManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
@@ -11,13 +14,15 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
     protected open val fetcher: Fetcher<K, I>,
     sourceOfTruth: SourceOfTruth<K, T>,
     protected open val mapper: Mapper<I, T>
-): Store<K, T> {
+): Store<K, T>, GroupableStore<T> {
 
     protected var pausableSourceOfTruth: PausableSourceOfTruth<K, T> = PausableSourceOfTruth(sourceOfTruth)
     private val TAG = this.javaClass.simpleName
     private val fetcherController = FetcherController(fetcher)
 
     protected val sourceOfTruth: SourceOfTruth<K, T> get() = pausableSourceOfTruth
+
+    override var group: EntityStoreGroup<T>? = null
 
     /**
      * Finds and listen the source of truth for a entity. If the entity is not in source of truth if fetches it using the fetcher.
@@ -92,15 +97,27 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
      */
     override suspend fun fetch(request: StoreRequest<K>): StoreResponse<T> {
 
-        val fetcherResult = fetcherController.fetch(request.key, request.refresh)
+        val fetcherResult = fetcherController.fetch(request.key, request.forceFetch)
 
         return withContext(Dispatchers.Main) {
             return@withContext when (fetcherResult) {
                 is FetcherResult.Data -> {
                     Log.d(TAG, "Received Data")
                     if (fetcherResult.cacheable) {
-                        val fetched = pausableSourceOfTruth.storeAfterFetch(request.key, mapper.toSourceOfTruthEntity(fetcherResult.value), true)
-                        StoreResponse.Data(fetched, ResponseOrigin.FETCHER)
+                        val sourceOfTruthEntity = mapper.toSourceOfTruthEntity(fetcherResult.value)
+
+                        // If there are pending write operations, they are applied to the incoming fetched data.
+                        val pendingUpdatesResult = group?.applyPendingChanges<K, I>(request.key, sourceOfTruthEntity)
+                        val entityToStore = pendingUpdatesResult?.updatedEntity ?: sourceOfTruthEntity
+                        val shouldStoreIt = pendingUpdatesResult?.shouldStoreIt ?: true
+
+                        // In some case like pending local deletions, we should not store fetched data.
+                        if (shouldStoreIt) {
+                            val fetched = pausableSourceOfTruth.storeAfterFetch(request.key, entityToStore, true)
+                            StoreResponse.Data(fetched, ResponseOrigin.FETCHER)
+                        } else {
+                            StoreResponse.NoData("Ignored because of pending operations in queue")
+                        }
                     } else {
                         val sourceOfTruthResponse = pausableSourceOfTruth.get(request.key)
                         StoreResponse.Data(sourceOfTruthResponse, ResponseOrigin.SOURCE_OF_TRUTH)
@@ -110,6 +127,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
                     Log.d(TAG, "Received No Data")
                     StoreResponse.NoData(fetcherResult.message)
                     /*
+                    TODO: Maybe enable this behavior via a configuration
                     // Returning cached data when the call is not made
                     val sourceOfTruthResponse = pausableSourceOfTruth.get(key)
                     Log.d(TAG, "Emitting cached data when there is no data")
@@ -126,7 +144,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
      * Subscribes to a call to fetch.
      * @param forced    if true, it ignores the rate limiter and makes the API call anyways.
      */
-    suspend fun performFetch(key: K, forced: Boolean = false) = fetch(key, forced)
+    suspend fun performFetch(key: K, forced: Boolean = false) = fetch(StoreRequest(key, forceFetch = forced))
 }
 
 /**
@@ -135,4 +153,3 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
  */
 open class SimpleStoreImpl<K: Any, T: Any>(fetcher: Fetcher<K, T>, sourceOfTruth: SourceOfTruth<K, T>):
     StoreImpl<K, T, T>(fetcher, sourceOfTruth, SameEntityMapper())
-

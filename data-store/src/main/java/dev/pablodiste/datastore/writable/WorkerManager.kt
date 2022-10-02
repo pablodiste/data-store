@@ -10,8 +10,7 @@ object WorkerManager {
     private val workers: MutableMap<Class<*>, PendingChangesWorker<*, *, *>> = mutableMapOf()
 
     @Suppress("UNCHECKED_CAST")
-    fun <K: Any, I: Any, T: Any> getOrCreateWorker(
-        store: Store<K, T>,
+    fun <K: Any, T: Any, I: Any> getOrCreateWorker(
         clazz: Class<*>,
         applicationScope: CoroutineScope,
         sourceOfTruth: SourceOfTruth<K, T>,
@@ -24,7 +23,7 @@ object WorkerManager {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <K: Any, I: Any, T: Any> getWorker(store: Store<K, T>, clazz: Class<*>): PendingChangesWorker<K, T, I>? {
+    fun <K: Any, T: Any, I: Any> getWorker(clazz: Class<*>): PendingChangesWorker<K, T, I>? {
         return (workers[clazz] as? PendingChangesWorker<K, T, I>)
     }
 

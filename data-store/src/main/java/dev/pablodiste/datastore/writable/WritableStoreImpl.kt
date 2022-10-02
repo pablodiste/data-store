@@ -4,18 +4,6 @@ import dev.pablodiste.datastore.*
 import dev.pablodiste.datastore.impl.StoreImpl
 import kotlinx.coroutines.CoroutineScope
 
-typealias EntityChange<T> = (T) -> T
-
-enum class ChangeOperation {
-    CREATE, UPDATE, DELETE
-}
-
-interface WritableStore<K: Any, T: Any>: Store<K, T> {
-    suspend fun put(key: K, entity: T, change: EntityChange<T>, operation: ChangeOperation): StoreResponse<T>
-    suspend fun remove(key: K, entity: T): StoreResponse<Boolean>
-    fun dispose()
-}
-
 open class WritableStoreImpl<K: Any, I: Any, T: Any>(
     clazz: Class<T>,
     applicationScope: CoroutineScope,
@@ -26,7 +14,7 @@ open class WritableStoreImpl<K: Any, I: Any, T: Any>(
     val keyBuilder: (T) -> K
 ): StoreImpl<K, I, T>(fetcher, sourceOfTruth, mapper), WritableStore<K, T> {
 
-    protected val worker = WorkerManager.getOrCreateWorker(this, clazz, applicationScope, sourceOfTruth, mapper, keyBuilder)
+    protected val worker = WorkerManager.getOrCreateWorker(clazz, applicationScope, sourceOfTruth, mapper, keyBuilder)
 
     override suspend fun put(key: K, entity: T, change: EntityChange<T>, operation: ChangeOperation): StoreResponse<T> {
         val updatedEntity = change(entity)
@@ -39,10 +27,6 @@ open class WritableStoreImpl<K: Any, I: Any, T: Any>(
         sourceOfTruth.delete(key)
         worker.queueChange(PendingChange(key, entity, { entity }, ChangeOperation.DELETE, sender))
         return StoreResponse.Data(true, origin = ResponseOrigin.SOURCE_OF_TRUTH)
-    }
-
-    override fun dispose() {
-        //worker.disconnect(this)
     }
 
 }

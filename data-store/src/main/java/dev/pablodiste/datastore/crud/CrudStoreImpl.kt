@@ -2,7 +2,7 @@ package dev.pablodiste.datastore.impl
 
 import dev.pablodiste.datastore.*
 
-open class DirectCrudStoreImpl<K: Any, I: Any, T: Any>(
+open class CrudStoreImpl<K: Any, I: Any, T: Any>(
     fetcher: CrudFetcher<K, I>,
     sourceOfTruth: SourceOfTruth<K, T>,
     mapper: Mapper<I, T>,
@@ -60,8 +60,8 @@ open class DirectCrudStoreImpl<K: Any, I: Any, T: Any>(
 /**
  * Simple CRUD store where the parsed fetcher entity type is the same as the source of truth entity type.
  */
-open class SimpleDirectCrudStoreImpl<K: Any, T: Any>(
+open class SimpleCrudStoreImpl<K: Any, T: Any>(
     fetcher: CrudFetcher<K, T>,
     sourceOfTruth: SourceOfTruth<K, T>,
     keyBuilder: ((T) -> K)
-): DirectCrudStoreImpl<K, T, T>(fetcher, sourceOfTruth, SameEntityMapper(), keyBuilder)
+): CrudStoreImpl<K, T, T>(fetcher, sourceOfTruth, SameEntityMapper(), keyBuilder)

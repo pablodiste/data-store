@@ -1,10 +1,13 @@
 package dev.pablodiste.datastore
 
 import app.cash.turbine.test
+import dev.pablodiste.datastore.impl.SimpleStoreBuilder
 import dev.pablodiste.datastore.inmemory.InMemorySourceOfTruth
 import dev.pablodiste.datastore.ratelimiter.FetchAlways
+import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import dev.pablodiste.datastore.writable.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -98,6 +101,40 @@ class WritableStoreImplTest: CoroutineTest() {
 
             store.remove(Key(2), fetchFromStream.requireData())
             expectNoEvents()
+        }
+        WorkerManager.dispose()
+    }
+
+    @Test
+    fun storeReflectsPendingChangesWhenGrouping() = runTest {
+        // Preparation
+        sender = object: Sender<Key, Entity> {
+            override val rateLimitPolicy: RateLimitPolicy get() = FetchAlways
+            override suspend fun send(key: Key, entity: Entity, changeOperation: ChangeOperation): FetcherResult<Entity> {
+                delay(1000000)
+                return FetcherResult.Data(Entity(2, "Two Updated"))
+            }
+        }
+        val writableStore = SimpleWritableStoreBuilder.from(this, fetcher, sender, sourceOfTruth) { entity -> Key(entity.id) }.build()
+        val queryStore = SimpleStoreBuilder.from(fetcher, sourceOfTruth).build()
+
+        // Connects two stores, updates done in the write store will be reflected in the other if they are pending
+        groupStoresByEntity(writableStore, queryStore)
+
+        writableStore.stream(Key(2), refresh = false).test {
+            val fetchFromStream = awaitItem() as StoreResponse.Data
+            assertEquals(StoreResponse.Data(Entity(2, "Two"), origin = ResponseOrigin.FETCHER), fetchFromStream)
+
+            // This update takes a long time to complete, simulating slow server
+            writableStore.update(Key(2), fetchFromStream.requireData()) { it.copy(name = "Two Updated") }
+            // If we fetch data from another store, the updated data is applied to the fetched data.
+            val fetched = queryStore.fetch(Key(2))
+            assertEquals(StoreResponse.Data(Entity(2, "Two Updated"), origin = ResponseOrigin.FETCHER), fetched)
+
+            val update = awaitItem() as StoreResponse.Data
+            assertEquals(StoreResponse.Data(Entity(2, "Two Updated"), origin = ResponseOrigin.SOURCE_OF_TRUTH), update)
+
+            cancelAndIgnoreRemainingEvents()
         }
         WorkerManager.dispose()
     }

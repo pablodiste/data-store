@@ -45,7 +45,7 @@ class PendingChangesWorker<K: Any, T: Any, I: Any>(
                         success = true
                         pendingItems.remove(it)
                     } else {
-                        // Implement failure strategy
+                        // TODO: Implement failure strategy
                         delay(1000)
                     }
                 }
@@ -61,4 +61,23 @@ class PendingChangesWorker<K: Any, T: Any, I: Any>(
     fun dispose() {
         workerJob?.cancel()
     }
+
+    fun applyPendingChanges(key: K, entity: T): PendingChangesApplicationResult<T> {
+        var changingEntity = entity
+        var shouldStoreIt = true
+        pendingItems.filter { it.key == key }.forEach {
+            when (it.changeOperation) {
+                // This happens when you create something on the client and it was also created on the server with the same key,
+                // this is unlikely to happen if the key does not clash. We give priority to local submission and we ignore fetched one.
+                ChangeOperation.CREATE -> { changingEntity = it.entity; shouldStoreIt = false }
+                // For updates we reapply the pending changes to fetched data.
+                ChangeOperation.UPDATE -> changingEntity = it.change(entity)
+                // If it was deleted locally, we ignore incoming data.
+                ChangeOperation.DELETE -> { changingEntity = it.entity; shouldStoreIt = false }
+            }
+        }
+        return PendingChangesApplicationResult(changingEntity, shouldStoreIt)
+    }
 }
+
+data class PendingChangesApplicationResult<T: Any>(val updatedEntity: T, val shouldStoreIt: Boolean)

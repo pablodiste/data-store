@@ -2,7 +2,7 @@ package dev.pablodiste.datastore.impl
 
 import dev.pablodiste.datastore.*
 
-open class DirectCrudStoreBuilder<K: Any, I: Any, T: Any>(
+open class CrudStoreBuilder<K: Any, I: Any, T: Any>(
     protected val crudFetcher: CrudFetcher<K, I>,
     sourceOfTruth: SourceOfTruth<K, T>,
     mapper: Mapper<I, T>,
@@ -10,7 +10,7 @@ open class DirectCrudStoreBuilder<K: Any, I: Any, T: Any>(
 ): StoreBuilder<K, I, T>(crudFetcher, sourceOfTruth, mapper) {
 
     override fun build(): Store<K, T> {
-        return DirectCrudStoreImpl(crudFetcher, sourceOfTruth, mapper, keyBuilder)
+        return CrudStoreImpl(crudFetcher, sourceOfTruth, mapper, keyBuilder)
     }
 
     companion object {
@@ -19,19 +19,19 @@ open class DirectCrudStoreBuilder<K: Any, I: Any, T: Any>(
             sourceOfTruth: SourceOfTruth<K, T>,
             mapper: Mapper<I, T>,
             keyBuilder: (T) -> K
-        ): DirectCrudStoreBuilder<K, I, T> =
-            DirectCrudStoreBuilder(crudFetcher, sourceOfTruth, mapper, keyBuilder)
+        ): CrudStoreBuilder<K, I, T> =
+            CrudStoreBuilder(crudFetcher, sourceOfTruth, mapper, keyBuilder)
     }
 }
 
-class SimpleDirectCrudStoreBuilder<K: Any, T: Any>(
+class SimpleCrudStoreBuilder<K: Any, T: Any>(
     fetcher: CrudFetcher<K, T>,
     sourceOfTruth: SourceOfTruth<K, T>,
     keyBuilder: (T) -> K
-): DirectCrudStoreBuilder<K, T, T>(fetcher, sourceOfTruth, SameEntityMapper(), keyBuilder) {
+): CrudStoreBuilder<K, T, T>(fetcher, sourceOfTruth, SameEntityMapper(), keyBuilder) {
 
     override fun build(): Store<K, T> {
-        return SimpleDirectCrudStoreImpl(crudFetcher, sourceOfTruth, keyBuilder)
+        return SimpleCrudStoreImpl(crudFetcher, sourceOfTruth, keyBuilder)
     }
 
     companion object {
@@ -39,6 +39,6 @@ class SimpleDirectCrudStoreBuilder<K: Any, T: Any>(
             fetcher: CrudFetcher<K, T>,
             sourceOfTruth: SourceOfTruth<K, T>,
             keyBuilder: (T) -> K
-        ): SimpleDirectCrudStoreBuilder<K, T> = SimpleDirectCrudStoreBuilder(fetcher, sourceOfTruth, keyBuilder)
+        ): SimpleCrudStoreBuilder<K, T> = SimpleCrudStoreBuilder(fetcher, sourceOfTruth, keyBuilder)
     }
 }
