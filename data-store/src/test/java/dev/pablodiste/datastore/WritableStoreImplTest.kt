@@ -3,7 +3,6 @@ package dev.pablodiste.datastore
 import app.cash.turbine.test
 import dev.pablodiste.datastore.impl.SimpleStoreBuilder
 import dev.pablodiste.datastore.inmemory.InMemorySourceOfTruth
-import dev.pablodiste.datastore.ratelimiter.FetchAlways
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import dev.pablodiste.datastore.writable.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,7 +29,7 @@ class WritableStoreImplTest: CoroutineTest() {
     @Before
     fun prepare() {
         fetcher = mock<Fetcher<Key, Entity>> {
-            on { rateLimitPolicy } doReturn FetchAlways
+            on { rateLimitPolicy } doReturn RateLimitPolicy.FetchAlways
             onBlocking { fetch(Key(1)) } doReturn FetcherResult.Data(Entity(1, "One"))
             onBlocking { fetch(Key(2)) } doReturn FetcherResult.Data(Entity(2, "Two"))
         }
@@ -47,7 +46,7 @@ class WritableStoreImplTest: CoroutineTest() {
     @Test
     fun storeCreate() = runTest {
         sender = mock {
-            on { rateLimitPolicy } doReturn FetchAlways
+            on { rateLimitPolicy } doReturn RateLimitPolicy.FetchAlways
             onBlocking { send(Key(1000), Entity(1000, "Three"), ChangeOperation.CREATE) } doReturn
                     FetcherResult.Data(Entity(3, "Three"))
         }
@@ -69,7 +68,7 @@ class WritableStoreImplTest: CoroutineTest() {
     @Test
     fun storeUpdate() = runTest {
         sender = mock {
-            on { rateLimitPolicy } doReturn FetchAlways
+            on { rateLimitPolicy } doReturn RateLimitPolicy.FetchAlways
             onBlocking { send(Key(2), Entity(2, "Two"), ChangeOperation.UPDATE) } doReturn
                     FetcherResult.Data(Entity(2, "Two Updated"))
         }
@@ -91,7 +90,7 @@ class WritableStoreImplTest: CoroutineTest() {
     @Test
     fun storeDelete() = runTest {
         sender = mock {
-            on { rateLimitPolicy } doReturn FetchAlways
+            on { rateLimitPolicy } doReturn RateLimitPolicy.FetchAlways
             onBlocking { send(Key(2), Entity(2, "Two"), ChangeOperation.DELETE) } doReturn FetcherResult.Success(true)
         }
         store = SimpleWritableStoreBuilder.from(this, fetcher, sender, sourceOfTruth) { entity -> Key(entity.id) }.build()
@@ -109,7 +108,7 @@ class WritableStoreImplTest: CoroutineTest() {
     fun storeReflectsPendingChangesWhenGrouping() = runTest {
         // Preparation
         sender = object: Sender<Key, Entity> {
-            override val rateLimitPolicy: RateLimitPolicy get() = FetchAlways
+            override val rateLimitPolicy: RateLimitPolicy get() = RateLimitPolicy.FetchAlways
             override suspend fun send(key: Key, entity: Entity, changeOperation: ChangeOperation): FetcherResult<Entity> {
                 delay(1000000)
                 return FetcherResult.Data(Entity(2, "Two Updated"))

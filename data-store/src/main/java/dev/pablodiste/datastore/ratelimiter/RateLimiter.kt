@@ -1,53 +1,65 @@
 package dev.pablodiste.datastore.ratelimiter
 
-import android.os.SystemClock
-import dev.pablodiste.datastore.FetcherResult
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import java.util.concurrent.TimeUnit
+import android.util.Log
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 /**
  * Decides whether we should fetch some data or not.
  */
-class RateLimiter<I: Any>(timeout: Int, timeUnit: TimeUnit) {
+interface RateLimiter {
+    fun shouldFetch(): Boolean
+}
 
-    private val _onCompletionFlow = MutableSharedFlow<FetcherResult<I>>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    val onResultAvailable: Flow<FetcherResult<I>> = _onCompletionFlow.distinctUntilChanged()
 
-    private var lastFetchedTime: Long? = null
-    private var completed: Boolean = false
-    private val timeout: Long = timeUnit.toMillis(timeout.toLong())
+/**
+ * Implements a fixed window algorithm for a rate limiter. It allows a max number of events in the window duration specified.
+ * After the duration has passed you can start requesting again.
+ */
+@OptIn(ExperimentalTime::class)
+class FixedWindowRateLimiter(
+    private val eventCount: Int = 1,
+    private val duration: Duration,
+    private val timeSource: TimeSource = TimeSource.Monotonic): RateLimiter {
 
-    val isCallInProgress: Boolean get() = !completed
+    private var requestCount: AtomicInteger = AtomicInteger(0)
+    private var startMark: TimeMark? = null
+    private var endMark: TimeMark? = null
 
     @Synchronized
-    fun shouldFetch(): Boolean {
-        val lastFetched = lastFetchedTime
-        val now = nowTimestamp()
-        if (lastFetched == null) {
-            lastFetchedTime = now
+    override fun shouldFetch(): Boolean {
+        val start = startMark
+
+        if (start == null) {
+            startMark = timeSource.markNow().also { endMark = it + duration }
+            requestCount.incrementAndGet()
+            Log.d("RL", "Count: " + requestCount.get())
             return true
         }
-        if (now - lastFetched > timeout) {
-            lastFetchedTime = now
+
+        if (endMark?.hasPassedNow() == true) {
+            requestCount.set(1)
+            startMark = timeSource.markNow().also { endMark = it + duration }
+            Log.d("RL", "Count: " + requestCount.get())
             return true
         }
-        return false
+
+        return (requestCount.incrementAndGet() <= eventCount).also {
+            Log.d("RL", "Count: ${requestCount.get()} Max: $eventCount")
+        }
     }
 
-    fun onRequest() {
-        completed = false
-    }
+}
 
-    fun onResult(result: FetcherResult<I>) {
-        _onCompletionFlow.tryEmit(result)
-        completed = true
-    }
+object FetchAlwaysRateLimiter: RateLimiter {
+    override fun shouldFetch(): Boolean = true
+}
 
-    private fun nowTimestamp(): Long {
-        return System.currentTimeMillis()
-    }
-
+object FetchOnlyOnceRateLimiter: RateLimiter {
+    private val alreadyFetched = AtomicBoolean(false)
+    override fun shouldFetch(): Boolean = alreadyFetched.getAndSet(true).not()
 }

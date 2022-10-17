@@ -3,7 +3,7 @@ package dev.pablodiste.datastore
 import app.cash.turbine.test
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
 import dev.pablodiste.datastore.inmemory.InMemoryListSourceOfTruth
-import dev.pablodiste.datastore.ratelimiter.FetchAlways
+import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -24,7 +24,7 @@ class StoreImplTest: CoroutineTest() {
     @Before
     fun prepare() {
         fetcher = mock<Fetcher<Key, List<Entity>>> {
-            on { rateLimitPolicy } doReturn FetchAlways
+            on { rateLimitPolicy } doReturn RateLimitPolicy.FetchAlways
             onBlocking { fetch(Key(1)) } doReturn FetcherResult.Data(listOf(
                 Entity(1, 1, "One - First"),
                 Entity(2, 1, "One - Second"),

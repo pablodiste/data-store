@@ -13,7 +13,7 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 @ExperimentalCoroutinesApi
 class InMemorySourceOfTruthTest: CoroutineTest() {
@@ -27,7 +27,7 @@ class InMemorySourceOfTruthTest: CoroutineTest() {
     @Before
     fun prepare() {
         val fetcher = mock<Fetcher<Key, Entity>> {
-            on { rateLimitPolicy } doReturn RateLimitPolicy(30, TimeUnit.SECONDS)
+            on { rateLimitPolicy } doReturn RateLimitPolicy.FixedWindowPolicy(duration = 30.seconds)
             onBlocking { fetch(Key(1)) } doReturn FetcherResult.Data(Entity(1, "First"))
             onBlocking { fetch(Key(2)) } doReturn FetcherResult.Data(Entity(2, "Second"))
         }
@@ -61,13 +61,21 @@ class InMemorySourceOfTruthTest: CoroutineTest() {
         store.stream(Key(id = 1), refresh = true)
             .onEach { println("Origin: " + it.requireOrigin()) }
             .test {
+                // The original stream method (refresh) will call the fetcher and we'll receive the result here.
                 assertNotNull(awaitItem())
+                // This fetch request is made to another id, but the same cached id 1 is returned after the storage of the item 2
                 store.fetch(Key(2))
                 assertNotNull(awaitItem())
+                // We have configured a rate limiter so this call should not emit anything.
                 store.fetch(Key(1))
+                expectNoEvents()
+                // When forcing the fetch, we should receive the emission
+                store.fetch(Key(1), forced = true)
                 assertNotNull(awaitItem())
             }
 
+        // In this case the store already has an item with the 1 key. Stream with refresh should emit twice, one for the cache and
+        // another one for the refreshed data when refresh = true.
         store.stream(Key(id = 1), refresh = true)
             .onEach {
                 when (it) {

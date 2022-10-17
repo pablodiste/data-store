@@ -582,14 +582,16 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
 ## Roadmap
 
 - Add additional testing coverage.
+- Rate limiter v2, add request count.
+- Fetcher controller: support retries.
 - Work in progress: Writeable Store
-  - Helpers for Senders
-  - More testing
-  - Detect changes on same entity id and process only one
+  - Sender Controller and library helpers
   - Error handling / Undo
+  - More testing
   - On delete operation remove pending updates for that id
   - Provide a way for clients to store pending updates
   - Provide a way for clients to enable and disable worker, for example for not sending when not logged in to API.
+  - Detect changes on same entity id and process only one
   - Documentation
 - Investigate automatic retries on error.
 - Helpers for pagination.
