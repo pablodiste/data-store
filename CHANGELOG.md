@@ -23,3 +23,6 @@ v0.1.2
     - Basic pending operation worker job for sending changes.
     - Connecting stores. Reapplying changes when fetching data from other stores.
     - Tests for basic operations, create, update, delete
+
+v0.1.3
+- Improved rate limiter. Now it supports number of calls and the possibility of adding more implementations.

@@ -291,7 +291,7 @@ All operations using the store are usually tied to a scope, we can use the viewM
 ```kotlin
 viewModelScope.launch {
     val response = personStore.fetch(RealmPersonStore.Key("1"))
-    ...
+    // ...
 }
 ```
 
@@ -300,7 +300,7 @@ With some databases like Realm we should close the opened resources when we are 
 ```kotlin
 viewModelScope.launch(personStore) {
     val response = personStore.fetch(RealmPersonStore.Key("1"))
-    ...
+    // ...
 }
 ```
 
@@ -309,7 +309,7 @@ As an alternative, we have an additional method to close many stores.
 
 ```kotlin
 viewModelScope.launch {
-    ... (use peopleStore and planetStore)
+    // Use peopleStore and planetStore
 }.autoClose(peopleStore, planetStore)
 ```
 
@@ -337,9 +337,9 @@ For example, from your ViewModel
 viewModelScope.launch {
     peopleStore.stream(refresh = true).collect { result ->
         when (result) {
-            is StoreResponse.Data -> // Here you send it to the UI
-            is StoreResponse.Error -> // You can show an error 
-            else -> // You can also handle the NoData showing an error 
+            is StoreResponse.Data -> refreshUI() // Here you send it to the UI
+            is StoreResponse.Error -> showError() // You can show an error 
+            else -> handleNoData() // You can also handle the NoData showing an error 
         }
     }
 }
@@ -432,7 +432,7 @@ fun providePostsStore(): SimpleStoreImpl<NoKey, List<Post>> {
     return SimpleStoreBuilder.from(
         fetcher = LimitedFetcher.of(
             fetch = { FetcherResult.Data(provideService().getPosts()) },
-            rateLimitPolicy = RateLimitPolicy(10, TimeUnit.SECONDS)
+            rateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 10.seconds)
         ),
         sourceOfTruth = SampleApplication.roomDb.postsSourceOfTruth()
     ).build() as SimpleStoreImpl
@@ -443,16 +443,16 @@ Similarly, if you are inheriting from `RetrofitFetcher` you can provide the limi
 ```kotlin
 	class PlayerFetcher: RetrofitFetcher<NoKey, List<Player>, RetrofitTeamService>(
     serviceClass = RetrofitPlayerService::class.java,
-    rateLimitPolicy = RateLimitPolicy(1, TimeUnit.MINUTES)) {
+    rateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 1.minutes)) {
 ```
 
-The default implementation is `RateLimitPolicy(5, TimeUnit.SECONDS)`
+The default implementation uses `RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds)`
 
-| rateLimitPolicy					| description |
-|------------------------------------|-------------|
-| `RateLimitPolicy`		 | It lets you define a timeout and time unit. The first time you make an API it will proceed, if you make a subsequent call inside this timeout period, it will NOT make an API call. Once the time has passed the timeout threshold, the next call will go to the API again with the same logic. Example: `RateLimitPolicy(10, TimeUnit.SECONDS)` |
-| `FetchOnlyOnce`		   | It calls the API only once in the app lifetime. Please note if you kill the app, this strategy will fetch again. |
-| `FetchAlways` | It does not limit the API calls in any way. |
+| rateLimitPolicy					| description                                                                                                                                                                                                                                                                                                                                                                                  |
+|---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `FixedWindowPolicy`	| It lets you define a number of calls and a time window. The first N times you make an API call it will proceed, if you make a subsequent call inside the time window provided, it will NOT make an API call. Once the time has passed the timeout threshold, the next call will go to the API again with the same logic. Example: `RateLimitPolicy.FixedWindowPolicy(duration = 10.seconds)` |
+| `FetchOnlyOnce`		| It calls the API only once in the app lifetime. Please note if you restart the app, the store will fetch again.                                                                                                                                                                                                                                                                              |
+| `FetchAlways` | It does not limit the API calls in any way.                                                                                                                                                                                                                                                                                                                                                  |
 
 #### Forcing a fetch ignoring the rate limiter
 
@@ -467,7 +467,9 @@ val result = personStore.fetch(RoomPersonStore.Key("1"), forced = true)
 The Rate limiter is active by default, but you can disable it with the code:
 
 ```kotlin
-StoreConfig.isRateLimiterEnabled = { // You can use a feature flag or a remote config here to return a Boolean }
+StoreConfig.isRateLimiterEnabled = {
+    // You can use a feature flag or a remote config here to return a Boolean 
+}
 ```
 If you want to disable it for a specific call, you can set `rateLimitPolicy = FetchAlways`.
 
@@ -496,7 +498,9 @@ You can configure the throttling setting `StoreConfig.throttlingConfiguration`.
 
 The throttling is active by default, but you can disable it for debugging purposes this way:
 ```kotlin
-StoreConfig.isThrottlingEnabled = { // You can use a feature flag or a remote config here to return a Boolean }
+StoreConfig.isThrottlingEnabled = {
+    // You can use a feature flag or a remote config here to return a Boolean
+}
 ```
 
 #### Showing API errors on the screen
@@ -506,7 +510,7 @@ StoreConfig.isThrottlingEnabled = { // You can use a feature flag or a remote co
 ```kotlin
 // In the ViewModel
 val throttlingState = StoreConfig.throttlingController.throttlingState
-...
+
 // In the View / Compose
 val throttlingState = viewModel.throttlingState.collectAsState()
 // Then you can use throttlingState.value.isThrottling to know if it is throttling.
@@ -582,7 +586,6 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
 ## Roadmap
 
 - Add additional testing coverage.
-- Rate limiter v2, add request count.
 - Fetcher controller: support retries.
 - Work in progress: Writeable Store
   - Sender Controller and library helpers
