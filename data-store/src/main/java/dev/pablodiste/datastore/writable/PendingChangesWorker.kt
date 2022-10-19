@@ -3,6 +3,7 @@ package dev.pablodiste.datastore.writable
 import dev.pablodiste.datastore.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 
 data class PendingChange<K: Any, T: Any, I: Any>(
@@ -20,7 +21,10 @@ class PendingChangesWorker<K: Any, T: Any, I: Any>(
     private val keyBuilder: ((T) -> K)
 ) {
 
-    private val pendingItemsFlow = MutableSharedFlow<PendingChange<K, T, I>>(replay = 0, extraBufferCapacity = 100, onBufferOverflow = BufferOverflow.SUSPEND)
+    private val pendingItemsFlow = MutableSharedFlow<PendingChange<K, T, I>>(
+        replay = 0,
+        extraBufferCapacity = 100,
+        onBufferOverflow = BufferOverflow.SUSPEND)
     private val pendingItems = mutableListOf<PendingChange<K, T, I>>()
     private var workerJob: Job? = null
 
@@ -54,8 +58,16 @@ class PendingChangesWorker<K: Any, T: Any, I: Any>(
     }
 
     fun queueChange(pendingChange: PendingChange<K, T, I>) {
+        if (pendingChange.changeOperation == ChangeOperation.DELETE) {
+            removeAllChangesWithKey(pendingChange.key)
+        }
         pendingItems.add(pendingChange)
         pendingItemsFlow.tryEmit(pendingChange)
+        pendingItemsFlow.replayCache
+    }
+
+    private fun removeAllChangesWithKey(key: K) {
+        // TODO Not yet implemented
     }
 
     fun dispose() {

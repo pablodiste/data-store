@@ -1,8 +1,9 @@
 package dev.pablodiste.datastore.ratelimiter
 
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
 
-open class RateLimitPolicy(val timeout: Int, val timeUnit: TimeUnit)
-
-object FetchOnlyOnce: RateLimitPolicy(24, TimeUnit.HOURS)
-object FetchAlways: RateLimitPolicy(0, TimeUnit.SECONDS)
+sealed class RateLimitPolicy {
+    data class FixedWindowPolicy(val eventCount: Int = 1, val duration: Duration): RateLimitPolicy()
+    object FetchAlways: RateLimitPolicy()
+    object FetchOnlyOnce: RateLimitPolicy()
+}

@@ -7,7 +7,7 @@ import dev.pablodiste.datastore.StoreConfig
 import dev.pablodiste.datastore.impl.LimitedFetcher
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import io.ktor.client.plugins.*
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Implements a retrofit service call, K = key, I: entity DTO class, S: Retrofit service class
@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
 abstract class KtorFetcher<K: Any, I: Any, S: Any>(
     serviceClass: Class<S>,
     serviceProvider: FetcherServiceProvider,
-    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS)
+    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds)
 ) : LimitedFetcher<K, I>(rateLimitPolicy) {
 
     init {
@@ -35,7 +35,7 @@ abstract class KtorFetcher<K: Any, I: Any, S: Any>(
     companion object {
         inline fun <K: Any, I: Any, reified S: Any> of(
             serviceProvider: FetcherServiceProvider,
-            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS),
+            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds),
             noinline fetch: suspend (K, S) -> FetcherResult<I>,
         ): Fetcher<K, I> {
             return object: KtorFetcher<K, I, S>(S::class.java, serviceProvider, rateLimitPolicy) {

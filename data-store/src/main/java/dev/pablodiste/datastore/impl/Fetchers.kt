@@ -4,14 +4,15 @@ import dev.pablodiste.datastore.CrudFetcher
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 abstract class LimitedFetcher<K: Any, I: Any>(
-    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS)): Fetcher<K, I> {
+    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds)
+): Fetcher<K, I> {
 
     companion object {
         fun <K: Any, I: Any> of(
-            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS),
+            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds),
             fetch: suspend (K) -> FetcherResult<I>,
         ): Fetcher<K, I> {
             return object: LimitedFetcher<K, I>(rateLimitPolicy) {
@@ -22,7 +23,7 @@ abstract class LimitedFetcher<K: Any, I: Any>(
 }
 
 abstract class LimitedCrudFetcher<K: Any, I: Any>(
-    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS)
+    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds)
 ): CrudFetcher<K, I> {
 
     companion object {
@@ -31,7 +32,7 @@ abstract class LimitedCrudFetcher<K: Any, I: Any>(
             create: suspend (K, I) -> FetcherResult<I> = { _, _ -> FetcherResult.NoData("NOOP") },
             update: suspend (K, I) -> FetcherResult<I> = { _, _ -> FetcherResult.NoData("NOOP") },
             delete: suspend (K, I) -> FetcherResult<I> = { _, _ -> FetcherResult.NoData("NOOP") },
-            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy(5, TimeUnit.SECONDS)
+            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds)
         ): CrudFetcher<K, I> {
             return object: LimitedCrudFetcher<K, I>(rateLimitPolicy) {
                 override suspend fun fetch(key: K): FetcherResult<I> = fetch(key)

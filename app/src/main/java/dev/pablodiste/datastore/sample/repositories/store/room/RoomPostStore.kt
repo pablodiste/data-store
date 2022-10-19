@@ -12,10 +12,12 @@ import dev.pablodiste.datastore.sample.models.room.Post
 import dev.pablodiste.datastore.sample.network.JsonPlaceholderService
 import dev.pablodiste.datastore.sample.network.RetrofitManager
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 fun providePostsStore(): SimpleStoreImpl<NoKey, List<Post>> {
     return SimpleStoreBuilder.from(
-        fetcher = LimitedFetcher.of(fetch = { FetcherResult.Data(provideService().getPosts()) }, rateLimitPolicy = RateLimitPolicy(2, TimeUnit.SECONDS)),
+        fetcher = LimitedFetcher.of(fetch = { FetcherResult.Data(provideService().getPosts()) },
+            rateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 2.seconds)),
         sourceOfTruth = dev.pablodiste.datastore.sample.SampleApplication.roomDb.postsSourceOfTruth()
     ).build() as SimpleStoreImpl
 }
