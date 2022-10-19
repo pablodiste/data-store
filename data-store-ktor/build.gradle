@@ -42,7 +42,7 @@ dependencies {
 
 ext {
     PUBLISH_GROUP_ID = 'dev.pablodiste.datastore'
-    PUBLISH_VERSION = '0.1.1'
+    PUBLISH_VERSION = '0.1.3'
     PUBLISH_ARTIFACT_ID = 'datastore-ktor'
     PUBLISH_DESCRIPTION = 'DataStore integration plugin with Ktor library'
     PUBLISH_URL = 'https://github.com/pablodiste/data-store'
