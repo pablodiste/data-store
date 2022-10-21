@@ -133,16 +133,14 @@ LimitedFetcher.of { key -> FetcherResult.Data(provideStarWarsService().getPerson
 In this example `provideStarWarsService()` provides the API service which makes the call to the server.
 
 We have available a couple of helper integrations to most common libraries too.
-The advantage of using these helpers is not only less boilerplate code but also they handle the specific library errors.
+The advantage of using these helpers is not only less boilerplate code but also they handle automatically the specific library errors.
 
 #### Retrofit Fetcher
 
 Including the retrofit integration, you can use the following code to create a Retrofit fetcher.
 
 ```kotlin
-RetrofitFetcher.of(RetrofitManager) { key, service: RoomStarWarsService ->
-    FetcherResult.Data(service.getStarships().results)
-}
+RetrofitFetcher.of(RetrofitManager) { key, service: RoomStarWarsService -> service.getStarships().results }
 ```
 
 Here `RetrofitManager` implements `FetcherServiceProvider` interface including a method used to create a Retrofit service. You can find more details in the sample application source code.
@@ -163,9 +161,9 @@ There is also a helper class you can use if you do not want to build Retrofit se
 
 ```kotlin
 class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
-    override suspend fun fetch(key: NoKey, service: StarWarsService): FetcherResult<List<People>> {
+    override suspend fun fetch(key: NoKey, service: StarWarsService): List<People> {
         val people = service.getPeople()
-        return FetcherResult.Data(people.results)
+        return people.results
     }
 }
 ```
@@ -178,9 +176,7 @@ class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarW
 Similar to the Retrofit integration you can use Ktor as HTTP client.
 
 ```kotlin
-KtorFetcher.of(KtorManager) { key, service: KtorStarWarsService ->
-    FetcherResult.Data(service.getStarships().results)
-}
+KtorFetcher.of(KtorManager) { key, service: KtorStarWarsService -> service.getStarships().results }
 ```
 
 It works the same way as Retrofit, please check the sample project for the implementation details.
@@ -196,6 +192,7 @@ LimitedFetcher.of { key -> FetcherResult.Data(provideAPIService().getPerson(key.
 ### 5. Implement the Source of Truth
 
 #### Using Room
+
 We have provided base DAOs for using with Room:
 
 - `RoomSourceOfTruth` stores individual objects. This type of source of truth is used, for example, when fetching data from APIs which return a single entity in the response.
@@ -530,7 +527,7 @@ data class PostKey(val id: Int)
 fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
     return SimpleCrudStoreBuilder.from(
         fetcher = LimitedCrudFetcher.of(
-            fetch = { post -> FetcherResult.Data(provideService().getPost(post.id)) },
+            fetch = { post -> provideService().getPost(post.id) },
             create = { key, post -> FetcherResult.Data(provideService().createPost(post)) },
             update = { key, post -> FetcherResult.Data(provideService().updatePost(key.id, post)) },
             delete = { key, post -> provideService().deletePost(key.id); true },
@@ -586,6 +583,7 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
 ## Roadmap
 
 - Improvements of error handling
+- Document fetcher errors
 - Fetcher controller: support retries.
 - Add additional testing coverage.
 - Work in progress: Writeable Store
