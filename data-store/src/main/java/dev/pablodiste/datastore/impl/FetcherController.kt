@@ -4,6 +4,7 @@ import android.util.Log
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.StoreConfig
+import dev.pablodiste.datastore.exceptions.FetcherError
 import dev.pablodiste.datastore.ratelimiter.FetchAlwaysRateLimiter
 import dev.pablodiste.datastore.ratelimiter.FetchOnlyOnceRateLimiter
 import dev.pablodiste.datastore.ratelimiter.FixedWindowRateLimiter
@@ -25,7 +26,6 @@ import java.util.*
 class FetcherController<K: Any, I: Any>(
     private val fetcher: Fetcher<K, I>
 ) {
-
     private val TAG = this.javaClass.simpleName
     private val throttlingController: ThrottlingFetcherController = StoreConfig.throttlingController
     private val keyBasedControllers: MutableMap<String, KeyBasedController<I>> = Collections.synchronizedMap(mutableMapOf())
@@ -50,18 +50,23 @@ class FetcherController<K: Any, I: Any>(
                         controller.onRequest()
                         return@withContext fetcher.fetch(key)
                     }
+                    if (response is FetcherResult.Error) {
+                        throttlingController.onException(response.error.exception)
+                    }
                     // We offer the result to any other duplicate request
                     controller.onResult(response)
                     response
                 } catch (e: Exception) {
-                    val response = FetcherResult.Error(e)
+                    // In general all errors should come as a FetcherResult.Error but we handle other exceptions here.
+                    // TODO: Detect the error source based on the exception
+                    val response = FetcherResult.Error(FetcherError.ClientError(e))
                     throttlingController.onException(e)
                     controller.onResult(response)
                     response
                 }
             } else {
                 // Currently throttling requests
-                FetcherResult.Error(throttlingController.throttlingError())
+                FetcherResult.Error(FetcherError.ClientError(throttlingController.throttlingError()))
             }
         } else {
             if (controller.isCallInProgress) {

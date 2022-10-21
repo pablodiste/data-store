@@ -18,10 +18,10 @@ class RoomPersonStore: SimpleStoreImpl<RoomPersonStore.Key, People>(
     data class Key(val id: String)
 
     class PersonFetcher: RetrofitFetcher<Key, People, RoomStarWarsService>(RoomStarWarsService::class.java, RetrofitManager) {
-        override suspend fun fetch(key: Key, service: RoomStarWarsService): FetcherResult<People> {
+        override suspend fun fetch(key: Key, service: RoomStarWarsService): People {
             val person = service.getPerson(key.id)
             person.parseId()
-            return FetcherResult.Data(person)
+            return person
         }
     }
 

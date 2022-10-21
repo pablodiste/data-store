@@ -17,10 +17,10 @@ class RealmPersonStore: ScopedSimpleStoreImpl<RealmPersonStore.Key, People>(
     data class Key(val id: String)
 
     class PersonFetcher: RetrofitFetcher<Key, People, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
-        override suspend fun fetch(key: Key, service: StarWarsService): FetcherResult<People> {
+        override suspend fun fetch(key: Key, service: StarWarsService): People {
             val person = service.getPerson(key.id)
             person.parseId()
-            return FetcherResult.Data(person)
+            return person
         }
     }
 

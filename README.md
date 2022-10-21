@@ -585,8 +585,9 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
 
 ## Roadmap
 
-- Add additional testing coverage.
+- Improvements of error handling
 - Fetcher controller: support retries.
+- Add additional testing coverage.
 - Work in progress: Writeable Store
   - Sender Controller and library helpers
   - Error handling / Undo
