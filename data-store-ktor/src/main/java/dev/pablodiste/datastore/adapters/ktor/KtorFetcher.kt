@@ -7,6 +7,7 @@ import dev.pablodiste.datastore.StoreConfig
 import dev.pablodiste.datastore.exceptions.FetcherError
 import dev.pablodiste.datastore.impl.LimitedFetcher
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
+import dev.pablodiste.datastore.retry.RetryPolicy
 import io.ktor.client.plugins.*
 import io.ktor.utils.io.errors.*
 import kotlin.time.Duration.Companion.seconds
@@ -17,7 +18,8 @@ import kotlin.time.Duration.Companion.seconds
 abstract class KtorFetcher<K: Any, I: Any, S: Any>(
     serviceClass: Class<S>,
     serviceProvider: FetcherServiceProvider,
-    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds)
+    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds),
+    override val retryPolicy: RetryPolicy = RetryPolicy.DoNotRetry
 ) : LimitedFetcher<K, I>(rateLimitPolicy) {
 
     init {

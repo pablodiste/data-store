@@ -8,6 +8,7 @@ import dev.pablodiste.datastore.StoreConfig.throttlingDetectedExceptions
 import dev.pablodiste.datastore.exceptions.FetcherError
 import dev.pablodiste.datastore.impl.LimitedFetcher
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
+import dev.pablodiste.datastore.retry.RetryPolicy
 import retrofit2.HttpException
 import java.io.IOException
 import kotlin.time.Duration.Companion.seconds
@@ -18,8 +19,9 @@ import kotlin.time.Duration.Companion.seconds
 abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
     serviceClass: Class<S>,
     serviceProvider: FetcherServiceProvider,
-    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds))
-    : LimitedFetcher<K, I>(rateLimitPolicy) {
+    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds),
+    override val retryPolicy: RetryPolicy = RetryPolicy.DoNotRetry
+    ) : LimitedFetcher<K, I>(rateLimitPolicy, retryPolicy) {
 
     init {
         throttlingDetectedExceptions.add(HttpException::class.java)
@@ -44,9 +46,10 @@ abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
         inline fun <K: Any, I: Any, reified S: Any> of(
             serviceProvider: FetcherServiceProvider,
             rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds),
+            retryPolicy: RetryPolicy = RetryPolicy.DoNotRetry,
             noinline fetch: suspend (K, S) -> I,
         ): Fetcher<K, I> {
-            return object: RetrofitFetcher<K, I, S>(S::class.java, serviceProvider, rateLimitPolicy) {
+            return object: RetrofitFetcher<K, I, S>(S::class.java, serviceProvider, rateLimitPolicy, retryPolicy) {
                 override suspend fun fetch(key: K, service: S): I = fetch(key, service)
             }
         }
@@ -60,8 +63,9 @@ abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
 abstract class RetrofitCrudFetcher<K: Any, I: Any, S: Any>(
     serviceClass: Class<S>,
     serviceProvider: FetcherServiceProvider,
-    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds)
-): RetrofitFetcher<K, I, S>(serviceClass, serviceProvider, rateLimitPolicy), CrudFetcher<K, I> {
+    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds),
+    override val retryPolicy: RetryPolicy = RetryPolicy.DoNotRetry
+): RetrofitFetcher<K, I, S>(serviceClass, serviceProvider, rateLimitPolicy, retryPolicy), CrudFetcher<K, I> {
 
     abstract suspend fun create(key: K, entity: I, service: S): FetcherResult<I>
     abstract suspend fun update(key: K, entity: I, service: S): FetcherResult<I>

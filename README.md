@@ -47,8 +47,10 @@ You can see the features working by cloning this repository and running the `app
 - Allows configuration of custom database queries (like DAOs)
 - Allows per-request source of truth expiration configuration.
 - Implements a way to limit multiple repeated calls to the same API.
+- Supports retries using exponential backoff on fetcher errors.
 - Implements throttling on API errors. You can be notified if throttling is activated and show proper error messaging in the UI.
 - Implements CRUDStores, a very simple interface to make Create, Read, Update and Delete operations over APIs and reflect the state updates automatically in the source of truth.
+- (WIP) Implements writable stores.
 
 ## Using DataStore
 ### Installation
@@ -470,6 +472,45 @@ StoreConfig.isRateLimiterEnabled = {
 ```
 If you want to disable it for a specific call, you can set `rateLimitPolicy = FetchAlways`.
 
+### Retries
+
+You can configure retries for a fetcher call this way:
+
+```kotlin
+fun providePostsStore(): SimpleStoreImpl<NoKey, List<Post>> {
+  return SimpleStoreBuilder.from(
+    fetcher = LimitedFetcher.of(
+      fetch = { FetcherResult.Data(provideService().getPosts()) },
+      rateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 10.seconds),
+      retryPolicy = RetryPolicy.ExponentialBackoff(3)
+    ),
+    sourceOfTruth = SampleApplication.roomDb.postsSourceOfTruth()
+  ).build()
+}
+```
+
+The retryPolicy is supported in all fetcher implementations (Retrofit, Ktor, custom). The alternatives are:
+
+| retryPolicy          | description                                                                                                                                                                              |
+|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `DoNotRetry`         | It does not retry the fetcher call on failures. This is the default.                                                                                                                     |
+| `ExponentialBackoff` | When the fetcher returns a `FetcherResult.Error`, the fetch is retried until `maxRetries`. The time between retries can be controlled by the `initialBackoff` and `backoffRate` params. |
+
+#### Configurable Retry
+
+You can configure `ExponentialBackoff` policy so the retry only happens when receiving certain HTTP response codes. For example:
+
+```kotlin
+RetryPolicy.ExponentialBackoff(maxRetries = 3, retryOnErrorCodes = listOf(500, 501, 502))
+```
+
+This config will retry only when the server returns 500, 501 or 502 error codes.
+You can also configure a custom retryOn function like the following example. The fetcher will retry only if `retryOn` function returns `true`.
+
+```kotlin
+RetryPolicy.ExponentialBackoff(maxRetries = 3, retryOn = { error -> ... })
+```
+
 ### Throttling
 
 You can enable throttling of service calls in case of continuously failing requests. Sometimes backends and servers are not able to process the requests fast enough, or they are down, or they experience temporary issues. In that case, the Store clients are able to wait some time before making the next call.
@@ -582,10 +623,11 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
 
 ## Roadmap
 
-- Improvements of error handling
 - Document fetcher errors
-- Fetcher controller: support retries.
 - Add additional testing coverage.
+- Helpers for pagination.
+- Retries: Support Retry-After header
+- Support parsing of error results.
 - Work in progress: Writeable Store
   - Sender Controller and library helpers
   - Error handling / Undo
@@ -595,7 +637,5 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
   - Provide a way for clients to enable and disable worker, for example for not sending when not logged in to API.
   - Detect changes on same entity id and process only one
   - Documentation
-- Investigate automatic retries on error.
-- Helpers for pagination.
 - Analyze making it available for KMM.
 - Add an optional memory cache.

@@ -9,9 +9,13 @@ import dev.pablodiste.datastore.ratelimiter.FetchAlwaysRateLimiter
 import dev.pablodiste.datastore.ratelimiter.FetchOnlyOnceRateLimiter
 import dev.pablodiste.datastore.ratelimiter.FixedWindowRateLimiter
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
+import dev.pablodiste.datastore.retry.DoNotRetry
+import dev.pablodiste.datastore.retry.ExponentialBackoffRetry
+import dev.pablodiste.datastore.retry.RetryPolicy
 import dev.pablodiste.datastore.throttling.ThrottlingFetcherController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -46,12 +50,17 @@ class FetcherController<K: Any, I: Any>(
         return if (force || isLimiterDisabled || rateLimiter.shouldFetch()) {
             if (isThrottlingDisabled || !throttlingController.isThrottling()) {
                 try {
-                    val response = withContext(Dispatchers.IO) {
-                        controller.onRequest()
+                    controller.onRequest()
+                    var response = withContext(Dispatchers.IO) {
                         return@withContext fetcher.fetch(key)
                     }
                     if (response is FetcherResult.Error) {
-                        throttlingController.onException(response.error.exception)
+                        val retryResponse = retry(key, response)
+                        if (retryResponse !is FetcherResult.Error) {
+                            response = retryResponse
+                        } else {
+                            throttlingController.onException(retryResponse.error.exception)
+                        }
                     }
                     // We offer the result to any other duplicate request
                     controller.onResult(response)
@@ -79,6 +88,32 @@ class FetcherController<K: Any, I: Any>(
                 FetcherResult.NoData("Fetch not executed")
             }
         }
+    }
+
+    /**
+     * After an error response we can retry the fetch automatically using a RetryPolicy.
+     * At the moment the retries are not affected by the rate limiter or the throttling
+     */
+    private suspend fun retry(key: K, errorResponse: FetcherResult.Error): FetcherResult<I> {
+        val retryMethod = when (val policy = fetcher.retryPolicy) {
+            RetryPolicy.DoNotRetry -> DoNotRetry()
+            is RetryPolicy.ExponentialBackoff -> ExponentialBackoffRetry(policy.maxRetries, policy.initialBackoff, policy.backoffRate,
+                policy.retryOnErrorCodes, policy.retryOn)
+        }
+        var lastError: FetcherResult.Error = errorResponse
+        while (retryMethod.shouldRetry(lastError)) {
+            val response = withContext(Dispatchers.IO) {
+                return@withContext fetcher.fetch(key)
+            }
+            if (response !is FetcherResult.Error) {
+                return response
+            } else {
+                lastError = response
+                Log.d(TAG, "Retrying in ${retryMethod.timeToNextRetry}")
+                delay(retryMethod.timeToNextRetry)
+            }
+        }
+        return lastError
     }
 
     class KeyBasedController<I: Any>(val rateLimitPolicy: RateLimitPolicy) {

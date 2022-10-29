@@ -1,6 +1,7 @@
 package dev.pablodiste.datastore
 
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
+import dev.pablodiste.datastore.retry.RetryPolicy
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -67,6 +68,11 @@ interface Fetcher<K: Any, I: Any> {
      * Policy to limit the number of consecutive or concurrent calls
      */
     val rateLimitPolicy: RateLimitPolicy
+
+    /**
+     * Policy to retry the fetch operation on error
+     */
+    val retryPolicy: RetryPolicy
 
     /**
      * Fetches data from the remote source.
