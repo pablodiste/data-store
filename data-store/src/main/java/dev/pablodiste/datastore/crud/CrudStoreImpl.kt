@@ -48,7 +48,7 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
                 val entityToSave = mapper.toSourceOfTruthEntity(result.value)
                 sourceOfTruth.store(keyBuilder(entityToSave), entityToSave)
             }
-            is FetcherResult.Error -> throw result.error
+            is FetcherResult.Error -> throw result.error.exception
             else -> throw Throwable("Error creating entity, invalid state")
         }
     }

@@ -26,3 +26,8 @@ v0.1.2
 
 v0.1.3
 - Improved rate limiter. Now it supports number of calls and the possibility of adding more implementations.
+
+v0.1.4
+- Added more detail in fetcher results.
+- Supporting Retries.
+- Bugfix in in-memory store.
