@@ -14,24 +14,24 @@ abstract class InMemorySourceOfTruth<K: Any, T: Any>: SourceOfTruth<K, T> {
         onBufferOverflow = BufferOverflow.SUSPEND,
         extraBufferCapacity = 0)
 
-    abstract fun predicate(key: K): (key: K, value: T) -> Boolean
+    abstract fun predicate(key: K): (value: T) -> Boolean
 
-    override suspend fun exists(key: K): Boolean = data.any { predicate(key)(key, it) }
+    override suspend fun exists(key: K): Boolean = data.any { predicate(key)(it) }
 
-    override fun listen(key: K): Flow<T> = internalFlow.mapNotNull { data.firstOrNull { predicate(key)(key, it) } }
+    override fun listen(key: K): Flow<T> = internalFlow.mapNotNull { data.firstOrNull { predicate(key)(it) } }
 
     override suspend fun store(key: K, entity: T, removeStale: Boolean): T {
-        data.removeAll { predicate(key)(key, it) }
+        data.removeAll { predicate(key)(it) }
         data.add(entity)
         emit()
         return entity
     }
 
-    override suspend fun get(key: K): T = data.find { predicate(key)(key, it) } ?:
+    override suspend fun get(key: K): T = data.find { predicate(key)(it) } ?:
         throw NoSuchElementException("Entity not found")
 
     override suspend fun delete(key: K): Boolean {
-        val removed = data.removeAll { predicate(key)(key, it) }
+        val removed = data.removeAll { predicate(key)(it) }
         emit()
         return removed
     }

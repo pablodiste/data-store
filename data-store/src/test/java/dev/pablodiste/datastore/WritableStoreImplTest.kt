@@ -34,7 +34,7 @@ class WritableStoreImplTest: CoroutineTest() {
             onBlocking { fetch(Key(2)) } doReturn FetcherResult.Data(Entity(2, "Two"))
         }
         sourceOfTruth = object: InMemorySourceOfTruth<Key, Entity>() {
-            override fun predicate(key: Key): (key: Key, value: Entity) -> Boolean = { _, value -> value.id == key.id }
+            override fun predicate(key: Key): (value: Entity) -> Boolean = { value -> value.id == key.id }
         }
     }
 

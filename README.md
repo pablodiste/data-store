@@ -47,8 +47,10 @@ You can see the features working by cloning this repository and running the `app
 - Allows configuration of custom database queries (like DAOs)
 - Allows per-request source of truth expiration configuration.
 - Implements a way to limit multiple repeated calls to the same API.
+- Supports retries using exponential backoff on fetcher errors.
 - Implements throttling on API errors. You can be notified if throttling is activated and show proper error messaging in the UI.
 - Implements CRUDStores, a very simple interface to make Create, Read, Update and Delete operations over APIs and reflect the state updates automatically in the source of truth.
+- (WIP) Implements writable stores.
 
 ## Using DataStore
 ### Installation
@@ -133,16 +135,14 @@ LimitedFetcher.of { key -> FetcherResult.Data(provideStarWarsService().getPerson
 In this example `provideStarWarsService()` provides the API service which makes the call to the server.
 
 We have available a couple of helper integrations to most common libraries too.
-The advantage of using these helpers is not only less boilerplate code but also they handle the specific library errors.
+The advantage of using these helpers is not only less boilerplate code but also they handle automatically the specific library errors.
 
 #### Retrofit Fetcher
 
 Including the retrofit integration, you can use the following code to create a Retrofit fetcher.
 
 ```kotlin
-RetrofitFetcher.of(RetrofitManager) { key, service: RoomStarWarsService ->
-    FetcherResult.Data(service.getStarships().results)
-}
+RetrofitFetcher.of(RetrofitManager) { key, service: RoomStarWarsService -> service.getStarships().results }
 ```
 
 Here `RetrofitManager` implements `FetcherServiceProvider` interface including a method used to create a Retrofit service. You can find more details in the sample application source code.
@@ -163,9 +163,9 @@ There is also a helper class you can use if you do not want to build Retrofit se
 
 ```kotlin
 class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
-    override suspend fun fetch(key: NoKey, service: StarWarsService): FetcherResult<List<People>> {
+    override suspend fun fetch(key: NoKey, service: StarWarsService): List<People> {
         val people = service.getPeople()
-        return FetcherResult.Data(people.results)
+        return people.results
     }
 }
 ```
@@ -178,9 +178,7 @@ class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarW
 Similar to the Retrofit integration you can use Ktor as HTTP client.
 
 ```kotlin
-KtorFetcher.of(KtorManager) { key, service: KtorStarWarsService ->
-    FetcherResult.Data(service.getStarships().results)
-}
+KtorFetcher.of(KtorManager) { key, service: KtorStarWarsService -> service.getStarships().results }
 ```
 
 It works the same way as Retrofit, please check the sample project for the implementation details.
@@ -196,6 +194,7 @@ LimitedFetcher.of { key -> FetcherResult.Data(provideAPIService().getPerson(key.
 ### 5. Implement the Source of Truth
 
 #### Using Room
+
 We have provided base DAOs for using with Room:
 
 - `RoomSourceOfTruth` stores individual objects. This type of source of truth is used, for example, when fetching data from APIs which return a single entity in the response.
@@ -473,6 +472,45 @@ StoreConfig.isRateLimiterEnabled = {
 ```
 If you want to disable it for a specific call, you can set `rateLimitPolicy = FetchAlways`.
 
+### Retries
+
+You can configure retries for a fetcher call this way:
+
+```kotlin
+fun providePostsStore(): SimpleStoreImpl<NoKey, List<Post>> {
+  return SimpleStoreBuilder.from(
+    fetcher = LimitedFetcher.of(
+      fetch = { FetcherResult.Data(provideService().getPosts()) },
+      rateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 10.seconds),
+      retryPolicy = RetryPolicy.ExponentialBackoff(3)
+    ),
+    sourceOfTruth = SampleApplication.roomDb.postsSourceOfTruth()
+  ).build()
+}
+```
+
+The retryPolicy is supported in all fetcher implementations (Retrofit, Ktor, custom). The alternatives are:
+
+| retryPolicy          | description                                                                                                                                                                              |
+|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `DoNotRetry`         | It does not retry the fetcher call on failures. This is the default.                                                                                                                     |
+| `ExponentialBackoff` | When the fetcher returns a `FetcherResult.Error`, the fetch is retried until `maxRetries`. The time between retries can be controlled by the `initialBackoff` and `backoffRate` params. |
+
+#### Configurable Retry
+
+You can configure `ExponentialBackoff` policy so the retry only happens when receiving certain HTTP response codes. For example:
+
+```kotlin
+RetryPolicy.ExponentialBackoff(maxRetries = 3, retryOnErrorCodes = listOf(500, 501, 502))
+```
+
+This config will retry only when the server returns 500, 501 or 502 error codes.
+You can also configure a custom retryOn function like the following example. The fetcher will retry only if `retryOn` function returns `true`.
+
+```kotlin
+RetryPolicy.ExponentialBackoff(maxRetries = 3, retryOn = { error -> ... })
+```
+
 ### Throttling
 
 You can enable throttling of service calls in case of continuously failing requests. Sometimes backends and servers are not able to process the requests fast enough, or they are down, or they experience temporary issues. In that case, the Store clients are able to wait some time before making the next call.
@@ -530,7 +568,7 @@ data class PostKey(val id: Int)
 fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
     return SimpleCrudStoreBuilder.from(
         fetcher = LimitedCrudFetcher.of(
-            fetch = { post -> FetcherResult.Data(provideService().getPost(post.id)) },
+            fetch = { post -> provideService().getPost(post.id) },
             create = { key, post -> FetcherResult.Data(provideService().createPost(post)) },
             update = { key, post -> FetcherResult.Data(provideService().updatePost(key.id, post)) },
             delete = { key, post -> provideService().deletePost(key.id); true },
@@ -585,8 +623,11 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
 
 ## Roadmap
 
+- Document fetcher errors
 - Add additional testing coverage.
-- Fetcher controller: support retries.
+- Helpers for pagination.
+- Retries: Support Retry-After header
+- Support parsing of error results.
 - Work in progress: Writeable Store
   - Sender Controller and library helpers
   - Error handling / Undo
@@ -596,7 +637,5 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
   - Provide a way for clients to enable and disable worker, for example for not sending when not logged in to API.
   - Detect changes on same entity id and process only one
   - Documentation
-- Investigate automatic retries on error.
-- Helpers for pagination.
 - Analyze making it available for KMM.
 - Add an optional memory cache.

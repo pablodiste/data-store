@@ -16,10 +16,11 @@ import kotlin.time.Duration.Companion.seconds
 
 fun providePostsStore(): SimpleStoreImpl<NoKey, List<Post>> {
     return SimpleStoreBuilder.from(
-        fetcher = LimitedFetcher.of(fetch = { FetcherResult.Data(provideService().getPosts()) },
+        fetcher = LimitedFetcher.of(
+            fetch = { FetcherResult.Data(provideService().getPosts()) },
             rateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 2.seconds)),
         sourceOfTruth = dev.pablodiste.datastore.sample.SampleApplication.roomDb.postsSourceOfTruth()
-    ).build() as SimpleStoreImpl
+    ).build()
 }
 
 private fun provideService() = RetrofitManager.createService(JsonPlaceholderService::class.java)

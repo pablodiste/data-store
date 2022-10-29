@@ -18,10 +18,10 @@ class RoomPeopleStore: NoKeySimpleStore<List<People>>(
 ) {
 
     class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, RoomStarWarsService>(RoomStarWarsService::class.java, RetrofitManager) {
-        override suspend fun fetch(key: NoKey, service: RoomStarWarsService): FetcherResult<List<People>> {
+        override suspend fun fetch(key: NoKey, service: RoomStarWarsService): List<People> {
             val people = service.getPeople()
             people.results.forEach { it.parseId() }
-            return FetcherResult.Data(people.results)
+            return people.results
         }
     }
 

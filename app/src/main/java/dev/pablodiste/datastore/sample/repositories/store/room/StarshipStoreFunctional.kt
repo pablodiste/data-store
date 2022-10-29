@@ -24,19 +24,14 @@ abstract class StarshipSourceOfTruth: RoomListSourceOfTruth<NoKey, Starship>("st
 
 fun provideStarshipStore(): Store<NoKey, List<Starship>> =
     StoreBuilder.from(
-        fetcher = RetrofitFetcher.of(RetrofitManager) { key, service: RoomStarWarsService ->
-            FetcherResult.Data(service.getStarships().results)
-        },
+        fetcher = RetrofitFetcher.of(RetrofitManager) { key, service: RoomStarWarsService -> service.getStarships().results },
         sourceOfTruth = SampleApplication.roomDb.starshipSourceOfTruth(),
         mapper = StarshipMapper()
     ).build()
 
 fun provideStarshipStoreKtor(): Store<NoKey, List<Starship>> =
     StoreBuilder.from(
-        fetcher = KtorFetcher.of(KtorManager) { key, service: KtorStarWarsService ->
-            FetcherResult.Data(service.getStarships().results)
-        },
+        fetcher = KtorFetcher.of(KtorManager) { key, service: KtorStarWarsService -> service.getStarships().results },
         sourceOfTruth = SampleApplication.roomDb.starshipSourceOfTruth(),
         mapper = StarshipMapper()
     ).build()
-

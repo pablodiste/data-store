@@ -32,7 +32,7 @@ class InMemorySourceOfTruthTest: CoroutineTest() {
             onBlocking { fetch(Key(2)) } doReturn FetcherResult.Data(Entity(2, "Second"))
         }
         val sourceOfTruth = object: InMemorySourceOfTruth<Key, Entity>() {
-            override fun predicate(key: Key): (key: Key, value: Entity) -> Boolean = { key, value -> value.id == key.id }
+            override fun predicate(key: Key): (value: Entity) -> Boolean = { value -> value.id == key.id }
         }
         store = SimpleStoreImpl(fetcher, sourceOfTruth)
     }

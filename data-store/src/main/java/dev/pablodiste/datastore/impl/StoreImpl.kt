@@ -4,7 +4,6 @@ import android.util.Log
 import dev.pablodiste.datastore.*
 import dev.pablodiste.datastore.writable.EntityStoreGroup
 import dev.pablodiste.datastore.writable.GroupableStore
-import dev.pablodiste.datastore.writable.WorkerManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
@@ -134,7 +133,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
                     StoreResponse.Data(sourceOfTruthResponse, ResponseOrigin.SOURCE_OF_TRUTH)
                     */
                 }
-                is FetcherResult.Error -> StoreResponse.Error(fetcherResult.error)
+                is FetcherResult.Error -> StoreResponse.Error(fetcherResult.error.exception)
                 is FetcherResult.Success -> StoreResponse.Error(IllegalStateException("Unexpected fetcher result"))
             }
         }
