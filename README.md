@@ -624,18 +624,19 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
 ## Roadmap
 
 - Document fetcher errors
+- Improve throttling code
 - Add additional testing coverage.
-- Helpers for pagination.
-- Retries: Support Retry-After header
+- Support of Pagination, integration with Pager3 or custom implementation.
 - Support parsing of error results.
+- Retries: Support Retry-After header
 - Work in progress: Writeable Store
-  - Sender Controller and library helpers
-  - Error handling / Undo
-  - More testing
-  - On delete operation remove pending updates for that id
-  - Provide a way for clients to store pending updates
-  - Provide a way for clients to enable and disable worker, for example for not sending when not logged in to API.
-  - Detect changes on same entity id and process only one
-  - Documentation
+    - Sender Controller and library helpers    
+    - Error handling / Undo
+    - On delete operation remove pending updates for that id
+    - Provide a way for clients to store pending updates
+    - Provide a way for clients to enable and disable worker, for example for not sending when not logged in to API.
+    - Detect changes on same entity id and process only one
+    - More Testing
+    - Documentation
 - Analyze making it available for KMM.
 - Add an optional memory cache.
