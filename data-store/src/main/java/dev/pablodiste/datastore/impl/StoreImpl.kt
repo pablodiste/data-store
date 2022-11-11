@@ -4,7 +4,6 @@ import android.util.Log
 import dev.pablodiste.datastore.*
 import dev.pablodiste.datastore.writable.EntityStoreGroup
 import dev.pablodiste.datastore.writable.GroupableStore
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
@@ -20,6 +19,8 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
     private val fetcherController = FetcherController(fetcher)
 
     protected val sourceOfTruth: SourceOfTruth<K, T> get() = pausableSourceOfTruth
+
+    protected val coroutineConfig get() = StoreConfig.coroutineConfig
 
     override var group: EntityStoreGroup<T>? = null
 
@@ -98,7 +99,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
 
         val fetcherResult = fetcherController.fetch(request.key, request.forceFetch)
 
-        return withContext(Dispatchers.Main) {
+        return withContext(coroutineConfig.mainDispatcher) {
             return@withContext when (fetcherResult) {
                 is FetcherResult.Data -> {
                     Log.d(TAG, "Received Data")

@@ -28,8 +28,7 @@ class WritableStoreImplTest: CoroutineTest() {
 
     @Before
     fun prepare() {
-        fetcher = mock<Fetcher<Key, Entity>> {
-            on { rateLimitPolicy } doReturn RateLimitPolicy.FetchAlways
+        fetcher = mock {
             onBlocking { fetch(Key(1)) } doReturn FetcherResult.Data(Entity(1, "One"))
             onBlocking { fetch(Key(2)) } doReturn FetcherResult.Data(Entity(2, "Two"))
         }

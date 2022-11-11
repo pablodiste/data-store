@@ -63,17 +63,7 @@ interface SourceOfTruth<K: Any, T: Any> {
 /**
  * Fetches data from a remote source, like an API
  */
-interface Fetcher<K: Any, I: Any> {
-    /**
-     * Policy to limit the number of consecutive or concurrent calls
-     */
-    val rateLimitPolicy: RateLimitPolicy
-
-    /**
-     * Policy to retry the fetch operation on error
-     */
-    val retryPolicy: RetryPolicy
-
+fun interface Fetcher<K: Any, I: Any> {
     /**
      * Fetches data from the remote source.
      */
@@ -83,3 +73,5 @@ interface Fetcher<K: Any, I: Any> {
 interface FetcherServiceProvider {
     fun <T> createService(service: Class<T>): T
 }
+
+data class FetcherConfig(val force: Boolean = false)

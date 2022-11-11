@@ -1,17 +1,12 @@
 package dev.pablodiste.datastore.adapters.retrofit
 
-import dev.pablodiste.datastore.CrudFetcher
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.FetcherServiceProvider
 import dev.pablodiste.datastore.StoreConfig.throttlingDetectedExceptions
 import dev.pablodiste.datastore.exceptions.FetcherError
-import dev.pablodiste.datastore.impl.LimitedFetcher
-import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
-import dev.pablodiste.datastore.retry.RetryPolicy
 import retrofit2.HttpException
 import java.io.IOException
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * Implements a retrofit service call, K = key, I: entity DTO class, S: Retrofit service class
@@ -19,9 +14,7 @@ import kotlin.time.Duration.Companion.seconds
 abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
     serviceClass: Class<S>,
     serviceProvider: FetcherServiceProvider,
-    override val rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds),
-    override val retryPolicy: RetryPolicy = RetryPolicy.DoNotRetry
-    ) : LimitedFetcher<K, I>(rateLimitPolicy, retryPolicy) {
+    ) : Fetcher<K, I> {
 
     init {
         throttlingDetectedExceptions.add(HttpException::class.java)
@@ -45,18 +38,16 @@ abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
     companion object {
         inline fun <K: Any, I: Any, reified S: Any> of(
             serviceProvider: FetcherServiceProvider,
-            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds),
-            retryPolicy: RetryPolicy = RetryPolicy.DoNotRetry,
             noinline fetch: suspend (K, S) -> I,
         ): Fetcher<K, I> {
-            return object: RetrofitFetcher<K, I, S>(S::class.java, serviceProvider, rateLimitPolicy, retryPolicy) {
+            return object: RetrofitFetcher<K, I, S>(S::class.java, serviceProvider) {
                 override suspend fun fetch(key: K, service: S): I = fetch(key, service)
             }
         }
     }
 }
 
-
+/*
 /**
  * Implements a retrofit service call, K = key, I: entity DTO class, S: Retrofit service class
  */
@@ -75,3 +66,4 @@ abstract class RetrofitCrudFetcher<K: Any, I: Any, S: Any>(
     override suspend fun update(key: K, entity: I): FetcherResult<I> = update(key, entity, service)
     override suspend fun delete(key: K, entity: I): FetcherResult<I> = delete(key, entity, service)
 }
+ */

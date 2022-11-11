@@ -23,8 +23,7 @@ class StoreImplTest: CoroutineTest() {
 
     @Before
     fun prepare() {
-        fetcher = mock<Fetcher<Key, List<Entity>>> {
-            on { rateLimitPolicy } doReturn RateLimitPolicy.FetchAlways
+        fetcher = mock {
             onBlocking { fetch(Key(1)) } doReturn FetcherResult.Data(listOf(
                 Entity(1, 1, "One - First"),
                 Entity(2, 1, "One - Second"),
