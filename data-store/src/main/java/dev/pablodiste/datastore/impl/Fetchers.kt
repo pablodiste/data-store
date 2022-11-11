@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.first
 import java.util.*
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
 object FetcherBuilder {
     fun <K: Any, I: Any> of(fetch: suspend (K) -> FetcherResult<I>): Fetcher<K, I> = Fetcher { key -> fetch(key) }
@@ -106,11 +107,13 @@ class LimitedFetcher<K: Any, I: Any>(
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     class RateLimiterController<I: Any>(val rateLimitPolicy: RateLimitPolicy) {
         val rateLimiter = when (rateLimitPolicy) {
             RateLimitPolicy.FetchAlways -> FetchAlwaysRateLimiter
             RateLimitPolicy.FetchOnlyOnce -> FetchOnlyOnceRateLimiter
-            is RateLimitPolicy.FixedWindowPolicy -> FixedWindowRateLimiter(eventCount = rateLimitPolicy.eventCount, duration = rateLimitPolicy.duration)
+            is RateLimitPolicy.FixedWindowPolicy -> FixedWindowRateLimiter(
+                eventCount = rateLimitPolicy.eventCount, duration = rateLimitPolicy.duration, timeSource = rateLimitPolicy.timeSource)
         }
     }
 }
