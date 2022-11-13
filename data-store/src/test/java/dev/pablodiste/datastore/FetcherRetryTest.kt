@@ -2,7 +2,7 @@ package dev.pablodiste.datastore
 
 import dev.pablodiste.datastore.exceptions.FetcherError
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
-import dev.pablodiste.datastore.impl.retry
+import dev.pablodiste.datastore.fetchers.retry
 import dev.pablodiste.datastore.inmemory.InMemorySourceOfTruth
 import dev.pablodiste.datastore.retry.RetryPolicy
 import kotlinx.coroutines.ExperimentalCoroutinesApi

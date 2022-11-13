@@ -2,12 +2,10 @@ package dev.pablodiste.datastore
 
 import dev.pablodiste.datastore.exceptions.FetcherError
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
-import dev.pablodiste.datastore.impl.limit
+import dev.pablodiste.datastore.fetchers.limit
 import dev.pablodiste.datastore.inmemory.InMemorySourceOfTruth
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue

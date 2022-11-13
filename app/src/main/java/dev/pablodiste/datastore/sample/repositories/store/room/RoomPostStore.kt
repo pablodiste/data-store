@@ -4,6 +4,7 @@ import androidx.room.Dao
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.adapters.room.RoomListSourceOfTruth
+import dev.pablodiste.datastore.fetchers.limit
 import dev.pablodiste.datastore.impl.*
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import dev.pablodiste.datastore.sample.models.room.Post

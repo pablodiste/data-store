@@ -1,12 +1,10 @@
 package dev.pablodiste.datastore.sample.repositories.store.room
 
 import androidx.room.Dao
-import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.Store
 import dev.pablodiste.datastore.adapters.ktor.KtorFetcher
 import dev.pablodiste.datastore.adapters.retrofit.RetrofitFetcher
 import dev.pablodiste.datastore.adapters.room.RoomListSourceOfTruth
-import dev.pablodiste.datastore.impl.LimitedFetcher
 import dev.pablodiste.datastore.impl.NoKey
 import dev.pablodiste.datastore.impl.StoreBuilder
 import dev.pablodiste.datastore.sample.SampleApplication

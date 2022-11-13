@@ -5,8 +5,14 @@ import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.FetcherServiceProvider
 import dev.pablodiste.datastore.StoreConfig
 import dev.pablodiste.datastore.exceptions.FetcherError
+import dev.pablodiste.datastore.fetchers.joinInProgressCalls
+import dev.pablodiste.datastore.fetchers.limit
+import dev.pablodiste.datastore.fetchers.retry
+import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
+import dev.pablodiste.datastore.retry.RetryPolicy
 import io.ktor.client.plugins.*
 import io.ktor.utils.io.errors.*
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Implements a retrofit service call, K = key, I: entity DTO class, S: Retrofit service class
@@ -45,11 +51,16 @@ abstract class KtorFetcher<K: Any, I: Any, S: Any>(
     companion object {
         inline fun <K: Any, I: Any, reified S: Any> of(
             serviceProvider: FetcherServiceProvider,
+            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds, eventCount = 1),
+            retryPolicy: RetryPolicy = RetryPolicy.DoNotRetry,
             noinline fetch: suspend (K, S) -> I,
         ): Fetcher<K, I> {
             return object: KtorFetcher<K, I, S>(S::class.java, serviceProvider) {
-                override suspend fun fetch(key: K, service: S): I = fetch(key, service)
-            }
+                    override suspend fun fetch(key: K, service: S): I = fetch(key, service)
+                }
+                .joinInProgressCalls()
+                .limit(rateLimitPolicy)
+                .retry(retryPolicy)
         }
     }
 

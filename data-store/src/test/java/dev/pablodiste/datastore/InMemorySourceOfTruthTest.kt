@@ -2,7 +2,7 @@ package dev.pablodiste.datastore
 
 import app.cash.turbine.test
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
-import dev.pablodiste.datastore.impl.limit
+import dev.pablodiste.datastore.fetchers.limit
 import dev.pablodiste.datastore.inmemory.InMemorySourceOfTruth
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import kotlinx.coroutines.ExperimentalCoroutinesApi

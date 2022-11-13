@@ -1,7 +1,7 @@
 package dev.pablodiste.datastore.sample.repositories.store.room
 
 import dev.pablodiste.datastore.adapters.retrofit.RetrofitFetcher
-import dev.pablodiste.datastore.FetcherResult
+import dev.pablodiste.datastore.fetchers.throttleAllStoresOnError
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
 import dev.pablodiste.datastore.sample.models.room.People
 import dev.pablodiste.datastore.sample.network.RetrofitManager
@@ -11,7 +11,7 @@ import retrofit2.HttpException
 import retrofit2.Response
 
 class RoomPersonStoreWithError: SimpleStoreImpl<RoomPersonStore.Key, People>(
-    fetcher = PersonFetcher(),
+    fetcher = PersonFetcher().throttleAllStoresOnError(),
     sourceOfTruth = dev.pablodiste.datastore.sample.SampleApplication.roomDb.personSourceOfTruth()
 ) {
     class PersonFetcher: RetrofitFetcher<RoomPersonStore.Key, People, RoomStarWarsService>(RoomStarWarsService::class.java, RetrofitManager) {
