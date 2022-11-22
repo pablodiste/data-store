@@ -1,8 +1,9 @@
 package dev.pablodiste.datastore.sample.repositories.store.room
 
+import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.Store
-import dev.pablodiste.datastore.impl.LimitedFetcher
+import dev.pablodiste.datastore.fetchers.FetcherBuilder
 import dev.pablodiste.datastore.impl.NoKey
 import dev.pablodiste.datastore.impl.SimpleStoreBuilder
 import dev.pablodiste.datastore.sample.SampleApplication
@@ -12,13 +13,13 @@ import dev.pablodiste.datastore.sample.network.RoomStarWarsService
 
 fun providePersonStore(): Store<RoomPersonStore.Key, People> =
     SimpleStoreBuilder.from(
-        fetcher = LimitedFetcher.of { key -> FetcherResult.Data(provideStarWarsService().getPerson(key.id).apply { parseId() }) },
+        fetcher = { key -> FetcherResult.Data(provideStarWarsService().getPerson(key.id).apply { parseId() }) },
         sourceOfTruth = SampleApplication.roomDb.personSourceOfTruth()
     ).build()
 
 fun providePeopleStore(): Store<NoKey, List<People>> =
     SimpleStoreBuilder.from(
-        fetcher = LimitedFetcher.of { key -> FetcherResult.Data(provideStarWarsService().getPeople().results) },
+        fetcher = Fetcher { key -> FetcherResult.Data(provideStarWarsService().getPeople().results) },
         sourceOfTruth = SampleApplication.roomDb.peopleSourceOfTruth()
     ).build()
 

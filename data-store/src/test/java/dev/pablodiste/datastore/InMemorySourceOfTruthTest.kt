@@ -2,6 +2,7 @@ package dev.pablodiste.datastore
 
 import app.cash.turbine.test
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
+import dev.pablodiste.datastore.fetchers.limit
 import dev.pablodiste.datastore.inmemory.InMemorySourceOfTruth
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,10 +28,9 @@ class InMemorySourceOfTruthTest: CoroutineTest() {
     @Before
     fun prepare() {
         val fetcher = mock<Fetcher<Key, Entity>> {
-            on { rateLimitPolicy } doReturn RateLimitPolicy.FixedWindowPolicy(duration = 30.seconds)
             onBlocking { fetch(Key(1)) } doReturn FetcherResult.Data(Entity(1, "First"))
             onBlocking { fetch(Key(2)) } doReturn FetcherResult.Data(Entity(2, "Second"))
-        }
+        }.limit(RateLimitPolicy.FixedWindowPolicy(10.seconds))
         val sourceOfTruth = object: InMemorySourceOfTruth<Key, Entity>() {
             override fun predicate(key: Key): (value: Entity) -> Boolean = { value -> value.id == key.id }
         }

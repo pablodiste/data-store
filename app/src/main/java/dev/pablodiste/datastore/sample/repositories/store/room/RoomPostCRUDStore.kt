@@ -3,7 +3,7 @@ package dev.pablodiste.datastore.sample.repositories.store.room;
 import androidx.room.Dao
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.adapters.room.RoomSourceOfTruth
-import dev.pablodiste.datastore.impl.LimitedCrudFetcher
+import dev.pablodiste.datastore.fetchers.LimitedCrudFetcher
 import dev.pablodiste.datastore.impl.SimpleCrudStoreBuilder
 import dev.pablodiste.datastore.impl.SimpleCrudStoreImpl
 import dev.pablodiste.datastore.sample.models.room.Post
