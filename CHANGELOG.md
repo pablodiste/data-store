@@ -31,3 +31,8 @@ v0.1.4
 - Added more detail in fetcher results.
 - Supporting Retries.
 - Bugfix in in-memory store.
+
+v0.1.5
+- Refactor for fetchers, convert features to operators.
+- Adding tests to fetchers.
+- Bugfix in joinInProgressCall behavior.
