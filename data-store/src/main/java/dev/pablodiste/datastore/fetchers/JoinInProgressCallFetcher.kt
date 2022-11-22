@@ -46,7 +46,7 @@ class JoinInProgressCallFetcher<K: Any, I: Any>(val fetcher: Fetcher<K, I>): Fet
 
         private val _onCompletionFlow = MutableSharedFlow<FetcherResult<I>>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
         val onResultAvailable: Flow<FetcherResult<I>> = _onCompletionFlow.distinctUntilChanged()
-        private var completed: Boolean = false
+        private var completed: Boolean = true
         val isCallInProgress: Boolean get() = !completed
 
         fun onRequest() {

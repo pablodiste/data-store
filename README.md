@@ -17,7 +17,7 @@ A Store is composed of two main objects, a fetcher, and a source of truth.
 // Repository code
 fun providePeopleStore(): Store<NoKey, List<People>> =
     SimpleStoreBuilder.from(
-        fetcher = LimitedFetcher.of { key -> FetcherResult.Data(provideStarWarsService().getPeople().results) },
+        fetcher = { key -> FetcherResult.Data(provideStarWarsService().getPeople().results) },
         cache = SampleApplication.roomDb.peopleCache()
     ).build()
 
@@ -58,7 +58,7 @@ You can see the features working by cloning this repository and running the `app
 Include the library in the dependencies section of your module configuration file. For example using Kotlin:
 
 ```kotlin
-implementation("dev.pablodiste.datastore:datastore:0.1.2")
+implementation("dev.pablodiste.datastore:datastore:0.1.4")
 ```
 
 Plugins for integrating DataStore with common libraries, you only need to include the ones you need
@@ -66,8 +66,8 @@ Plugins for integrating DataStore with common libraries, you only need to includ
 ```kotlin
 implementation("dev.pablodiste.datastore:datastore-room:0.1.1")
 implementation("dev.pablodiste.datastore:datastore-realm:0.1.1")
-implementation("dev.pablodiste.datastore:datastore-retrofit:0.1.2")
-implementation("dev.pablodiste.datastore:datastore-ktor:0.1.1")
+implementation("dev.pablodiste.datastore:datastore-retrofit:0.1.4")
+implementation("dev.pablodiste.datastore:datastore-ktor:0.1.4")
 ```
 
 ### 1. Defining your data classes
@@ -90,13 +90,24 @@ data class People(
 ```
 ### 2. Creating a Store
 
-We have few base classes you can use for creating an Store:
+You can create a basic store using a functional builder this way:
 
-- `StoreImpl<K: Any, I: Any, T: Any>` is the main implementation, it requires you to provide K a key for the request, I the class to be used by the fetcher and T the class to be used by the source of truth.
+```kotlin
+fun providePersonStore(): Store<RoomPersonStore.Key, People> =
+    SimpleStoreBuilder.from(
+        fetcher = { key -> FetcherResult.Data(provideStarWarsService().getPerson(key.id)) },
+        sourceOfTruth = SampleApplication.roomDb.personSourceOfTruth()
+    ).build()
+```
+
+As an alternative we have few base classes you can use for creating an Store. These are useful if you want to add additional methods to your repository.
+
+- `StoreImpl<K: Any, I: Any, T: Any>` is the main implementation, it requires you to provide K a key for the request, I is the class to be used by the fetcher and T is the class to be used by the source of truth.
 - `SimpleStoreImpl` is a helper class where I = T, we are going to be using the same data class for fetching and storing.
 - `NoKeySimpleStore` is a `SimpleStoreImpl` where the Key is NoKey. Please read the Key section for more information on Keys.
 
 For example:
+
 ```kotlin
 class PeopleStore: NoKeySimpleStore<List<People>>(
     fetcher = PeopleFetcher(),
@@ -106,14 +117,6 @@ class PeopleStore: NoKeySimpleStore<List<People>>(
 ```
 Defines a store which will fetch using a fetcher based on the entity People, and it will store it in a source of truth database using the same Entity.
 
-As an alternative we also provide a functional builder for creating the store:
-```kotlin
-fun providePersonStore(): Store<RoomPersonStore.Key, People> =
-    SimpleStoreBuilder.from(
-        fetcher = LimitedFetcher.of { key -> FetcherResult.Data(provideStarWarsService().getPerson(key.id)) },
-        sourceOfTruth = SampleApplication.roomDb.personSourceOfTruth()
-    ).build()
-```
 
 ### 3. Define a Key.
 A `Key` is a parametric data class used to identify the API request operation. This `Key` can be any class with a `toString` implementation. Its fields are used to provide parameters to the API and it is also used as a unique identifier for each API Request, so we can avoid multiple repeated calls.
@@ -128,13 +131,21 @@ This key should be referenced in the generic parameter K of the store definition
 
 ### 4. Implement the Fetcher
 
-The fetcher fetches data from an API and returns a FetcherResults. You can provide a fetcher to the store this way:
+The fetcher fetches data from an API and returns a FetcherResults. Fetcher is a functional interface so you can provide it to the store using just a lambda.
 ```kotlin
-LimitedFetcher.of { key -> FetcherResult.Data(provideStarWarsService().getPerson(key.id)) }
+fetcher = { key -> FetcherResult.Data(provideStarWarsService().getPerson(key.id)) }
+// or also
+fetcher = Fetcher { key -> FetcherResult.Data(provideStarWarsService().getPerson(key.id)) }
 ```
 In this example `provideStarWarsService()` provides the API service which makes the call to the server.
 
-We have available a couple of helper integrations to most common libraries too.
+We also have a builder method which creates a fetcher with the `joinInProgressCalls` and `limit` operators on it. Please see ahead in the docs for more information about how to configure fetchers with more options.
+
+```kotlin
+fetcher = FetcherBuilder.of { key: RoomPersonStore.Key -> FetcherResult.Data(provideStarWarsService().getPerson(key.id)) }
+```
+
+We have also available a couple of helper integrations to most common fetcher libraries.
 The advantage of using these helpers is not only less boilerplate code but also they handle automatically the specific library errors.
 
 #### Retrofit Fetcher
@@ -188,7 +199,7 @@ It works the same way as Retrofit, please check the sample project for the imple
 You can also use other libraries or provide your own code to fetch data, you just need to make the call in the fetch function and return a `FetcherResult`.
 
 ```kotlin
-LimitedFetcher.of { key -> FetcherResult.Data(provideAPIService().getPerson(key.id)) }
+Fetcher { key -> FetcherResult.Data(provideAPIService().getPerson(key.id)) }
 ```
 
 ### 5. Implement the Source of Truth
@@ -420,37 +431,23 @@ abstract class PeopleSourceOfTruth: RoomListSourceOfTruth<NoKey, People>("people
 
 ### Avoiding multiple repeated calls
 
-It is very common in big applications to request the same information from many different locations. In order to avoid doing repeated API calls the `Store` implements a `RateLimiter`.
+It is very common in big applications to request the same information from many different locations in the app. In order to avoid doing repeated API calls returning the same data, the `Store` implements a `LimitedFetcher`.
 
-The limiter will allow the first call, and then any subsequent call inside a time span provided will not be executed. If the second call happens before the completion of the first call, that second call will wait for the result of the first one and it will return the same value for both. If the second call happens after the first call has arrived, `NoData` is returned instead until the time provided in the limiter has elapsed. Once the time has elapsed the store is able to call the API again.
-
-It is available a `LimitedFetcher` and provides a way to define a `rateLimitPolicy`:
+The limiter can be configured with `duration` and an `eventCount`. For example you can configure a fetcher to limit the calls to 10 calls per minute this way.
 
 ```kotlin
-fun providePostsStore(): SimpleStoreImpl<NoKey, List<Post>> {
-    return SimpleStoreBuilder.from(
-        fetcher = LimitedFetcher.of(
-            fetch = { FetcherResult.Data(provideService().getPosts()) },
-            rateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 10.seconds)
-        ),
-        sourceOfTruth = SampleApplication.roomDb.postsSourceOfTruth()
-    ).build() as SimpleStoreImpl
-}
-```
-Similarly, if you are inheriting from `RetrofitFetcher` you can provide the limiter settings in the constructor.
-
-```kotlin
-	class PlayerFetcher: RetrofitFetcher<NoKey, List<Player>, RetrofitTeamService>(
-    serviceClass = RetrofitPlayerService::class.java,
-    rateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 1.minutes)) {
+Fetcher<NoKey, List<Post>> { FetcherResult.Data(provideService().getPosts()) }
+  .limit(rateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 1.minutes, eventCount = 10))
 ```
 
-The default implementation uses `RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds)`
+In this example, the limiter will allow 10 calls in the first minute (the window duration), any additional call in the first minute will not be executed and `NoData` will be returned instead. Once the minute has passed, 10 more calls will be enabled.
+
+The default implementation uses `RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds)`. We have other options available:
 
 | rateLimitPolicy					| description                                                                                                                                                                                                                                                                                                                                                                                  |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `FixedWindowPolicy`	| It lets you define a number of calls and a time window. The first N times you make an API call it will proceed, if you make a subsequent call inside the time window provided, it will NOT make an API call. Once the time has passed the timeout threshold, the next call will go to the API again with the same logic. Example: `RateLimitPolicy.FixedWindowPolicy(duration = 10.seconds)` |
-| `FetchOnlyOnce`		| It calls the API only once in the app lifetime. Please note if you restart the app, the store will fetch again.                                                                                                                                                                                                                                                                              |
+| `FetchOnlyOnce`		| It calls the API only once in the app lifetime. Please note if you restart the app, the fetcher will fetch again.                                                                                                                                                                                                                                                                            |
 | `FetchAlways` | It does not limit the API calls in any way.                                                                                                                                                                                                                                                                                                                                                  |
 
 #### Forcing a fetch ignoring the rate limiter
@@ -470,26 +467,27 @@ StoreConfig.isRateLimiterEnabled = {
     // You can use a feature flag or a remote config here to return a Boolean 
 }
 ```
-If you want to disable it for a specific call, you can set `rateLimitPolicy = FetchAlways`.
+If you want to disable it for a specific call, you can check the `FetchAlways` rate limit policy.
+
+### Joining in-progress calls
+
+We have available one operator that detects if there is any in flight fetcher call, any concurrent repeated call will wait for the result of the first one and it will return the same result as the original. This helps to reduce the amount of calls to the backend. It can be used in combination of the rate limiter too.
+
+```kotlin
+Fetcher<NoKey, List<Post>> { FetcherResult.Data(provideService().getPosts()) }
+  .joinInProgressCalls()
+```
 
 ### Retries
 
 You can configure retries for a fetcher call this way:
 
 ```kotlin
-fun providePostsStore(): SimpleStoreImpl<NoKey, List<Post>> {
-  return SimpleStoreBuilder.from(
-    fetcher = LimitedFetcher.of(
-      fetch = { FetcherResult.Data(provideService().getPosts()) },
-      rateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 10.seconds),
-      retryPolicy = RetryPolicy.ExponentialBackoff(3)
-    ),
-    sourceOfTruth = SampleApplication.roomDb.postsSourceOfTruth()
-  ).build()
-}
+Fetcher<NoKey, List<Post>> { FetcherResult.Data(provideService().getPosts()) }
+  .retry(RetryPolicy.ExponentialBackoff(maxRetries = 2))
 ```
 
-The retryPolicy is supported in all fetcher implementations (Retrofit, Ktor, custom). The alternatives are:
+The retry extension is supported in all fetcher implementations (Retrofit, Ktor, custom). The alternatives are:
 
 | retryPolicy          | description                                                                                                                                                                              |
 |----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -517,9 +515,12 @@ You can enable throttling of service calls in case of continuously failing reque
 It works the following way: If there are more than a configurable amount of errors in a row, the next service calls during a timeframe will result in an immediate local exception and they will not be executed.
 You can also configure a base timeframe until a next call is allowed. If the time has passed and there is another error this timeframe grows exponentially to avoid flooding the server with retries or repeated calls.
 
-> The throttled requests are not retried automatically nor queued
-> (yet), they result in a throttling error. You can retry them from the client
-> code.
+> The throttled requests are not retried automatically nor queued (yet), they result in a throttling error. You can configure a retry with the retry fetcher operator.
+
+```kotlin
+Fetcher<NoKey, List<Post>> { FetcherResult.Data(provideService().getPosts()) }
+  .throttleAllStoresOnError()
+```
 
 #### Throttling configuration
 
@@ -531,7 +532,6 @@ You can configure the throttling setting `StoreConfig.throttlingConfiguration`.
 |throttleInitialTimeout  | Duration of the throttling period in milliseconds. |
 |errorDurationThreshold  | The timeout period will grow exponentially if the API errors continue happening, until reaching this duration in milliseconds. |
 
-
 #### Disabling throttling
 
 The throttling is active by default, but you can disable it for debugging purposes this way:
@@ -541,7 +541,7 @@ StoreConfig.isThrottlingEnabled = {
 }
 ```
 
-#### Showing API errors on the screen
+#### Showing throttling errors on the UI
 
 `ThrottlingFetcherController` exposes a `throttlingState` state flow you can use in the UI. The state includes `isThrottling` boolean indicating if throttling is currently active, and `timestampUntilNextCall` the unix timestamp to the date-time in which you can resume making calls or retry them.
 
@@ -553,6 +553,7 @@ val throttlingState = StoreConfig.throttlingController.throttlingState
 val throttlingState = viewModel.throttlingState.collectAsState()
 // Then you can use throttlingState.value.isThrottling to know if it is throttling.
 ```
+
 
 ### CRUD Stores
 

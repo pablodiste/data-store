@@ -119,7 +119,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
                             StoreResponse.NoData("Ignored because of pending operations in queue")
                         }
                     } else {
-                        val sourceOfTruthResponse = pausableSourceOfTruth.get(request.key)
+                        val sourceOfTruthResponse = pausableSourceOfTruth.listen(request.key).first()
                         StoreResponse.Data(sourceOfTruthResponse, ResponseOrigin.SOURCE_OF_TRUTH)
                     }
                 }

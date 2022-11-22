@@ -28,7 +28,7 @@ class FetcherRetryTest: CoroutineTest() {
     @Before
     fun prepare() {
         mockFetcher = mock()
-        fetcher = mockFetcher.retry(RetryPolicy.ExponentialBackoff(2))
+        fetcher = mockFetcher.retry(RetryPolicy.ExponentialBackoff(maxRetries = 2))
         sourceOfTruth = object: InMemorySourceOfTruth<Key, Entity>() {
             override fun predicate(key: Key): (value: Entity) -> Boolean = { value -> value.id == key.id }
         }

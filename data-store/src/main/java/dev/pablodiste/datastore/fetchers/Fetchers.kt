@@ -1,11 +1,8 @@
-package dev.pablodiste.datastore.impl
+package dev.pablodiste.datastore.fetchers
 
 import dev.pablodiste.datastore.CrudFetcher
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
-import dev.pablodiste.datastore.fetchers.joinInProgressCalls
-import dev.pablodiste.datastore.fetchers.limit
-import dev.pablodiste.datastore.fetchers.retry
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import dev.pablodiste.datastore.retry.RetryPolicy
 import kotlin.time.Duration.Companion.seconds
