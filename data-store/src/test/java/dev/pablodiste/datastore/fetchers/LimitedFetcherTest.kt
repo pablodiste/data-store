@@ -1,8 +1,8 @@
-package dev.pablodiste.datastore
+package dev.pablodiste.datastore.fetchers
 
+import dev.pablodiste.datastore.*
 import dev.pablodiste.datastore.exceptions.FetcherError
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
-import dev.pablodiste.datastore.fetchers.limit
 import dev.pablodiste.datastore.inmemory.InMemorySourceOfTruth
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +20,7 @@ import kotlin.time.TestTimeSource
 
 @ExperimentalCoroutinesApi
 @OptIn(ExperimentalTime::class)
-class FetcherLimiterTest: CoroutineTest() {
+class LimitedFetcherTest: CoroutineTest() {
 
     data class Key(val id: Int)
     data class Entity(val id: Int, val name: String)

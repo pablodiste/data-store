@@ -1,7 +1,7 @@
-package dev.pablodiste.datastore
+package dev.pablodiste.datastore.fetchers
 
+import dev.pablodiste.datastore.*
 import dev.pablodiste.datastore.exceptions.FetcherError
-import dev.pablodiste.datastore.fetchers.joinInProgressCalls
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
 import dev.pablodiste.datastore.inmemory.InMemorySourceOfTruth
 import kotlinx.coroutines.ExperimentalCoroutinesApi

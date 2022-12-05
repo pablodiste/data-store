@@ -460,7 +460,7 @@ val result = personStore.fetch(RoomPersonStore.Key("1"), forced = true)
 
 #### Disabling the Rate Limiter
 
-The Rate limiter is active by default, but you can disable it with the code:
+You can disable all rate limiters with the code:
 
 ```kotlin
 StoreConfig.isRateLimiterEnabled = {
@@ -471,7 +471,8 @@ If you want to disable it for a specific call, you can check the `FetchAlways` r
 
 ### Joining in-progress calls
 
-We have available one operator that detects if there is any in flight fetcher call, any concurrent repeated call will wait for the result of the first one and it will return the same result as the original. This helps to reduce the amount of calls to the backend. It can be used in combination of the rate limiter too.
+We have available one operator that works the following way: it detects if there is any in flight fetcher call, then any concurrent repeated call will wait for the result of the first one and it will return the same result as the original. 
+This helps to reduce the amount of calls to the backend. It can be used in combination of the rate limiter.
 
 ```kotlin
 Fetcher<NoKey, List<Post>> { FetcherResult.Data(provideService().getPosts()) }
@@ -620,16 +621,23 @@ when (response) {
 ## Contributions
 
 Any suggestion and bug report is welcome, you can create issues in the github page.
-Feel free to fork it and/or send a pull request in case you want to make fixes or add any additional feature or change. Please create an issue in github so we can discuss the idea and collaborate.
+Feel free to fork it and/or send a pull request in case you want to make fixes or add any additional feature or change. 
+Please create an issue in github so we can discuss the idea and collaborate.
 
 ## Roadmap
 
-- Document fetcher errors
-- Improve throttling code
+- Improve throttling code. Support throttling on error per fetcher call.
+- Functional builders for the source of truth.
+- Add another sample project for showcasing more features.
+- SQLDelight example and wrappers
 - Add additional testing coverage.
 - Support of Pagination, integration with Pager3 or custom implementation.
 - Support parsing of error results.
-- Retries: Support Retry-After header
+- Support cancelling requests.
+- Retries: Support 429 and Retry-After header
+- Limiter: Implement Token RateLimiter
+- Support X-Rate-Limit headers.
+- Support enabling / disabling fetcher calls based on app state, i.e. login token expiration.
 - Work in progress: Writeable Store
     - Sender Controller and library helpers    
     - Error handling / Undo

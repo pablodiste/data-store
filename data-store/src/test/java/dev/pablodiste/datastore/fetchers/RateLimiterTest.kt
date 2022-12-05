@@ -1,5 +1,6 @@
-package dev.pablodiste.datastore
+package dev.pablodiste.datastore.fetchers
 
+import dev.pablodiste.datastore.CoroutineTest
 import dev.pablodiste.datastore.ratelimiter.FixedWindowRateLimiter
 import junit.framework.Assert.assertFalse
 import junit.framework.Assert.assertTrue
