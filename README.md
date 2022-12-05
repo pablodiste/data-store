@@ -510,7 +510,26 @@ You can also configure a custom retryOn function like the following example. The
 RetryPolicy.ExponentialBackoff(maxRetries = 3, retryOn = { error -> ... })
 ```
 
-### Throttling
+### Throttling a single fetcher on server errors
+
+With this operator you can detect if multiple errors are happening in the server and avoid sending requests for some time. 
+Throttling will be applied on HTTP errors, for example 500 errors when a service or group of services are down. 
+
+Basic usage looks like this
+
+```kotlin
+Fetcher<NoKey, List<Post>> { FetcherResult.Data(provideService().getPosts()) }
+  .throttleOnError(maxErrorCount = 3, errorWindowDuration = 1.minutes)
+```
+
+In this example, if 3 or more errors are returned by the server in a window of 1 minute before the last request time up until the last request time, the store will return `ThrottlingError` exception on each subsequent fetcher call for 5 seconds (`initialBackoff`) and the fetcher requests done in that timeframe will not be executed.
+The throttling timeframe will grow exponentially after new errors arrive.
+
+You can configure with `initialBackoff` the throttling timeframe after the errors has been detected, and with `backoffRate` its growth rate.
+
+Throttling is activated by default with any HTTP error code returned but you can configure the HTTP error codes to consider passing them in the `throttleOnErrorCodes` parameter, or you can also set up a custom error detector with `throttleOn` functional parameter.
+
+### Throttling all active fetchers on server errors
 
 You can enable throttling of service calls in case of continuously failing requests. Sometimes backends and servers are not able to process the requests fast enough, or they are down, or they experience temporary issues. In that case, the Store clients are able to wait some time before making the next call.
 It works the following way: If there are more than a configurable amount of errors in a row, the next service calls during a timeframe will result in an immediate local exception and they will not be executed.
@@ -626,7 +645,6 @@ Please create an issue in github so we can discuss the idea and collaborate.
 
 ## Roadmap
 
-- Improve throttling code. Support throttling on error per fetcher call.
 - Functional builders for the source of truth.
 - Add another sample project for showcasing more features.
 - SQLDelight example and wrappers
@@ -636,6 +654,7 @@ Please create an issue in github so we can discuss the idea and collaborate.
 - Support cancelling requests.
 - Retries: Support 429 and Retry-After header
 - Limiter: Implement Token RateLimiter
+- Refactor throttling code.
 - Support X-Rate-Limit headers.
 - Support enabling / disabling fetcher calls based on app state, i.e. login token expiration.
 - Work in progress: Writeable Store
