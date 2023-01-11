@@ -13,9 +13,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import dev.pablodiste.datastore.sample.ui.realm.fetch.FetchExample
 import dev.pablodiste.datastore.sample.ui.realm.fetch.FetchExampleViewModel
 import dev.pablodiste.datastore.sample.ui.realm.get.GetExample
@@ -26,10 +28,15 @@ import dev.pablodiste.datastore.sample.ui.room.concurrent.RoomConcurrentExample
 import dev.pablodiste.datastore.sample.ui.room.concurrent.RoomConcurrentExampleViewModel
 import dev.pablodiste.datastore.sample.ui.room.crud.RoomCrudExample
 import dev.pablodiste.datastore.sample.ui.room.crud.RoomCrudExampleViewModel
+import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostView
+import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostViewModel
+import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostsExample
+import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostsViewModel
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamDTOExample
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamDTOExampleViewModel
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamExample
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamExampleViewModel
+import dev.pablodiste.datastore.sample.viewmodels.viewModelFactory
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -117,6 +124,20 @@ fun AppMainScreen() {
                     val viewModel = viewModel<GetExampleViewModel>()
                     GetExample(viewModel, openDrawer = { openDrawer() })
                 }
+                composable(DrawerScreens.DummyPosts.route) {
+                    val viewModel = viewModel<DummyPostsViewModel>()
+                    DummyPostsExample(viewModel,
+                        openDrawer = { openDrawer() },
+                        onPostSelected = { postId -> navController.navigate("dummy_post/$postId") }
+                    )
+                }
+                composable(DrawerScreens.ViewDummyPost.route,
+                    arguments = listOf(navArgument("postId") { type = NavType.IntType })) {
+                    val viewModel = viewModel<DummyPostViewModel>(factory = viewModelFactory {
+                        DummyPostViewModel(it.arguments?.getInt("postId") ?: 0)
+                    })
+                    DummyPostView(viewModel, openDrawer = { openDrawer() })
+                }
             }
         }
     }
@@ -152,6 +173,8 @@ sealed class DrawerScreens(val title: String, val route: String) {
     object RealmStreamExample : DrawerScreens("Stream Example (Realm)", "realm_stream")
     object RealmFetchExample : DrawerScreens("Fetch Example (Realm)", "realm_fetch")
     object RealmGetExample : DrawerScreens("Get Example (Realm)", "realm_get")
+    object DummyPosts : DrawerScreens("List of Posts (Room)", "dummy_posts")
+    object ViewDummyPost : DrawerScreens("Post (Room)", "dummy_post/{postId}")
 }
 
 private val screens = listOf(
@@ -165,6 +188,7 @@ private val screens = listOf(
     DrawerScreens.RealmStreamExample,
     DrawerScreens.RealmFetchExample,
     DrawerScreens.RealmGetExample,
+    DrawerScreens.DummyPosts,
 )
 
 @Composable
