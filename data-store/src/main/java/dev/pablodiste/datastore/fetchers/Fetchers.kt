@@ -20,6 +20,22 @@ object FetcherBuilder {
     }
 }
 
+object CrudFetcherBuilder {
+    fun <K: Any, I: Any> of(
+        fetch: suspend (K) -> FetcherResult<I> = { FetcherResult.NoData("NOOP") },
+        create: suspend (K, I) -> FetcherResult<I> = { _, _ -> FetcherResult.NoData("NOOP") },
+        update: suspend (K, I) -> FetcherResult<I> = { _, _ -> FetcherResult.NoData("NOOP") },
+        delete: suspend (K, I) -> FetcherResult<I> = { _, _ -> FetcherResult.NoData("NOOP") },
+    ): CrudFetcher<K, I> {
+        return object: CrudFetcher<K, I> {
+            override suspend fun fetch(key: K): FetcherResult<I> = fetch(key)
+            override suspend fun create(key: K, entity: I): FetcherResult<I> = create(key, entity)
+            override suspend fun update(key: K, entity: I): FetcherResult<I> = update(key, entity)
+            override suspend fun delete(key: K, entity: I): FetcherResult<I> = delete(key, entity)
+        }
+    }
+}
+
 abstract class LimitedCrudFetcher<K: Any, I: Any>: CrudFetcher<K, I> {
 
     companion object {

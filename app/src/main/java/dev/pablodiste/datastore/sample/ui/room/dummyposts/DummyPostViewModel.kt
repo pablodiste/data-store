@@ -4,11 +4,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.pablodiste.datastore.get
-import dev.pablodiste.datastore.impl.stream
 import dev.pablodiste.datastore.sample.models.room.DummyPost
 import dev.pablodiste.datastore.sample.repositories.store.room.DummyPostId
 import dev.pablodiste.datastore.sample.repositories.store.room.provideDummyPostStore
-import dev.pablodiste.datastore.sample.repositories.store.room.provideDummyPostsStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -28,4 +26,10 @@ class DummyPostViewModel(val postId: Int) : ViewModel() {
     companion object {
         private val TAG: String = DummyPostViewModel::class.java.simpleName
     }
+
+    suspend fun delete() {
+        val post = uiState.value!!
+        postStore.delete(DummyPostId(post.id), post)
+    }
+
 }

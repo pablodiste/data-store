@@ -30,7 +30,7 @@ import dev.pablodiste.datastore.sample.ui.room.crud.RoomCrudExample
 import dev.pablodiste.datastore.sample.ui.room.crud.RoomCrudExampleViewModel
 import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostView
 import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostViewModel
-import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostsExample
+import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostsList
 import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostsViewModel
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamDTOExample
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamDTOExampleViewModel
@@ -126,7 +126,7 @@ fun AppMainScreen() {
                 }
                 composable(DrawerScreens.DummyPosts.route) {
                     val viewModel = viewModel<DummyPostsViewModel>()
-                    DummyPostsExample(viewModel,
+                    DummyPostsList(viewModel,
                         openDrawer = { openDrawer() },
                         onPostSelected = { postId -> navController.navigate("dummy_post/$postId") }
                     )
@@ -136,7 +136,10 @@ fun AppMainScreen() {
                     val viewModel = viewModel<DummyPostViewModel>(factory = viewModelFactory {
                         DummyPostViewModel(it.arguments?.getInt("postId") ?: 0)
                     })
-                    DummyPostView(viewModel, openDrawer = { openDrawer() })
+                    DummyPostView(viewModel,
+                        openDrawer = { openDrawer() },
+                        onDeletePressed = { navController.popBackStack() }
+                    )
                 }
             }
         }
@@ -144,7 +147,7 @@ fun AppMainScreen() {
 }
 
 @Composable
-fun TopBar(title: String = "", buttonIcon: ImageVector, onButtonClicked: () -> Unit) {
+fun TopBar(title: String = "", buttonIcon: ImageVector, actions: @Composable (RowScope.() -> Unit) = {}, onButtonClicked: () -> Unit) {
     TopAppBar(
         title = {
             Text(
@@ -156,7 +159,8 @@ fun TopBar(title: String = "", buttonIcon: ImageVector, onButtonClicked: () -> U
                 Icon(buttonIcon, contentDescription = "")
             }
         },
-        backgroundColor = MaterialTheme.colors.primaryVariant
+        backgroundColor = MaterialTheme.colors.primaryVariant,
+        actions = actions,
     )
 }
 

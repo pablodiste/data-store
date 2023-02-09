@@ -1,24 +1,40 @@
 package dev.pablodiste.datastore.sample.ui.room.dummyposts
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.pablodiste.datastore.sample.models.room.DummyPost
 import dev.pablodiste.datastore.sample.ui.main.BaseScreen
+import kotlinx.coroutines.launch
 
 @Composable
-fun DummyPostView(viewModel: DummyPostViewModel, openDrawer: () -> Unit) {
-    BaseScreen(title = "Post Details Screen (Room)", openDrawer = openDrawer) {
+fun DummyPostView(viewModel: DummyPostViewModel, openDrawer: () -> Unit, onDeletePressed: () -> Boolean) {
+    val coroutineScope = rememberCoroutineScope()
+    BaseScreen(
+        title = "Post Details Screen (Room)",
+        openDrawer = openDrawer,
+        actions = {
+            IconButton(onClick = {
+                coroutineScope.launch {
+                    viewModel.delete()
+                    onDeletePressed()
+                }
+            }) {
+                Icon(Icons.Filled.Delete, contentDescription = "Delete")
+            }
+        }
+    ) {
         val uiState by viewModel.uiState.collectAsState()
         DummyPostDetails(uiState)
     }

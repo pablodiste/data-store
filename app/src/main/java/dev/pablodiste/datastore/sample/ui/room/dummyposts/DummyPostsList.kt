@@ -17,15 +17,15 @@ import dev.pablodiste.datastore.sample.models.room.DummyPost
 import dev.pablodiste.datastore.sample.ui.main.BaseScreen
 
 @Composable
-fun DummyPostsExample(viewModel: DummyPostsViewModel, openDrawer: () -> Unit, onPostSelected: (postId: Int) -> Unit) {
-    BaseScreen(title = "List of Posts (Room)", openDrawer = openDrawer) {
+fun DummyPostsList(viewModel: DummyPostsViewModel, openDrawer: () -> Unit, onPostSelected: (postId: Int) -> Unit) {
+    BaseScreen(title = "List of Posts (Room)", openDrawer = openDrawer,) {
         val uiState by viewModel.uiState.collectAsState()
-        RoomStreamExamplePeopleList(uiState, onPostSelected)
+        DummyPostsList(uiState, onPostSelected)
     }
 }
 
 @Composable
-fun RoomStreamExamplePeopleList(posts: List<DummyPost> = listOf(), onPostSelected: (postId: Int) -> Unit = {}) {
+fun DummyPostsList(posts: List<DummyPost> = listOf(), onPostSelected: (postId: Int) -> Unit = {}) {
     LazyColumn {
         items(posts) {
             Row(

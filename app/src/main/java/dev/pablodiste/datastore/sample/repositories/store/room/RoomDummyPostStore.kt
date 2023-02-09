@@ -1,9 +1,16 @@
 package dev.pablodiste.datastore.sample.repositories.store.room;
 
 import androidx.room.Dao
+import dev.pablodiste.datastore.ChangeOperation
+import dev.pablodiste.datastore.CrudFetcher2
+import dev.pablodiste.datastore.FetcherResult
+import dev.pablodiste.datastore.Sender
 import dev.pablodiste.datastore.adapters.retrofit.RetrofitFetcher
+import dev.pablodiste.datastore.adapters.retrofit.RetrofitSender
 import dev.pablodiste.datastore.adapters.room.RoomListSourceOfTruth
 import dev.pablodiste.datastore.adapters.room.RoomSourceOfTruth
+import dev.pablodiste.datastore.crud.SimpleCrudStoreBuilder
+import dev.pablodiste.datastore.crud.SimpleCrudStoreImpl
 import dev.pablodiste.datastore.impl.NoKey
 import dev.pablodiste.datastore.impl.SimpleStoreBuilder
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
@@ -29,10 +36,26 @@ fun provideDummyPostsStore(): SimpleStoreImpl<NoKey, List<DummyPost>> {
     ).build()
 }
 
+private fun provideService() = RetrofitManager.createService(DummyJsonService::class.java)
+
 data class DummyPostId(val id: Int)
-fun provideDummyPostStore(): SimpleStoreImpl<DummyPostId, DummyPost> {
-    return SimpleStoreBuilder.from(
-        fetcher = RetrofitFetcher.of(RetrofitManager) { key: DummyPostId, service: DummyJsonService -> service.getPost(key.id) },
-        sourceOfTruth = SampleApplication.roomDb.dummyPostSourceOfTruth()
+
+fun provideDummyPostStore(): SimpleCrudStoreImpl<DummyPostId, DummyPost> {
+    return SimpleCrudStoreBuilder.from(
+        crudFetcher = CrudFetcher2(
+            readFetcher = RetrofitFetcher.of(RetrofitManager) { key: DummyPostId, service: DummyJsonService -> service.getPost(key.id) },
+            createSender = RetrofitSender.of(RetrofitManager) { key: DummyPostId, entity: DummyPost, s: DummyJsonService, op: ChangeOperation ->
+                s.createPost(entity)
+            },
+            updateSender = RetrofitSender.of(RetrofitManager) { key: DummyPostId, entity: DummyPost, s: DummyJsonService, op: ChangeOperation ->
+                s.updatePost(key.id, entity)
+            },
+            deleteSender = { key: DummyPostId, entity: DummyPost, op: ChangeOperation ->
+                provideService().deletePost(key.id)
+                FetcherResult.Success(success = true)
+            }
+        ),
+        sourceOfTruth = SampleApplication.roomDb.dummyPostSourceOfTruth(),
+        keyBuilder = { post -> DummyPostId(post.id) }
     ).build()
 }

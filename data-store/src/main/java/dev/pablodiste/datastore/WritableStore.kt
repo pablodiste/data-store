@@ -5,12 +5,7 @@ import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 /**
  * Sends data to a remote source, like an API
  */
-interface Sender<K: Any, I: Any> {
-    /**
-     * Policy to limit the number of consecutive or concurrent calls
-     */
-    val rateLimitPolicy: RateLimitPolicy
-
+fun interface Sender<K: Any, I: Any> {
     /**
      * Sends data to the remote source.
      */

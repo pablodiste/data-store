@@ -15,7 +15,7 @@ import dev.pablodiste.datastore.sample.ui.main.BaseScreen
 
 @Composable
 fun RoomConcurrentExample(viewModel: RoomConcurrentExampleViewModel, openDrawer: () -> Unit) {
-    BaseScreen(title = "Store Concurrent Example (Room)", openDrawer = openDrawer) {
+    BaseScreen(title = "Store Concurrent Example (Room)", openDrawer = openDrawer,) {
         RoomConcurrentExamplePeopleList(viewModel)
     }
 }

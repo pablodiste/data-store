@@ -16,7 +16,7 @@ import java.util.*
 
 @Composable
 fun ErrorExample(viewModel: ErrorExampleViewModel, openDrawer: () -> Unit) {
-    BaseScreen(title = "Error handling Example (Room)", openDrawer = openDrawer) {
+    BaseScreen(title = "Error handling Example (Room)", openDrawer = openDrawer,) {
         val uiState = viewModel.uiState.collectAsState()
         val throttlingState = viewModel.throttlingState.collectAsState()
 

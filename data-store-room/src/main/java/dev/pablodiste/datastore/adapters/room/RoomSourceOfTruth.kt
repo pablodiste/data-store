@@ -103,6 +103,7 @@ abstract class RoomSourceOfTruth<K: Any, T: Any>(
     @RawQuery
     protected abstract suspend fun getBooleanSync(query: SupportSQLiteQuery): Boolean
 
+    @Transaction
     @RawQuery
     protected abstract suspend fun delete(query: SupportSQLiteQuery): Int
 

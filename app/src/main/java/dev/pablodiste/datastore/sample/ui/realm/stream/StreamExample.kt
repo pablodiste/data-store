@@ -15,7 +15,7 @@ import dev.pablodiste.datastore.sample.ui.main.BaseScreen
 
 @Composable
 fun StreamExample(viewModel: StreamExampleViewModel, openDrawer: () -> Unit) {
-    BaseScreen(title = "Store Stream Example (Realm)", openDrawer = openDrawer) {
+    BaseScreen(title = "Store Stream Example (Realm)", openDrawer = openDrawer,) {
         StreamExamplePeopleList(viewModel)
     }
 }
