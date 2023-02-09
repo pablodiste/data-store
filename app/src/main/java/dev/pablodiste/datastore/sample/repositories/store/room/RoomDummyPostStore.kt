@@ -3,8 +3,6 @@ package dev.pablodiste.datastore.sample.repositories.store.room;
 import androidx.room.Dao
 import dev.pablodiste.datastore.ChangeOperation
 import dev.pablodiste.datastore.CrudFetcher2
-import dev.pablodiste.datastore.FetcherResult
-import dev.pablodiste.datastore.Sender
 import dev.pablodiste.datastore.adapters.retrofit.RetrofitFetcher
 import dev.pablodiste.datastore.adapters.retrofit.RetrofitSender
 import dev.pablodiste.datastore.adapters.room.RoomListSourceOfTruth
@@ -36,8 +34,6 @@ fun provideDummyPostsStore(): SimpleStoreImpl<NoKey, List<DummyPost>> {
     ).build()
 }
 
-private fun provideService() = RetrofitManager.createService(DummyJsonService::class.java)
-
 data class DummyPostId(val id: Int)
 
 fun provideDummyPostStore(): SimpleCrudStoreImpl<DummyPostId, DummyPost> {
@@ -50,9 +46,8 @@ fun provideDummyPostStore(): SimpleCrudStoreImpl<DummyPostId, DummyPost> {
             updateSender = RetrofitSender.of(RetrofitManager) { key: DummyPostId, entity: DummyPost, s: DummyJsonService, op: ChangeOperation ->
                 s.updatePost(key.id, entity)
             },
-            deleteSender = { key: DummyPostId, entity: DummyPost, op: ChangeOperation ->
-                provideService().deletePost(key.id)
-                FetcherResult.Success(success = true)
+            deleteSender = RetrofitSender.noResult(RetrofitManager) { key: DummyPostId, entity: DummyPost, s: DummyJsonService, op: ChangeOperation ->
+                s.deletePost(key.id)
             }
         ),
         sourceOfTruth = SampleApplication.roomDb.dummyPostSourceOfTruth(),

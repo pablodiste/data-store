@@ -16,34 +16,41 @@ import retrofit2.HttpException
 import java.io.IOException
 import kotlin.time.Duration.Companion.seconds
 
+abstract class RetrofitServiceCall<K: Any, I: Any, S: Any>(
+    serviceClass: Class<S>,
+    serviceProvider: FetcherServiceProvider
+) {
+
+    val service = serviceProvider.createService(serviceClass)
+
+    init {
+        throttlingDetectedExceptions.add(HttpException::class.java)
+    }
+
+    suspend fun <I: Any> retrofitFetch(operation: suspend () -> FetcherResult<I>) = try {
+        operation.invoke()
+    } catch (ex: IOException) {
+        FetcherResult.Error(FetcherError.IOError(ex))
+    } catch (ex: HttpException) {
+        FetcherResult.Error(FetcherError.HttpError(exception = ex, code = ex.code(), message = ex.message()))
+    } catch (ex: Exception) {
+        FetcherResult.Error(FetcherError.UnknownError(ex))
+    }
+}
+
 /**
  * Implements a retrofit service call, K = key, I: entity DTO class, S: Retrofit service class
  */
 abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
     serviceClass: Class<S>,
     serviceProvider: FetcherServiceProvider,
-    ) : Fetcher<K, I> {
-
-    init {
-        throttlingDetectedExceptions.add(HttpException::class.java)
-    }
-
-    protected val service = serviceProvider.createService(serviceClass)
+    ) : RetrofitServiceCall<K, I, S>(serviceClass, serviceProvider), Fetcher<K, I> {
 
     abstract suspend fun fetch(key: K, service: S): I
 
-    override suspend fun fetch(key: K): FetcherResult<I> = fetch { fetch(key, service) }
-
-    protected suspend fun fetch(operation: suspend () -> I) = try {
-            FetcherResult.Data(operation.invoke())
-        } catch (ex: IOException) {
-            FetcherResult.Error(FetcherError.IOError(ex))
-        } catch (ex: HttpException) {
-            FetcherResult.Error(FetcherError.HttpError(exception = ex, code = ex.code(), message = ex.message()))
-        } catch (ex: Exception) {
-            FetcherResult.Error(FetcherError.UnknownError(ex))
-        }
-
+    override suspend fun fetch(key: K): FetcherResult<I> = retrofitFetch {
+        FetcherResult.Data(fetch(key, service))
+    }
 
     companion object {
         inline fun <K: Any, I: Any, reified S: Any> of(
@@ -65,24 +72,14 @@ abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(
 abstract class RetrofitSender<K: Any, I: Any, S: Any>(
     serviceClass: Class<S>,
     serviceProvider: FetcherServiceProvider,
-) : Sender<K, I> {
-
-    protected val service = serviceProvider.createService(serviceClass)
+) : RetrofitServiceCall<K, I, S>(serviceClass, serviceProvider), Sender<K, I> {
 
     abstract suspend fun send(key: K, entity: I, changeOperation: ChangeOperation, service: S): I
 
-    override suspend fun send(key: K, entity: I, changeOperation: ChangeOperation): FetcherResult<I> = fetch {
-        send(key, entity, changeOperation, service)
-    }
-
-    protected suspend fun fetch(operation: suspend () -> I) = try {
-        FetcherResult.Data(operation.invoke())
-    } catch (ex: IOException) {
-        FetcherResult.Error(FetcherError.IOError(ex))
-    } catch (ex: HttpException) {
-        FetcherResult.Error(FetcherError.HttpError(exception = ex, code = ex.code(), message = ex.message()))
-    } catch (ex: Exception) {
-        FetcherResult.Error(FetcherError.UnknownError(ex))
+    override suspend fun send(key: K, entity: I, changeOperation: ChangeOperation): FetcherResult<I> = retrofitFetch {
+        FetcherResult.Data(
+            send(key, entity, changeOperation, service)
+        )
     }
 
     companion object {
@@ -95,38 +92,21 @@ abstract class RetrofitSender<K: Any, I: Any, S: Any>(
                     send(key, entity, service, changeOperation)
             }
         }
-    }
-}
 
-/**
- * Implements a retrofit service call, K = key, I: entity DTO class, S: Retrofit service class
- */
-/*
-abstract class RetrofitCrudFetcher<K: Any, I: Any, S: Any>(serviceClass: Class<S>, serviceProvider: FetcherServiceProvider,):
-    RetrofitFetcher<K, I, S>(serviceClass, serviceProvider), CrudFetcher<K, I> {
-
-    abstract suspend fun create(key: K, entity: I, service: S): I
-    abstract suspend fun update(key: K, entity: I, service: S): I
-    abstract suspend fun delete(key: K, entity: I, service: S): I
-
-    override suspend fun create(key: K, entity: I): FetcherResult<I> = fetch { create(key, entity, service) }
-    override suspend fun update(key: K, entity: I): FetcherResult<I> = fetch { update(key, entity, service) }
-    override suspend fun delete(key: K, entity: I): FetcherResult<I> = fetch { delete(key, entity, service) }
-
-    companion object {
-        inline fun <K: Any, I: Any, reified S: Any> of(
+        inline fun <K: Any, I: Any, reified S: Any> noResult(
             serviceProvider: FetcherServiceProvider,
-            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds, eventCount = 1),
-            retryPolicy: RetryPolicy = RetryPolicy.DoNotRetry,
-            noinline fetch: suspend (K, S) -> I,
-        ): RetrofitCrudFetcher<K, I, S> {
-            return object: RetrofitCrudFetcher<K, I, S>(S::class.java, serviceProvider) {
-                override suspend fun fetch(key: K, service: S): I = fetch(key, service)
+            noinline send: suspend (K, I, S, ChangeOperation) -> Unit,
+        ): Sender<K, I> {
+            return object: RetrofitSender<K, I, S>(S::class.java, serviceProvider) {
+                override suspend fun send(key: K, entity: I, changeOperation: ChangeOperation): FetcherResult<I> =
+                    retrofitFetch {
+                        send.invoke(key, entity, service, changeOperation)
+                        FetcherResult.Success(success = true)
+                    }
+
+                override suspend fun send(key: K, entity: I, changeOperation: ChangeOperation, service: S): I = entity
             }
-                .joinInProgressCalls()
-                .limit(rateLimitPolicy)
-                .retry(retryPolicy)
         }
+
     }
 }
- */
