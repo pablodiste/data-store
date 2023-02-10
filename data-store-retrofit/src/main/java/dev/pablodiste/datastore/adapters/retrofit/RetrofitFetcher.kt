@@ -1,6 +1,5 @@
 package dev.pablodiste.datastore.adapters.retrofit
 
-import dev.pablodiste.datastore.ChangeOperation
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.FetcherServiceProvider
@@ -74,37 +73,37 @@ abstract class RetrofitSender<K: Any, I: Any, S: Any>(
     serviceProvider: FetcherServiceProvider,
 ) : RetrofitServiceCall<K, I, S>(serviceClass, serviceProvider), Sender<K, I> {
 
-    abstract suspend fun send(key: K, entity: I, changeOperation: ChangeOperation, service: S): I
+    abstract suspend fun send(key: K, entity: I, service: S): I
 
-    override suspend fun send(key: K, entity: I, changeOperation: ChangeOperation): FetcherResult<I> = retrofitFetch {
+    override suspend fun send(key: K, entity: I): FetcherResult<I> = retrofitFetch {
         FetcherResult.Data(
-            send(key, entity, changeOperation, service)
+            send(key, entity, service)
         )
     }
 
     companion object {
         inline fun <K: Any, I: Any, reified S: Any> of(
             serviceProvider: FetcherServiceProvider,
-            noinline send: suspend (K, I, S, ChangeOperation) -> I,
+            noinline send: suspend (K, I, S) -> I,
         ): Sender<K, I> {
             return object: RetrofitSender<K, I, S>(S::class.java, serviceProvider) {
-                override suspend fun send(key: K, entity: I, changeOperation: ChangeOperation, service: S): I =
-                    send(key, entity, service, changeOperation)
+                override suspend fun send(key: K, entity: I, service: S): I =
+                    send(key, entity, service)
             }
         }
 
         inline fun <K: Any, I: Any, reified S: Any> noResult(
             serviceProvider: FetcherServiceProvider,
-            noinline send: suspend (K, I, S, ChangeOperation) -> Unit,
+            noinline send: suspend (K, I, S) -> Unit,
         ): Sender<K, I> {
             return object: RetrofitSender<K, I, S>(S::class.java, serviceProvider) {
-                override suspend fun send(key: K, entity: I, changeOperation: ChangeOperation): FetcherResult<I> =
+                override suspend fun send(key: K, entity: I): FetcherResult<I> =
                     retrofitFetch {
-                        send.invoke(key, entity, service, changeOperation)
+                        send.invoke(key, entity, service)
                         FetcherResult.Success(success = true)
                     }
 
-                override suspend fun send(key: K, entity: I, changeOperation: ChangeOperation, service: S): I = entity
+                override suspend fun send(key: K, entity: I, service: S): I = entity
             }
         }
 

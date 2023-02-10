@@ -1,10 +1,9 @@
 package dev.pablodiste.datastore.sample.repositories.store.room;
 
 import androidx.room.Dao
-import dev.pablodiste.datastore.CrudFetcher2
+import dev.pablodiste.datastore.CrudFetcher
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.adapters.room.RoomSourceOfTruth
-import dev.pablodiste.datastore.fetchers.LimitedCrudFetcher
 import dev.pablodiste.datastore.crud.SimpleCrudStoreBuilder
 import dev.pablodiste.datastore.crud.SimpleCrudStoreImpl
 import dev.pablodiste.datastore.sample.models.room.Post
@@ -15,11 +14,11 @@ data class PostKey(val id: Int)
 
 fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
     return SimpleCrudStoreBuilder.from(
-        crudFetcher = CrudFetcher2(
+        crudFetcher = CrudFetcher(
             readFetcher = { post -> FetcherResult.Data(provideService().getPost(post.id)) },
-            createSender = { key, post, op -> FetcherResult.Data(provideService().createPost(post)) },
-            updateSender = { key, post, op -> FetcherResult.Data(provideService().updatePost(key.id, post)) },
-            deleteSender = { key, post, op -> provideService().deletePost(key.id); FetcherResult.Success(true) },
+            createSender = { key, post -> FetcherResult.Data(provideService().createPost(post)) },
+            updateSender = { key, post -> FetcherResult.Data(provideService().updatePost(key.id, post)) },
+            deleteSender = { key, post -> provideService().deletePost(key.id); FetcherResult.Success(true) },
         ),
         sourceOfTruth = dev.pablodiste.datastore.sample.SampleApplication.roomDb.postSourceOfTruth(),
         keyBuilder = { entity -> PostKey(entity.id) }

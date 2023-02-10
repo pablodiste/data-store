@@ -1,8 +1,6 @@
 package dev.pablodiste.datastore.crud
 
-import dev.pablodiste.datastore.ChangeOperation
 import dev.pablodiste.datastore.CrudFetcher
-import dev.pablodiste.datastore.CrudFetcher2
 import dev.pablodiste.datastore.CrudStore
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.Mapper
@@ -13,7 +11,7 @@ import dev.pablodiste.datastore.StoreResponse
 import dev.pablodiste.datastore.impl.StoreImpl
 
 open class CrudStoreImpl<K: Any, I: Any, T: Any>(
-    protected val crudFetcher: CrudFetcher2<K, I>,
+    protected val crudFetcher: CrudFetcher<K, I>,
     sourceOfTruth: SourceOfTruth<K, T>,
     mapper: Mapper<I, T>,
     private val keyBuilder: ((T) -> K)
@@ -21,7 +19,7 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
 
     override suspend fun create(key: K, entity: T): StoreResponse<T> {
         return try {
-            val createResult = crudFetcher.createSender.send(key, mapper.toFetcherEntity(entity), ChangeOperation.CREATE)
+            val createResult = crudFetcher.createSender.send(key, mapper.toFetcherEntity(entity))
             val storeResult = storeFetcherResult(createResult)
             StoreResponse.Data(storeResult, ResponseOrigin.FETCHER)
         } catch (e: Exception) {
@@ -31,7 +29,7 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
 
     override suspend fun update(key: K, entity: T): StoreResponse<T> {
         return try {
-            val updateResult = crudFetcher.updateSender.send(key, mapper.toFetcherEntity(entity), ChangeOperation.UPDATE)
+            val updateResult = crudFetcher.updateSender.send(key, mapper.toFetcherEntity(entity))
             val storeResult = storeFetcherResult(updateResult)
             StoreResponse.Data(storeResult, ResponseOrigin.FETCHER)
         } catch (e: Exception) {
@@ -41,7 +39,7 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
 
     override suspend fun delete(key: K, entity: T): Boolean {
         return try {
-            crudFetcher.deleteSender.send(key, mapper.toFetcherEntity(entity), ChangeOperation.DELETE)
+            crudFetcher.deleteSender.send(key, mapper.toFetcherEntity(entity))
             sourceOfTruth.delete(key)
             true
         } catch (e: Exception) {
@@ -68,7 +66,7 @@ open class CrudStoreImpl<K: Any, I: Any, T: Any>(
  * Simple CRUD store where the parsed fetcher entity type is the same as the source of truth entity type.
  */
 open class SimpleCrudStoreImpl<K: Any, T: Any>(
-    crudFetcher: CrudFetcher2<K, T>,
+    crudFetcher: CrudFetcher<K, T>,
     sourceOfTruth: SourceOfTruth<K, T>,
     keyBuilder: ((T) -> K)
 ): CrudStoreImpl<K, T, T>(crudFetcher, sourceOfTruth, SameEntityMapper(), keyBuilder)

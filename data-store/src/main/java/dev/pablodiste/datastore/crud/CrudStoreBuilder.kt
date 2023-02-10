@@ -1,6 +1,6 @@
 package dev.pablodiste.datastore.crud
 
-import dev.pablodiste.datastore.CrudFetcher2
+import dev.pablodiste.datastore.CrudFetcher
 import dev.pablodiste.datastore.Mapper
 import dev.pablodiste.datastore.SameEntityMapper
 import dev.pablodiste.datastore.SourceOfTruth
@@ -8,7 +8,7 @@ import dev.pablodiste.datastore.Store
 import dev.pablodiste.datastore.impl.StoreBuilder
 
 open class CrudStoreBuilder<K: Any, I: Any, T: Any>(
-    protected val crudFetcher: CrudFetcher2<K, I>,
+    protected val crudFetcher: CrudFetcher<K, I>,
     sourceOfTruth: SourceOfTruth<K, T>,
     mapper: Mapper<I, T>,
     protected val keyBuilder: (T) -> K
@@ -20,7 +20,7 @@ open class CrudStoreBuilder<K: Any, I: Any, T: Any>(
 
     companion object {
         fun <K: Any, I: Any, T: Any> from(
-            crudFetcher: CrudFetcher2<K, I>,
+            crudFetcher: CrudFetcher<K, I>,
             sourceOfTruth: SourceOfTruth<K, T>,
             mapper: Mapper<I, T>,
             keyBuilder: (T) -> K
@@ -30,7 +30,7 @@ open class CrudStoreBuilder<K: Any, I: Any, T: Any>(
 }
 
 class SimpleCrudStoreBuilder<K: Any, T: Any>(
-    crudFetcher: CrudFetcher2<K, T>,
+    crudFetcher: CrudFetcher<K, T>,
     sourceOfTruth: SourceOfTruth<K, T>,
     keyBuilder: (T) -> K
 ): CrudStoreBuilder<K, T, T>(crudFetcher, sourceOfTruth, SameEntityMapper(), keyBuilder) {
@@ -41,7 +41,7 @@ class SimpleCrudStoreBuilder<K: Any, T: Any>(
 
     companion object {
         fun <K: Any, T: Any> from(
-            crudFetcher: CrudFetcher2<K, T>,
+            crudFetcher: CrudFetcher<K, T>,
             sourceOfTruth: SourceOfTruth<K, T>,
             keyBuilder: (T) -> K
         ): SimpleCrudStoreBuilder<K, T> = SimpleCrudStoreBuilder(crudFetcher, sourceOfTruth, keyBuilder)

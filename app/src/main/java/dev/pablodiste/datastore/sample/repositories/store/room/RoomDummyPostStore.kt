@@ -1,8 +1,7 @@
 package dev.pablodiste.datastore.sample.repositories.store.room;
 
 import androidx.room.Dao
-import dev.pablodiste.datastore.ChangeOperation
-import dev.pablodiste.datastore.CrudFetcher2
+import dev.pablodiste.datastore.CrudFetcher
 import dev.pablodiste.datastore.adapters.retrofit.RetrofitFetcher
 import dev.pablodiste.datastore.adapters.retrofit.RetrofitSender
 import dev.pablodiste.datastore.adapters.room.RoomListSourceOfTruth
@@ -38,17 +37,11 @@ data class DummyPostId(val id: Int)
 
 fun provideDummyPostStore(): SimpleCrudStoreImpl<DummyPostId, DummyPost> {
     return SimpleCrudStoreBuilder.from(
-        crudFetcher = CrudFetcher2(
+        crudFetcher = CrudFetcher(
             readFetcher = RetrofitFetcher.of(RetrofitManager) { key: DummyPostId, service: DummyJsonService -> service.getPost(key.id) },
-            createSender = RetrofitSender.of(RetrofitManager) { key: DummyPostId, entity: DummyPost, s: DummyJsonService, op: ChangeOperation ->
-                s.createPost(entity)
-            },
-            updateSender = RetrofitSender.of(RetrofitManager) { key: DummyPostId, entity: DummyPost, s: DummyJsonService, op: ChangeOperation ->
-                s.updatePost(key.id, entity)
-            },
-            deleteSender = RetrofitSender.noResult(RetrofitManager) { key: DummyPostId, entity: DummyPost, s: DummyJsonService, op: ChangeOperation ->
-                s.deletePost(key.id)
-            }
+            createSender = RetrofitSender.of(RetrofitManager) { key: DummyPostId, entity: DummyPost, s: DummyJsonService -> s.createPost(entity) },
+            updateSender = RetrofitSender.of(RetrofitManager) { key: DummyPostId, entity: DummyPost, s: DummyJsonService -> s.updatePost(key.id, entity) },
+            deleteSender = RetrofitSender.noResult(RetrofitManager) { key: DummyPostId, entity: DummyPost, s: DummyJsonService -> s.deletePost(key.id) }
         ),
         sourceOfTruth = SampleApplication.roomDb.dummyPostSourceOfTruth(),
         keyBuilder = { post -> DummyPostId(post.id) }

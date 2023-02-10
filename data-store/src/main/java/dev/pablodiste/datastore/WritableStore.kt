@@ -1,7 +1,5 @@
 package dev.pablodiste.datastore
 
-import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
-
 /**
  * Sends data to a remote source, like an API
  */
@@ -9,7 +7,7 @@ fun interface Sender<K: Any, I: Any> {
     /**
      * Sends data to the remote source.
      */
-    suspend fun send(key: K, entity: I, changeOperation: ChangeOperation): FetcherResult<I>
+    suspend fun send(key: K, entity: I): FetcherResult<I>
 }
 
 interface WritableStore<K: Any, T: Any>: Store<K, T> {
