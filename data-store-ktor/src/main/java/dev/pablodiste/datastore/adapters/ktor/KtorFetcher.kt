@@ -3,6 +3,7 @@ package dev.pablodiste.datastore.adapters.ktor
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.FetcherServiceProvider
+import dev.pablodiste.datastore.Sender
 import dev.pablodiste.datastore.StoreConfig
 import dev.pablodiste.datastore.exceptions.FetcherError
 import dev.pablodiste.datastore.fetchers.joinInProgressCalls
@@ -10,17 +11,18 @@ import dev.pablodiste.datastore.fetchers.limit
 import dev.pablodiste.datastore.fetchers.retry
 import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import dev.pablodiste.datastore.retry.RetryPolicy
-import io.ktor.client.plugins.*
-import io.ktor.utils.io.errors.*
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.RedirectResponseException
+import io.ktor.client.plugins.ServerResponseException
+import io.ktor.utils.io.errors.IOException
 import kotlin.time.Duration.Companion.seconds
 
-/**
- * Implements a retrofit service call, K = key, I: entity DTO class, S: Retrofit service class
- */
-abstract class KtorFetcher<K: Any, I: Any, S: Any>(
+abstract class KtorServiceCall<K: Any, I: Any, S: Any>(
     serviceClass: Class<S>,
-    serviceProvider: FetcherServiceProvider,
-) : Fetcher<K, I> {
+    serviceProvider: FetcherServiceProvider
+) {
+
+    val service = serviceProvider.createService(serviceClass)
 
     init {
         StoreConfig.throttlingDetectedExceptions.addAll(listOf(
@@ -30,22 +32,31 @@ abstract class KtorFetcher<K: Any, I: Any, S: Any>(
         )
     }
 
-    protected val service = serviceProvider.createService(serviceClass)
+    suspend fun <I: Any> ktorFetch(operation: suspend () -> FetcherResult<I>) = try {
+        operation.invoke()
+    } catch (e: ClientRequestException) {
+        FetcherResult.Error(FetcherError.HttpError(exception = e, code = e.response.status.value, message = e.message))
+    } catch (e: ServerResponseException) {
+        FetcherResult.Error(FetcherError.HttpError(exception = e, code = e.response.status.value, message = e.message))
+    } catch (e: IOException) {
+        FetcherResult.Error(FetcherError.IOError(e))
+    } catch (e: Exception) {
+        FetcherResult.Error(FetcherError.UnknownError(e))
+    }
+}
+
+/**
+ * Implements a retrofit service call, K = key, I: entity DTO class, S: Retrofit service class
+ */
+abstract class KtorFetcher<K: Any, I: Any, S: Any>(
+    serviceClass: Class<S>,
+    serviceProvider: FetcherServiceProvider,
+) : KtorServiceCall<K, I, S>(serviceClass, serviceProvider), Fetcher<K, I> {
 
     abstract suspend fun fetch(key: K, service: S): I
 
-    override suspend fun fetch(key: K): FetcherResult<I> {
-        return try {
-            FetcherResult.Data(fetch(key, service))
-        } catch (e: ClientRequestException) {
-            FetcherResult.Error(FetcherError.HttpError(exception = e, code = e.response.status.value, message = e.message))
-        } catch (e: ServerResponseException) {
-            FetcherResult.Error(FetcherError.HttpError(exception = e, code = e.response.status.value, message = e.message))
-        } catch (e: IOException) {
-            FetcherResult.Error(FetcherError.IOError(e))
-        } catch (e: Exception) {
-            FetcherResult.Error(FetcherError.UnknownError(e))
-        }
+    override suspend fun fetch(key: K): FetcherResult<I> = ktorFetch {
+        FetcherResult.Data(fetch(key, service))
     }
 
     companion object {
@@ -64,4 +75,45 @@ abstract class KtorFetcher<K: Any, I: Any, S: Any>(
         }
     }
 
+}
+
+abstract class KtorSender<K: Any, I: Any, S: Any>(
+    serviceClass: Class<S>,
+    serviceProvider: FetcherServiceProvider,
+) : KtorServiceCall<K, I, S>(serviceClass, serviceProvider), Sender<K, I> {
+
+    abstract suspend fun send(key: K, entity: I, service: S): I
+
+    override suspend fun send(key: K, entity: I): FetcherResult<I> = ktorFetch {
+        FetcherResult.Data(
+            send(key, entity, service)
+        )
+    }
+
+    companion object {
+        inline fun <K: Any, I: Any, reified S: Any> of(
+            serviceProvider: FetcherServiceProvider,
+            noinline send: suspend (K, I, S) -> I,
+        ): Sender<K, I> {
+            return object: KtorSender<K, I, S>(S::class.java, serviceProvider) {
+                override suspend fun send(key: K, entity: I, service: S): I =
+                    send(key, entity, service)
+            }
+        }
+
+        inline fun <K: Any, I: Any, reified S: Any> noResult(
+            serviceProvider: FetcherServiceProvider,
+            noinline send: suspend (K, I, S) -> Unit,
+        ): Sender<K, I> {
+            return object: KtorSender<K, I, S>(S::class.java, serviceProvider) {
+                override suspend fun send(key: K, entity: I): FetcherResult<I> =
+                    ktorFetch {
+                        send.invoke(key, entity, service)
+                        FetcherResult.Success(success = true)
+                    }
+
+                override suspend fun send(key: K, entity: I, service: S): I = entity
+            }
+        }
+    }
 }

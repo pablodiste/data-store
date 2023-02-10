@@ -3,7 +3,6 @@ package dev.pablodiste.datastore.writable
 import dev.pablodiste.datastore.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 
 data class PendingChange<K: Any, T: Any, I: Any>(
@@ -38,7 +37,7 @@ class PendingChangesWorker<K: Any, T: Any, I: Any>(
                 var success = false
                 while (!success) {
                     val entityToSend = mapper.toFetcherEntity(it.change(it.entity))
-                    val result = it.pendingWorkerSender.send(it.key, entityToSend, it.changeOperation)
+                    val result = it.pendingWorkerSender.send(it.key, entityToSend)
 
                     if (result is FetcherResult.Data || (result is FetcherResult.Success && result.success)) {
                         if (result is FetcherResult.Data) {

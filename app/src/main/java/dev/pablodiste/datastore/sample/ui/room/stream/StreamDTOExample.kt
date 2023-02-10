@@ -15,7 +15,7 @@ import dev.pablodiste.datastore.sample.ui.main.BaseScreen
 
 @Composable
 fun RoomStreamDTOExample(viewModel: RoomStreamDTOExampleViewModel, openDrawer: () -> Unit) {
-    BaseScreen(title = "Store Stream Example (DTO + Room + Ktor)", openDrawer = openDrawer) {
+    BaseScreen(title = "Store Stream Example (DTO + Room + Ktor)", openDrawer = openDrawer,) {
         RoomStreamDTOExamplePeopleList(viewModel)
     }
 }

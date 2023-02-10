@@ -1,6 +1,7 @@
-package dev.pablodiste.datastore
+package dev.pablodiste.datastore.sourceoftruth
 
 import app.cash.turbine.test
+import dev.pablodiste.datastore.*
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
 import dev.pablodiste.datastore.fetchers.limit
 import dev.pablodiste.datastore.inmemory.InMemorySourceOfTruth

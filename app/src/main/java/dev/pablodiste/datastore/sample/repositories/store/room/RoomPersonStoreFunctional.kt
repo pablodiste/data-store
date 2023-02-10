@@ -3,7 +3,6 @@ package dev.pablodiste.datastore.sample.repositories.store.room
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.Store
-import dev.pablodiste.datastore.fetchers.FetcherBuilder
 import dev.pablodiste.datastore.impl.NoKey
 import dev.pablodiste.datastore.impl.SimpleStoreBuilder
 import dev.pablodiste.datastore.sample.SampleApplication

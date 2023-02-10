@@ -1,8 +1,8 @@
-package dev.pablodiste.datastore
+package dev.pablodiste.datastore.fetchers
 
+import dev.pablodiste.datastore.*
 import dev.pablodiste.datastore.exceptions.FetcherError
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
-import dev.pablodiste.datastore.fetchers.retry
 import dev.pablodiste.datastore.inmemory.InMemorySourceOfTruth
 import dev.pablodiste.datastore.retry.RetryPolicy
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -15,7 +15,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 @ExperimentalCoroutinesApi
-class FetcherRetryTest: CoroutineTest() {
+class RetryFetcherTest: CoroutineTest() {
 
     data class Key(val id: Int)
     data class Entity(val id: Int, val name: String)

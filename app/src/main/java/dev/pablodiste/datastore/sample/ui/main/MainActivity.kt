@@ -13,9 +13,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import dev.pablodiste.datastore.sample.ui.realm.fetch.FetchExample
 import dev.pablodiste.datastore.sample.ui.realm.fetch.FetchExampleViewModel
 import dev.pablodiste.datastore.sample.ui.realm.get.GetExample
@@ -26,10 +28,17 @@ import dev.pablodiste.datastore.sample.ui.room.concurrent.RoomConcurrentExample
 import dev.pablodiste.datastore.sample.ui.room.concurrent.RoomConcurrentExampleViewModel
 import dev.pablodiste.datastore.sample.ui.room.crud.RoomCrudExample
 import dev.pablodiste.datastore.sample.ui.room.crud.RoomCrudExampleViewModel
+import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostEdit
+import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostEditViewModel
+import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostView
+import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostViewModel
+import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostsList
+import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostsViewModel
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamDTOExample
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamDTOExampleViewModel
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamExample
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamExampleViewModel
+import dev.pablodiste.datastore.sample.viewmodels.viewModelFactory
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -77,6 +86,33 @@ fun AppMainScreen() {
                 composable(DrawerScreens.Home.route) {
                     Home(openDrawer = { openDrawer() })
                 }
+                composable(DrawerScreens.DummyPosts.route) {
+                    val viewModel = viewModel<DummyPostsViewModel>()
+                    DummyPostsList(viewModel,
+                        openDrawer = { openDrawer() },
+                        onPostSelected = { postId -> navController.navigate("dummy_post/$postId") }
+                    )
+                }
+                composable(DrawerScreens.ViewDummyPost.route,
+                    arguments = listOf(navArgument("postId") { type = NavType.IntType })) {
+                    val viewModel = viewModel<DummyPostViewModel>(factory = viewModelFactory {
+                        DummyPostViewModel(it.arguments?.getInt("postId") ?: 0)
+                    })
+                    DummyPostView(viewModel,
+                        openDrawer = { openDrawer() },
+                        onDeletePressed = { navController.popBackStack() },
+                        onEditPressed = { postId -> navController.navigate("dummy_post/edit/$postId") }
+                    )
+                }
+                composable(DrawerScreens.EditDummyPost.route,
+                    arguments = listOf(navArgument("postId") { type = NavType.IntType })) {
+                    val viewModel = viewModel<DummyPostEditViewModel>(factory = viewModelFactory {
+                        DummyPostEditViewModel(it.arguments?.getInt("postId") ?: 0)
+                    })
+                    DummyPostEdit(viewModel,
+                        openDrawer = { openDrawer() }
+                    ) { navController.popBackStack(route = "dummy_posts", inclusive = false) }
+                }
                 composable(DrawerScreens.RealmStreamExample.route) {
                     val viewModel = viewModel<StreamExampleViewModel>()
                     StreamExample(viewModel, openDrawer = { openDrawer() })
@@ -123,7 +159,7 @@ fun AppMainScreen() {
 }
 
 @Composable
-fun TopBar(title: String = "", buttonIcon: ImageVector, onButtonClicked: () -> Unit) {
+fun TopBar(title: String = "", buttonIcon: ImageVector, actions: @Composable (RowScope.() -> Unit) = {}, onButtonClicked: () -> Unit) {
     TopAppBar(
         title = {
             Text(
@@ -135,7 +171,8 @@ fun TopBar(title: String = "", buttonIcon: ImageVector, onButtonClicked: () -> U
                 Icon(buttonIcon, contentDescription = "")
             }
         },
-        backgroundColor = MaterialTheme.colors.primaryVariant
+        backgroundColor = MaterialTheme.colors.primaryVariant,
+        actions = actions,
     )
 }
 
@@ -152,6 +189,9 @@ sealed class DrawerScreens(val title: String, val route: String) {
     object RealmStreamExample : DrawerScreens("Stream Example (Realm)", "realm_stream")
     object RealmFetchExample : DrawerScreens("Fetch Example (Realm)", "realm_fetch")
     object RealmGetExample : DrawerScreens("Get Example (Realm)", "realm_get")
+    object DummyPosts : DrawerScreens("List of Posts (Room)", "dummy_posts")
+    object ViewDummyPost : DrawerScreens("Post (Room)", "dummy_post/{postId}")
+    object EditDummyPost : DrawerScreens("Edit Post (Room)", "dummy_post/edit/{postId}")
 }
 
 private val screens = listOf(
@@ -165,6 +205,7 @@ private val screens = listOf(
     DrawerScreens.RealmStreamExample,
     DrawerScreens.RealmFetchExample,
     DrawerScreens.RealmGetExample,
+    DrawerScreens.DummyPosts,
 )
 
 @Composable

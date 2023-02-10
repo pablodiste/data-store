@@ -11,7 +11,7 @@ import dev.pablodiste.datastore.sample.ui.main.BaseScreen
 
 @Composable
 fun FetchExample(viewModel: FetchExampleViewModel, openDrawer: () -> Unit) {
-    BaseScreen(title = "Store Fetch Example (Realm)", openDrawer = openDrawer) {
+    BaseScreen(title = "Store Fetch Example (Realm)", openDrawer = openDrawer,) {
         FetchExamplePerson(viewModel)
     }
 }

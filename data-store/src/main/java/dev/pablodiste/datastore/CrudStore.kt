@@ -22,8 +22,9 @@ interface CrudStore<K: Any, T: Any>: Store<K, T> {
     fun dispose()
 }
 
-interface CrudFetcher<K: Any, I: Any>: Fetcher<K, I> {
-    suspend fun create(key: K, entity: I): FetcherResult<I>
-    suspend fun update(key: K, entity: I): FetcherResult<I>
-    suspend fun delete(key: K, entity: I): FetcherResult<I>
-}
+class CrudFetcher<K: Any, I: Any>(
+    val readFetcher: Fetcher<K, I>,
+    val createSender: Sender<K, I> = Sender { _, _ -> FetcherResult.NoData("NOOP") },
+    val updateSender: Sender<K, I> = Sender { _, _ -> FetcherResult.NoData("NOOP") },
+    val deleteSender: Sender<K, I> = Sender { _, _ -> FetcherResult.NoData("NOOP") }
+)

@@ -460,7 +460,7 @@ val result = personStore.fetch(RoomPersonStore.Key("1"), forced = true)
 
 #### Disabling the Rate Limiter
 
-The Rate limiter is active by default, but you can disable it with the code:
+You can disable all rate limiters with the code:
 
 ```kotlin
 StoreConfig.isRateLimiterEnabled = {
@@ -471,7 +471,8 @@ If you want to disable it for a specific call, you can check the `FetchAlways` r
 
 ### Joining in-progress calls
 
-We have available one operator that detects if there is any in flight fetcher call, any concurrent repeated call will wait for the result of the first one and it will return the same result as the original. This helps to reduce the amount of calls to the backend. It can be used in combination of the rate limiter too.
+We have available one operator that works the following way: it detects if there is any in flight fetcher call, then any concurrent repeated call will wait for the result of the first one and it will return the same result as the original. 
+This helps to reduce the amount of calls to the backend. It can be used in combination of the rate limiter.
 
 ```kotlin
 Fetcher<NoKey, List<Post>> { FetcherResult.Data(provideService().getPosts()) }
@@ -509,7 +510,26 @@ You can also configure a custom retryOn function like the following example. The
 RetryPolicy.ExponentialBackoff(maxRetries = 3, retryOn = { error -> ... })
 ```
 
-### Throttling
+### Throttling a single fetcher on server errors
+
+With this operator you can detect if multiple errors are happening in the server and avoid sending requests for some time. 
+Throttling will be applied on HTTP errors, for example 500 errors when a service or group of services are down. 
+
+Basic usage looks like this
+
+```kotlin
+Fetcher<NoKey, List<Post>> { FetcherResult.Data(provideService().getPosts()) }
+  .throttleOnError(maxErrorCount = 3, errorWindowDuration = 1.minutes)
+```
+
+In this example, if 3 or more errors are returned by the server in a window of 1 minute before the last request time up until the last request time, the store will return `ThrottlingError` exception on each subsequent fetcher call for 5 seconds (`initialBackoff`) and the fetcher requests done in that timeframe will not be executed.
+The throttling timeframe will grow exponentially after new errors arrive.
+
+You can configure with `initialBackoff` the throttling timeframe after the errors has been detected, and with `backoffRate` its growth rate.
+
+Throttling is activated by default with any HTTP error code returned but you can configure the HTTP error codes to consider passing them in the `throttleOnErrorCodes` parameter, or you can also set up a custom error detector with `throttleOn` functional parameter.
+
+### Throttling all active fetchers on server errors
 
 You can enable throttling of service calls in case of continuously failing requests. Sometimes backends and servers are not able to process the requests fast enough, or they are down, or they experience temporary issues. In that case, the Store clients are able to wait some time before making the next call.
 It works the following way: If there are more than a configurable amount of errors in a row, the next service calls during a timeframe will result in an immediate local exception and they will not be executed.
@@ -558,7 +578,7 @@ val throttlingState = viewModel.throttlingState.collectAsState()
 ### CRUD Stores
 
 A CrudStore is a Store which also implements create, update and delete methods.
-These operations are reflected in API calls (POST, PUT and DELETE REST calls for example), and the new/updated/deleted entities are also created/updated/deleted from the source of truth when the API call succeeds.
+These operations are reflected in API calls (POST, PUT and DELETE REST calls for example), and the new/updated/deleted entities are also created/updated/deleted in the source of truth when the API call succeeds.
 This is a very simple implementation and it does not consider making changes on a working thread.
 
 Example of definition:
@@ -567,16 +587,16 @@ Example of definition:
 data class PostKey(val id: Int)
 
 fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
-    return SimpleCrudStoreBuilder.from(
-        fetcher = LimitedCrudFetcher.of(
-            fetch = { post -> provideService().getPost(post.id) },
-            create = { key, post -> FetcherResult.Data(provideService().createPost(post)) },
-            update = { key, post -> FetcherResult.Data(provideService().updatePost(key.id, post)) },
-            delete = { key, post -> provideService().deletePost(key.id); true },
-        ),
-        sourceOfTruth = SampleApplication.roomDb.postSourceOfTruth(),
-        keyBuilder = { entity -> PostKey(entity.id) }
-    ).build() as SimpleCrudStoreImpl
+  return SimpleCrudStoreBuilder.from(
+    crudFetcher = CrudFetcher(
+      readFetcher = { post -> FetcherResult.Data(provideService().getPost(post.id)) },
+      createSender = { key, post -> FetcherResult.Data(provideService().createPost(post)) },
+      updateSender = { key, post -> FetcherResult.Data(provideService().updatePost(key.id, post)) },
+      deleteSender = { key, post -> provideService().deletePost(key.id); FetcherResult.Success(true) },
+    ),
+    sourceOfTruth = dev.pablodiste.datastore.sample.SampleApplication.roomDb.postSourceOfTruth(),
+    keyBuilder = { entity -> PostKey(entity.id) }
+  ).build()
 }
 
 private fun provideService() = RetrofitManager.createService(JsonPlaceholderService::class.java)
@@ -589,7 +609,7 @@ abstract class PostCache: RoomCache<PostKey, Post>("posts", SampleApplication.ro
 Some details:
 
 - `PostKey` is the key used to identify each request, in this example the id is used to distinguish between different entities.
-- `providePostsCRUDStore` creates the CRUD Store, we provide one method for each CRUD operation: `create`, `update`, `delete`, and `fetch`. We also need to provide a `keyBuilder` function used to generate a new key for the new stored data.
+- `providePostsCRUDStore` creates the CRUD Store, we provide one parameter for each CRUD operation: `create`, `update`, `delete`, and `read`. We also need to provide a `keyBuilder` function used to generate a new key for the new stored data.
 - The source of truth in this case is a Room Dao with a query using the key provided.
 
 The usage is simple:
@@ -620,16 +640,22 @@ when (response) {
 ## Contributions
 
 Any suggestion and bug report is welcome, you can create issues in the github page.
-Feel free to fork it and/or send a pull request in case you want to make fixes or add any additional feature or change. Please create an issue in github so we can discuss the idea and collaborate.
+Feel free to fork it and/or send a pull request in case you want to make fixes or add any additional feature or change. 
+Please create an issue in github so we can discuss the idea and collaborate.
 
 ## Roadmap
 
-- Document fetcher errors
-- Improve throttling code
-- Add additional testing coverage.
 - Support of Pagination, integration with Pager3 or custom implementation.
 - Support parsing of error results.
-- Retries: Support Retry-After header
+- Support cancelling requests.
+- Support operators (limit, retry) on Sender
+- Retries: Support 429 and Retry-After header
+- SQLDelight examples and wrappers
+- Add additional testing coverage.
+- Limiter: Implement Token RateLimiter
+- Refactor throttling code.
+- Support X-Rate-Limit headers.
+- Support enabling / disabling fetcher calls based on app state, i.e. login token expiration.
 - Work in progress: Writeable Store
     - Sender Controller and library helpers    
     - Error handling / Undo
@@ -640,4 +666,5 @@ Feel free to fork it and/or send a pull request in case you want to make fixes o
     - More Testing
     - Documentation
 - Analyze making it available for KMM.
+- Investigate if there is a way to create functional builders for the source of truth.
 - Add an optional memory cache.
