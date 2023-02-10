@@ -578,7 +578,7 @@ val throttlingState = viewModel.throttlingState.collectAsState()
 ### CRUD Stores
 
 A CrudStore is a Store which also implements create, update and delete methods.
-These operations are reflected in API calls (POST, PUT and DELETE REST calls for example), and the new/updated/deleted entities are also created/updated/deleted from the source of truth when the API call succeeds.
+These operations are reflected in API calls (POST, PUT and DELETE REST calls for example), and the new/updated/deleted entities are also created/updated/deleted in the source of truth when the API call succeeds.
 This is a very simple implementation and it does not consider making changes on a working thread.
 
 Example of definition:
@@ -587,16 +587,16 @@ Example of definition:
 data class PostKey(val id: Int)
 
 fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
-    return SimpleCrudStoreBuilder.from(
-        fetcher = LimitedCrudFetcher.of(
-            fetch = { post -> provideService().getPost(post.id) },
-            create = { key, post -> FetcherResult.Data(provideService().createPost(post)) },
-            update = { key, post -> FetcherResult.Data(provideService().updatePost(key.id, post)) },
-            delete = { key, post -> provideService().deletePost(key.id); true },
-        ),
-        sourceOfTruth = SampleApplication.roomDb.postSourceOfTruth(),
-        keyBuilder = { entity -> PostKey(entity.id) }
-    ).build() as SimpleCrudStoreImpl
+  return SimpleCrudStoreBuilder.from(
+    crudFetcher = CrudFetcher(
+      readFetcher = { post -> FetcherResult.Data(provideService().getPost(post.id)) },
+      createSender = { key, post -> FetcherResult.Data(provideService().createPost(post)) },
+      updateSender = { key, post -> FetcherResult.Data(provideService().updatePost(key.id, post)) },
+      deleteSender = { key, post -> provideService().deletePost(key.id); FetcherResult.Success(true) },
+    ),
+    sourceOfTruth = dev.pablodiste.datastore.sample.SampleApplication.roomDb.postSourceOfTruth(),
+    keyBuilder = { entity -> PostKey(entity.id) }
+  ).build()
 }
 
 private fun provideService() = RetrofitManager.createService(JsonPlaceholderService::class.java)
@@ -609,7 +609,7 @@ abstract class PostCache: RoomCache<PostKey, Post>("posts", SampleApplication.ro
 Some details:
 
 - `PostKey` is the key used to identify each request, in this example the id is used to distinguish between different entities.
-- `providePostsCRUDStore` creates the CRUD Store, we provide one method for each CRUD operation: `create`, `update`, `delete`, and `fetch`. We also need to provide a `keyBuilder` function used to generate a new key for the new stored data.
+- `providePostsCRUDStore` creates the CRUD Store, we provide one parameter for each CRUD operation: `create`, `update`, `delete`, and `read`. We also need to provide a `keyBuilder` function used to generate a new key for the new stored data.
 - The source of truth in this case is a Room Dao with a query using the key provided.
 
 The usage is simple:
@@ -645,14 +645,13 @@ Please create an issue in github so we can discuss the idea and collaborate.
 
 ## Roadmap
 
-- Functional builders for the source of truth.
-- Add another sample project for showcasing more features.
-- SQLDelight example and wrappers
-- Add additional testing coverage.
 - Support of Pagination, integration with Pager3 or custom implementation.
 - Support parsing of error results.
 - Support cancelling requests.
+- Support operators (limit, retry) on Sender
 - Retries: Support 429 and Retry-After header
+- SQLDelight examples and wrappers
+- Add additional testing coverage.
 - Limiter: Implement Token RateLimiter
 - Refactor throttling code.
 - Support X-Rate-Limit headers.
@@ -667,4 +666,5 @@ Please create an issue in github so we can discuss the idea and collaborate.
     - More Testing
     - Documentation
 - Analyze making it available for KMM.
+- Investigate if there is a way to create functional builders for the source of truth.
 - Add an optional memory cache.

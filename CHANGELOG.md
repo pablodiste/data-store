@@ -36,3 +36,7 @@ v0.1.5
 - Refactor for fetchers, convert features to operators.
 - Adding tests to fetchers.
 - Bugfix in joinInProgressCall behavior.
+
+v0.1.6
+- Refactors for CRUD, using Senders
+
