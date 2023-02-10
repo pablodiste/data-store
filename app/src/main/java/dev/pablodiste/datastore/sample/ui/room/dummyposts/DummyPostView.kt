@@ -8,6 +8,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -19,12 +20,22 @@ import dev.pablodiste.datastore.sample.ui.main.BaseScreen
 import kotlinx.coroutines.launch
 
 @Composable
-fun DummyPostView(viewModel: DummyPostViewModel, openDrawer: () -> Unit, onDeletePressed: () -> Boolean) {
+fun DummyPostView(
+    viewModel: DummyPostViewModel,
+    openDrawer: () -> Unit,
+    onDeletePressed: () -> Boolean,
+    onEditPressed: (postId: Int) -> Unit) {
+
     val coroutineScope = rememberCoroutineScope()
+    val uiState by viewModel.uiState.collectAsState()
+
     BaseScreen(
         title = "Post Details Screen (Room)",
         openDrawer = openDrawer,
         actions = {
+            IconButton(onClick = { onEditPressed(uiState?.id ?: 0) }) {
+                Icon(Icons.Filled.Edit, contentDescription = "Edit")
+            }
             IconButton(onClick = {
                 coroutineScope.launch {
                     viewModel.delete()
@@ -35,7 +46,6 @@ fun DummyPostView(viewModel: DummyPostViewModel, openDrawer: () -> Unit, onDelet
             }
         }
     ) {
-        val uiState by viewModel.uiState.collectAsState()
         DummyPostDetails(uiState)
     }
 }

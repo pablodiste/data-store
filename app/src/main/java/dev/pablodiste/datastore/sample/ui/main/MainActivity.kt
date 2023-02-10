@@ -28,6 +28,8 @@ import dev.pablodiste.datastore.sample.ui.room.concurrent.RoomConcurrentExample
 import dev.pablodiste.datastore.sample.ui.room.concurrent.RoomConcurrentExampleViewModel
 import dev.pablodiste.datastore.sample.ui.room.crud.RoomCrudExample
 import dev.pablodiste.datastore.sample.ui.room.crud.RoomCrudExampleViewModel
+import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostEdit
+import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostEditViewModel
 import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostView
 import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostViewModel
 import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostsList
@@ -84,6 +86,33 @@ fun AppMainScreen() {
                 composable(DrawerScreens.Home.route) {
                     Home(openDrawer = { openDrawer() })
                 }
+                composable(DrawerScreens.DummyPosts.route) {
+                    val viewModel = viewModel<DummyPostsViewModel>()
+                    DummyPostsList(viewModel,
+                        openDrawer = { openDrawer() },
+                        onPostSelected = { postId -> navController.navigate("dummy_post/$postId") }
+                    )
+                }
+                composable(DrawerScreens.ViewDummyPost.route,
+                    arguments = listOf(navArgument("postId") { type = NavType.IntType })) {
+                    val viewModel = viewModel<DummyPostViewModel>(factory = viewModelFactory {
+                        DummyPostViewModel(it.arguments?.getInt("postId") ?: 0)
+                    })
+                    DummyPostView(viewModel,
+                        openDrawer = { openDrawer() },
+                        onDeletePressed = { navController.popBackStack() },
+                        onEditPressed = { postId -> navController.navigate("dummy_post/edit/$postId") }
+                    )
+                }
+                composable(DrawerScreens.EditDummyPost.route,
+                    arguments = listOf(navArgument("postId") { type = NavType.IntType })) {
+                    val viewModel = viewModel<DummyPostEditViewModel>(factory = viewModelFactory {
+                        DummyPostEditViewModel(it.arguments?.getInt("postId") ?: 0)
+                    })
+                    DummyPostEdit(viewModel,
+                        openDrawer = { openDrawer() }
+                    ) { navController.popBackStack(route = "dummy_posts", inclusive = false) }
+                }
                 composable(DrawerScreens.RealmStreamExample.route) {
                     val viewModel = viewModel<StreamExampleViewModel>()
                     StreamExample(viewModel, openDrawer = { openDrawer() })
@@ -124,23 +153,6 @@ fun AppMainScreen() {
                     val viewModel = viewModel<GetExampleViewModel>()
                     GetExample(viewModel, openDrawer = { openDrawer() })
                 }
-                composable(DrawerScreens.DummyPosts.route) {
-                    val viewModel = viewModel<DummyPostsViewModel>()
-                    DummyPostsList(viewModel,
-                        openDrawer = { openDrawer() },
-                        onPostSelected = { postId -> navController.navigate("dummy_post/$postId") }
-                    )
-                }
-                composable(DrawerScreens.ViewDummyPost.route,
-                    arguments = listOf(navArgument("postId") { type = NavType.IntType })) {
-                    val viewModel = viewModel<DummyPostViewModel>(factory = viewModelFactory {
-                        DummyPostViewModel(it.arguments?.getInt("postId") ?: 0)
-                    })
-                    DummyPostView(viewModel,
-                        openDrawer = { openDrawer() },
-                        onDeletePressed = { navController.popBackStack() }
-                    )
-                }
             }
         }
     }
@@ -179,6 +191,7 @@ sealed class DrawerScreens(val title: String, val route: String) {
     object RealmGetExample : DrawerScreens("Get Example (Realm)", "realm_get")
     object DummyPosts : DrawerScreens("List of Posts (Room)", "dummy_posts")
     object ViewDummyPost : DrawerScreens("Post (Room)", "dummy_post/{postId}")
+    object EditDummyPost : DrawerScreens("Edit Post (Room)", "dummy_post/edit/{postId}")
 }
 
 private val screens = listOf(
