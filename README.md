@@ -58,16 +58,16 @@ You can see the features working by cloning this repository and running the `app
 Include the library in the dependencies section of your module configuration file. For example using Kotlin:
 
 ```kotlin
-implementation("dev.pablodiste.datastore:datastore:0.1.5")
+implementation("dev.pablodiste.datastore:datastore:0.1.6")
 ```
 
 Plugins for integrating DataStore with common libraries, you only need to include the ones you need
 
 ```kotlin
-implementation("dev.pablodiste.datastore:datastore-room:0.1.1")
+implementation("dev.pablodiste.datastore:datastore-room:0.1.6")
 implementation("dev.pablodiste.datastore:datastore-realm:0.1.1")
-implementation("dev.pablodiste.datastore:datastore-retrofit:0.1.5")
-implementation("dev.pablodiste.datastore:datastore-ktor:0.1.5")
+implementation("dev.pablodiste.datastore:datastore-retrofit:0.1.6")
+implementation("dev.pablodiste.datastore:datastore-ktor:0.1.6")
 ```
 
 ### 1. Defining your data classes
