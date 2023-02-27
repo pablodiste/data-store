@@ -16,7 +16,7 @@ class RealmPeopleStore: NoKeyScopedSimpleStore<List<People>>(
     sourceOfTruth = PeopleSourceOfTruth()
 ) {
 
-    class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
+    class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(RetrofitManager.starWarsService) {
         override suspend fun fetch(key: NoKey, service: StarWarsService): List<People> {
             val people = service.getPeople()
             people.results.forEach { it.parseId() }

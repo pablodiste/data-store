@@ -14,7 +14,7 @@ class RoomPersonStoreWithError: SimpleStoreImpl<RoomPersonStore.Key, People>(
     fetcher = PersonFetcher().throttleAllStoresOnError(),
     sourceOfTruth = dev.pablodiste.datastore.sample.SampleApplication.roomDb.personSourceOfTruth()
 ) {
-    class PersonFetcher: RetrofitFetcher<RoomPersonStore.Key, People, RoomStarWarsService>(RoomStarWarsService::class.java, RetrofitManager) {
+    class PersonFetcher: RetrofitFetcher<RoomPersonStore.Key, People, RoomStarWarsService>(RetrofitManager.roomStarWarsService) {
         override suspend fun fetch(key: RoomPersonStore.Key, service: RoomStarWarsService): People {
             throw HttpException(Response.error<String>(500, "Server error".toResponseBody()))
         }

@@ -35,4 +35,8 @@ object RetrofitManager : FetcherServiceProvider {
         .callFactory(build())
         .build()
 
+    val dummyJSONService by lazy { retrofitDJ.create(DummyJsonService::class.java) }
+    val jsonPlaceholderService by lazy { retrofitJP.create(JsonPlaceholderService::class.java) }
+    val starWarsService by lazy { retrofitSW.create(StarWarsService::class.java) }
+    val roomStarWarsService by lazy { retrofitSW.create(RoomStarWarsService::class.java) }
 }

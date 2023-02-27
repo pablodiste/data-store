@@ -16,7 +16,7 @@ class RealmPlanetsStore: NoKeyScopedSimpleStore<List<Planet>>(
     sourceOfTruth = PlanetSourceOfTruth()
 ) {
 
-    class PlanetFetcher: RetrofitFetcher<NoKey, List<Planet>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
+    class PlanetFetcher: RetrofitFetcher<NoKey, List<Planet>, StarWarsService>(RetrofitManager.starWarsService) {
         override suspend fun fetch(key: NoKey, service: StarWarsService): List<Planet> {
             val planets = service.getPlanets()
             return planets.results

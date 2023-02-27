@@ -25,7 +25,7 @@ fun providePostsCRUDStore(): SimpleCrudStoreImpl<PostKey, Post> {
     ).build()
 }
 
-private fun provideService() = RetrofitManager.createService(JsonPlaceholderService::class.java)
+private fun provideService() = RetrofitManager.jsonPlaceholderService
 
 @Dao
 abstract class PostSourceOfTruth: RoomSourceOfTruth<PostKey, Post>("posts", dev.pablodiste.datastore.sample.SampleApplication.roomDb) {

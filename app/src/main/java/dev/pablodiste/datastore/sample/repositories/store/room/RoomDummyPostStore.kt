@@ -26,9 +26,11 @@ abstract class DummyPostSourceOfTruth: RoomSourceOfTruth<DummyPostId, DummyPost>
     override fun query(key: DummyPostId): String = "id = ${key.id}"
 }
 
+private fun provideService() = RetrofitManager.dummyJSONService
+
 fun provideDummyPostsStore(): SimpleStoreImpl<NoKey, List<DummyPost>> {
     return SimpleStoreBuilder.from(
-        fetcher = RetrofitFetcher.of(RetrofitManager) { _, service: DummyJsonService -> service.getPosts().posts },
+        fetcher = RetrofitFetcher.of(provideService()) { _, service: DummyJsonService -> service.getPosts().posts },
         sourceOfTruth = SampleApplication.roomDb.dummyPostsSourceOfTruth()
     ).build()
 }
@@ -38,10 +40,10 @@ data class DummyPostId(val id: Int)
 fun provideDummyPostStore(): SimpleCrudStoreImpl<DummyPostId, DummyPost> {
     return SimpleCrudStoreBuilder.from(
         crudFetcher = CrudFetcher(
-            readFetcher = RetrofitFetcher.of(RetrofitManager) { key: DummyPostId, service: DummyJsonService -> service.getPost(key.id) },
-            createSender = RetrofitSender.of(RetrofitManager) { key: DummyPostId, entity: DummyPost, s: DummyJsonService -> s.createPost(entity) },
-            updateSender = RetrofitSender.of(RetrofitManager) { key: DummyPostId, entity: DummyPost, s: DummyJsonService -> s.updatePost(key.id, entity) },
-            deleteSender = RetrofitSender.noResult(RetrofitManager) { key: DummyPostId, entity: DummyPost, s: DummyJsonService -> s.deletePost(key.id) }
+            readFetcher = RetrofitFetcher.of(provideService()) { key: DummyPostId, service: DummyJsonService -> service.getPost(key.id) },
+            createSender = RetrofitSender.of(provideService()) { key: DummyPostId, entity: DummyPost, s: DummyJsonService -> s.createPost(entity) },
+            updateSender = RetrofitSender.of(provideService()) { key: DummyPostId, entity: DummyPost, s: DummyJsonService -> s.updatePost(key.id, entity) },
+            deleteSender = RetrofitSender.noResult(provideService()) { key: DummyPostId, entity: DummyPost, s: DummyJsonService -> s.deletePost(key.id) }
         ),
         sourceOfTruth = SampleApplication.roomDb.dummyPostSourceOfTruth(),
         keyBuilder = { post -> DummyPostId(post.id) }

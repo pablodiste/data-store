@@ -20,9 +20,11 @@ abstract class StarshipSourceOfTruth: RoomListSourceOfTruth<NoKey, Starship>("st
     override fun query(key: NoKey): String = ""
 }
 
+private fun provideService(): RoomStarWarsService = RetrofitManager.roomStarWarsService
+
 fun provideStarshipStore(): Store<NoKey, List<Starship>> =
     StoreBuilder.from(
-        fetcher = RetrofitFetcher.of(RetrofitManager) { key, service: RoomStarWarsService -> service.getStarships().results },
+        fetcher = RetrofitFetcher.of(provideService()) { key, service: RoomStarWarsService -> service.getStarships().results },
         sourceOfTruth = SampleApplication.roomDb.starshipSourceOfTruth(),
         mapper = StarshipMapper()
     ).build()

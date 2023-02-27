@@ -20,7 +20,7 @@ fun providePostsStore(): SimpleStoreImpl<NoKey, List<Post>> {
     ).build()
 }
 
-private fun provideService() = RetrofitManager.createService(JsonPlaceholderService::class.java)
+private fun provideService() = RetrofitManager.jsonPlaceholderService
 
 @Dao
 abstract class PostsSourceOfTruth: RoomListSourceOfTruth<NoKey, Post>("posts", dev.pablodiste.datastore.sample.SampleApplication.roomDb) {

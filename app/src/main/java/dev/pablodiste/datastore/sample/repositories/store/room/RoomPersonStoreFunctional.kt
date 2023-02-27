@@ -22,4 +22,4 @@ fun providePeopleStore(): Store<NoKey, List<People>> =
         sourceOfTruth = SampleApplication.roomDb.peopleSourceOfTruth()
     ).build()
 
-private fun provideStarWarsService() = RetrofitManager.createService(RoomStarWarsService::class.java)
+private fun provideStarWarsService() = RetrofitManager.roomStarWarsService
