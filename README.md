@@ -574,6 +574,24 @@ val throttlingState = viewModel.throttlingState.collectAsState()
 // Then you can use throttlingState.value.isThrottling to know if it is throttling.
 ```
 
+### Parsing Error Responses (Retrofit)
+
+We have a helper for retrofit helpers which allows parsing of error responses. This is useful to get more information about the server error response.
+
+```kotlin
+Fetcher<NoKey, List<Post>> { FetcherResult.Data(provideService().getPosts()) }
+  .deserializeError<Key, Entity, ErrorModel>(retrofit)
+```
+
+You have to provide `ErrorModel`, the type of the model used to deserialize the error response. We need to send the `retrofit` instance as well, the entity will be deserialized using the converter configured in Retrofit.
+In order to get the error response, the store returns a `FetcherException` from which you can get the fetcher error with the parsed data.
+
+```kotlin
+val result = store.fetch(Key(id = 1))
+val fetcherError = ((result as StoreResponse.Error).error as FetcherException).fetcherError
+val parsedError = (fetcherError as FetcherError.EntityHttpError<ErrorModel>).errorResult
+```
+
 
 ### CRUD Stores
 
@@ -645,17 +663,16 @@ Please create an issue in github so we can discuss the idea and collaborate.
 
 ## Roadmap
 
-- Support of Pagination, integration with Pager3 or custom implementation.
 - Support parsing of error results.
-- Support cancelling requests.
 - Support operators (limit, retry) on Sender
-- Retries: Support 429 and Retry-After header
+- Support enabling / disabling fetcher calls based on app state, i.e. login token expiration.
+- Support of Pagination, integration with Pager3 or custom implementation.
 - SQLDelight examples and wrappers
 - Add additional testing coverage.
 - Limiter: Implement Token RateLimiter
 - Refactor throttling code.
+- Retries: Support 429 and Retry-After header
 - Support X-Rate-Limit headers.
-- Support enabling / disabling fetcher calls based on app state, i.e. login token expiration.
 - Work in progress: Writeable Store
     - Sender Controller and library helpers    
     - Error handling / Undo
