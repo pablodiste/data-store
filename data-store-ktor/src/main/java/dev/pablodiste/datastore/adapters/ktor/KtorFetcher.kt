@@ -17,12 +17,7 @@ import io.ktor.client.plugins.ServerResponseException
 import io.ktor.utils.io.errors.IOException
 import kotlin.time.Duration.Companion.seconds
 
-abstract class KtorServiceCall<K: Any, I: Any, S: Any>(
-    serviceClass: Class<S>,
-    serviceProvider: FetcherServiceProvider
-) {
-
-    val service = serviceProvider.createService(serviceClass)
+abstract class KtorServiceCall<K: Any, I: Any, S: Any>(val service: S) {
 
     init {
         StoreConfig.throttlingDetectedExceptions.addAll(listOf(
@@ -48,10 +43,8 @@ abstract class KtorServiceCall<K: Any, I: Any, S: Any>(
 /**
  * Implements a retrofit service call, K = key, I: entity DTO class, S: Retrofit service class
  */
-abstract class KtorFetcher<K: Any, I: Any, S: Any>(
-    serviceClass: Class<S>,
-    serviceProvider: FetcherServiceProvider,
-) : KtorServiceCall<K, I, S>(serviceClass, serviceProvider), Fetcher<K, I> {
+abstract class KtorFetcher<K: Any, I: Any, S: Any>(service: S) :
+    KtorServiceCall<K, I, S>(service), Fetcher<K, I> {
 
     abstract suspend fun fetch(key: K, service: S): I
 
@@ -60,13 +53,13 @@ abstract class KtorFetcher<K: Any, I: Any, S: Any>(
     }
 
     companion object {
-        inline fun <K: Any, I: Any, reified S: Any> of(
-            serviceProvider: FetcherServiceProvider,
+        fun <K: Any, I: Any, S: Any> of(
+            service: S,
             rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds, eventCount = 1),
             retryPolicy: RetryPolicy = RetryPolicy.DoNotRetry,
-            noinline fetch: suspend (K, S) -> I,
+            fetch: suspend (K, S) -> I,
         ): Fetcher<K, I> {
-            return object: KtorFetcher<K, I, S>(S::class.java, serviceProvider) {
+            return object: KtorFetcher<K, I, S>(service) {
                     override suspend fun fetch(key: K, service: S): I = fetch(key, service)
                 }
                 .joinInProgressCalls()
@@ -77,10 +70,8 @@ abstract class KtorFetcher<K: Any, I: Any, S: Any>(
 
 }
 
-abstract class KtorSender<K: Any, I: Any, S: Any>(
-    serviceClass: Class<S>,
-    serviceProvider: FetcherServiceProvider,
-) : KtorServiceCall<K, I, S>(serviceClass, serviceProvider), Sender<K, I> {
+abstract class KtorSender<K: Any, I: Any, S: Any>(service: S) :
+    KtorServiceCall<K, I, S>(service), Sender<K, I> {
 
     abstract suspend fun send(key: K, entity: I, service: S): I
 
@@ -91,21 +82,15 @@ abstract class KtorSender<K: Any, I: Any, S: Any>(
     }
 
     companion object {
-        inline fun <K: Any, I: Any, reified S: Any> of(
-            serviceProvider: FetcherServiceProvider,
-            noinline send: suspend (K, I, S) -> I,
-        ): Sender<K, I> {
-            return object: KtorSender<K, I, S>(S::class.java, serviceProvider) {
+        fun <K: Any, I: Any, S: Any> of(service: S, send: suspend (K, I, S) -> I): Sender<K, I> {
+            return object: KtorSender<K, I, S>(service) {
                 override suspend fun send(key: K, entity: I, service: S): I =
                     send(key, entity, service)
             }
         }
 
-        inline fun <K: Any, I: Any, reified S: Any> noResult(
-            serviceProvider: FetcherServiceProvider,
-            noinline send: suspend (K, I, S) -> Unit,
-        ): Sender<K, I> {
-            return object: KtorSender<K, I, S>(S::class.java, serviceProvider) {
+        fun <K: Any, I: Any, S: Any> noResult(service: S, send: suspend (K, I, S) -> Unit): Sender<K, I> {
+            return object: KtorSender<K, I, S>(service) {
                 override suspend fun send(key: K, entity: I): FetcherResult<I> =
                     ktorFetch {
                         send.invoke(key, entity, service)

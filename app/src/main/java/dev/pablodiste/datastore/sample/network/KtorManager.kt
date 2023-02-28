@@ -51,4 +51,7 @@ object KtorManager: FetcherServiceProvider {
     override fun <T> createService(service: Class<T>): T {
         return service.getConstructor(HttpClient::class.java).newInstance(ktorHttpClient)
     }
+
+    val ktorStarWarsService by lazy { createService(KtorStarWarsService::class.java) }
+
 }
