@@ -58,16 +58,16 @@ You can see the features working by cloning this repository and running the `app
 Include the library in the dependencies section of your module configuration file. For example using Kotlin:
 
 ```kotlin
-implementation("dev.pablodiste.datastore:datastore:0.1.6")
+implementation("dev.pablodiste.datastore:datastore:0.1.7")
 ```
 
 Plugins for integrating DataStore with common libraries, you only need to include the ones you need
 
 ```kotlin
-implementation("dev.pablodiste.datastore:datastore-room:0.1.6")
+implementation("dev.pablodiste.datastore:datastore-room:0.1.7")
 implementation("dev.pablodiste.datastore:datastore-realm:0.1.1")
-implementation("dev.pablodiste.datastore:datastore-retrofit:0.1.6")
-implementation("dev.pablodiste.datastore:datastore-ktor:0.1.6")
+implementation("dev.pablodiste.datastore:datastore-retrofit:0.1.7")
+implementation("dev.pablodiste.datastore:datastore-ktor:0.1.7")
 ```
 
 ### 1. Defining your data classes
@@ -153,27 +153,15 @@ The advantage of using these helpers is not only less boilerplate code but also 
 Including the retrofit integration, you can use the following code to create a Retrofit fetcher.
 
 ```kotlin
-RetrofitFetcher.of(RetrofitManager) { key, service: RoomStarWarsService -> service.getStarships().results }
+RetrofitFetcher.of(retrofitService) { key, service: RoomStarWarsService -> service.getStarships().results }
 ```
 
-Here `RetrofitManager` implements `FetcherServiceProvider` interface including a method used to create a Retrofit service. You can find more details in the sample application source code.
-
-```kotlin
-object RetrofitManager : FetcherServiceProvider {
-
-    private val retrofit: Retrofit
-    // Setup retrofit instance...
-    
-    override fun <T> createService(service: Class<T>): T {
-        retrofit.create(service)
-    }
-}
-```
+Here `retrofitService` is a service instance created with `Retrofit.create`. You can find more details in the sample application source code.
 
 There is also a helper class you can use if you do not want to build Retrofit services using the functional approach.
 
 ```kotlin
-class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarWarsService::class.java, RetrofitManager) {
+class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(RetrofitManager.starWarsService) {
     override suspend fun fetch(key: NoKey, service: StarWarsService): List<People> {
         val people = service.getPeople()
         return people.results
@@ -181,15 +169,14 @@ class PeopleFetcher: RetrofitFetcher<NoKey, List<People>, StarWarsService>(StarW
 }
 ```
 
-- As we mentioned `RetrofitManager` is a `FetcherServiceProvider` implementation that manages the creation of the retrofit service.
-- `StarWarsService` is a Retrofit service definition interface.
+Here `RetrofitManager.starWarsService` and `StarWarsService` is a Retrofit service definition interface.
 
 #### Ktor Fetcher
 
 Similar to the Retrofit integration you can use Ktor as HTTP client.
 
 ```kotlin
-KtorFetcher.of(KtorManager) { key, service: KtorStarWarsService -> service.getStarships().results }
+KtorFetcher.of(ktorService) { key, service: KtorStarWarsService -> service.getStarships().results }
 ```
 
 It works the same way as Retrofit, please check the sample project for the implementation details.

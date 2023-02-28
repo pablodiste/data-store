@@ -48,7 +48,7 @@ dependencies {
 
 ext {
     PUBLISH_GROUP_ID = 'dev.pablodiste.datastore'
-    PUBLISH_VERSION = '0.1.6'
+    PUBLISH_VERSION = '0.1.7'
     PUBLISH_ARTIFACT_ID = 'datastore-retrofit'
     PUBLISH_DESCRIPTION = 'DataStore integration plugin with Retrofit library'
     PUBLISH_URL = 'https://github.com/pablodiste/data-store'

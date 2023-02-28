@@ -40,3 +40,6 @@ v0.1.5
 v0.1.6
 - Refactors for CRUD, using Senders
 
+v0.1.7
+- Removing ServiceProvider from Fetchers and Senders
+- Retrofit adding support to parse error responses
