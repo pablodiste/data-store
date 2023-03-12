@@ -497,6 +497,15 @@ You can also configure a custom retryOn function like the following example. The
 RetryPolicy.ExponentialBackoff(maxRetries = 3, retryOn = { error -> ... })
 ```
 
+### Disable a Fetcher
+
+You can disable a fetcher under certain conditions with this operator. When the fetcher is disabled it returns `NoData`.
+
+```kotlin
+Fetcher<NoKey, List<Post>> { FetcherResult.Data(provideService().getPosts()) }
+  .disableOn { isLoggedIn().not() }
+```
+
 ### Throttling a single fetcher on server errors
 
 With this operator you can detect if multiple errors are happening in the server and avoid sending requests for some time. 
@@ -650,16 +659,18 @@ Please create an issue in github so we can discuss the idea and collaborate.
 
 ## Roadmap
 
-- Support parsing of error results.
-- Support operators (limit, retry) on Sender
-- Support enabling / disabling fetcher calls based on app state, i.e. login token expiration.
+- Loading state - example with pull to refresh
 - Support of Pagination, integration with Pager3 or custom implementation.
+- Data expiration, TTL, validators.
 - SQLDelight examples and wrappers
-- Add additional testing coverage.
+- Add additional testing coverage, add coverage library.
+- Support multiple responses per request, web-sockets.
 - Limiter: Implement Token RateLimiter
 - Refactor throttling code.
+- Analyze making it available for KMM.
 - Retries: Support 429 and Retry-After header
 - Support X-Rate-Limit headers.
+- Crud: Support operators (limit, retry) on Sender
 - Work in progress: Writeable Store
     - Sender Controller and library helpers    
     - Error handling / Undo
@@ -669,6 +680,5 @@ Please create an issue in github so we can discuss the idea and collaborate.
     - Detect changes on same entity id and process only one
     - More Testing
     - Documentation
-- Analyze making it available for KMM.
 - Investigate if there is a way to create functional builders for the source of truth.
 - Add an optional memory cache.
