@@ -20,5 +20,10 @@ data class StoreRequest<K>(
     /**
      * When true, the fetcher ignores any rule that limit calls and perform the fetch anyways.
      */
-    val forceFetch: Boolean = false
+    val forceFetch: Boolean = false,
+
+    /**
+     * When true, the store will emit Loading when executing a fetcher call
+     */
+    val emitLoadingStates: Boolean = false
 )

@@ -3,7 +3,6 @@ package dev.pablodiste.datastore.fetchers
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.StoreConfig
-import dev.pablodiste.datastore.impl.FetcherContext
 import dev.pablodiste.datastore.ratelimiter.FetchAlwaysRateLimiter
 import dev.pablodiste.datastore.ratelimiter.FetchOnlyOnceRateLimiter
 import dev.pablodiste.datastore.ratelimiter.FixedWindowRateLimiter

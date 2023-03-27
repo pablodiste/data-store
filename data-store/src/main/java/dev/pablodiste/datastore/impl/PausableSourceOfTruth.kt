@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.*
 
 class PausableSourceOfTruth<K: Any, T: Any>(val sourceOfTruth: SourceOfTruth<K, T>): SourceOfTruth<K, T> {
 
-    private var usingFetcher = false
+    private var usingFetcherWithKey: K? = null
 
     override fun listen(key: K): Flow<T> {
         return sourceOfTruth.listen(key)
@@ -17,8 +17,8 @@ class PausableSourceOfTruth<K: Any, T: Any>(val sourceOfTruth: SourceOfTruth<K, 
 
     fun listenWithResponse(key: K): Flow<StoreResponse<T>> {
         return listen(key).map {
-            if (usingFetcher) {
-                usingFetcher = false
+            if (usingFetcherWithKey == key) {
+                usingFetcherWithKey = null
                 StoreResponse.Data(it, ResponseOrigin.FETCHER)
             } else {
                 StoreResponse.Data(it, ResponseOrigin.SOURCE_OF_TRUTH)
@@ -27,7 +27,7 @@ class PausableSourceOfTruth<K: Any, T: Any>(val sourceOfTruth: SourceOfTruth<K, 
     }
 
     suspend fun storeAfterFetch(key: K, entity: T, removeStale: Boolean): T {
-        usingFetcher = true
+        usingFetcherWithKey = key
         val result = store(key, entity, removeStale)
         return result
     }
