@@ -2,7 +2,6 @@ package dev.pablodiste.datastore.adapters.retrofit
 
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
-import dev.pablodiste.datastore.FetcherServiceProvider
 import dev.pablodiste.datastore.Sender
 import dev.pablodiste.datastore.StoreConfig.throttlingDetectedExceptions
 import dev.pablodiste.datastore.exceptions.FetcherError
@@ -46,7 +45,7 @@ abstract class RetrofitFetcher<K: Any, I: Any, S: Any>(service: S):
     companion object {
         fun <K: Any, I: Any, S: Any> of(
             service: S,
-            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 5.seconds, eventCount = 1),
+            rateLimitPolicy: RateLimitPolicy = RateLimitPolicy.FixedWindowPolicy(duration = 1.seconds, eventCount = 1),
             retryPolicy: RetryPolicy = RetryPolicy.DoNotRetry,
             fetch: suspend (K, S) -> I,
         ): Fetcher<K, I> {
