@@ -588,6 +588,19 @@ val fetcherError = ((result as StoreResponse.Error).error as FetcherException).f
 val parsedError = (fetcherError as FetcherError.EntityHttpError<ErrorModel>).errorResult
 ```
 
+### Loading States
+
+You can configure the store to send a loading state in the stream flow. When enabled, `Loading` is sent when the Fetcher starts a network call.
+
+```kotlin
+store.stream(StoreRequest(key = NoKey(), refresh = true, emitLoadingStates = true)).collect { result ->
+  // Result can be Loading
+}
+}
+```
+You can use this, for example, to show a loading indicator when receiving `Loading` and hiding it when receiving `Data` or `Error`.
+Please note if you call `fetch` or any other method that generates a network call, you also need to provide `emitLoadingStates = true` to the `StoreRequest` to receive `Loading` states.
+This is specially helpful when implementing refresh buttons, pull-to-refresh or swipe-to-refresh interactions, you can listen to the `stream` and you can call `fetch` to perform a network call. An example is provided in the demo code.
 
 ### CRUD Stores
 
