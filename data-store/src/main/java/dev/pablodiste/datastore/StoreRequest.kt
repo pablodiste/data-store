@@ -23,6 +23,11 @@ data class StoreRequest<K>(
     val forceFetch: Boolean = false,
 
     /**
+     * When true, the store will emit NoData states, caused by rate limiters and other scenarios
+     */
+    val emitNoDataStates: Boolean = false,
+
+    /**
      * When true, the store will emit Loading when executing a fetcher call
      */
     val emitLoadingStates: Boolean = false

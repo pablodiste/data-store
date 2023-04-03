@@ -12,7 +12,7 @@ sealed class StoreResponse<out T> {
             is Data -> value
             is Error -> throw error
             is NoData -> throw IllegalStateException("There is no data")
-            is Loading -> throw IllegalStateException("There is no data")
+            is Loading -> throw IllegalStateException("Loading state, there is no data")
         }
     }
 

@@ -150,7 +150,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
                 when (fetcherResult) {
                     is FetcherResult.Loading -> StoreResponse.Loading(ResponseOrigin.FETCHER)
                     is FetcherResult.Data -> null// This case is used when the cached data comes from the SOT, we don't have to emit here.
-                    is FetcherResult.NoData -> StoreResponse.NoData(fetcherResult.message)
+                    is FetcherResult.NoData -> if (request.emitNoDataStates) StoreResponse.NoData(fetcherResult.message) else null
                     is FetcherResult.Error -> StoreResponse.Error(FetcherException(fetcherResult.error))
                     is FetcherResult.Success -> StoreResponse.Error(IllegalStateException("Unexpected fetcher result"))
                 }
