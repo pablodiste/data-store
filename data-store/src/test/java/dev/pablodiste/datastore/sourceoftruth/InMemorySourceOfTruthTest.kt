@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.doReturn
@@ -79,9 +78,9 @@ class InMemorySourceOfTruthTest: CoroutineTest() {
                 // because we are streaming key = 1. Source of truth emit changes even if they were made in a different key.
                 store.fetch(Key(2))
                 assertEquals(StoreResponse.Data(Entity(1, "First"), ResponseOrigin.SOURCE_OF_TRUTH), awaitItem())
-                // We have configured a rate limiter so this call should emit a NoData.
+                // We have configured a rate limiter so this should not emit anything.
                 store.fetch(Key(1))
-                assertTrue(awaitItem() is StoreResponse.NoData)
+                expectNoEvents()
                 // When forcing the fetch, we should receive the emission
                 store.fetch(Key(1), forced = true)
                 assertEquals(StoreResponse.Data(Entity(1, "First"), ResponseOrigin.FETCHER), awaitItem())
@@ -104,9 +103,8 @@ class InMemorySourceOfTruthTest: CoroutineTest() {
                 val sotItem = awaitItem()
                 assertNotNull(sotItem)
                 assertEquals(sotItem, StoreResponse.Data(Entity(1, "First"), ResponseOrigin.SOURCE_OF_TRUTH))
-                val sotItem2 = awaitItem()
-                assertNotNull(sotItem2)
-                assertTrue(sotItem2 is StoreResponse.NoData)
+                // Rate limiter is enabled so we don't expect fetcher calls
+                expectNoEvents()
             }
     }
 
