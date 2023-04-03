@@ -30,7 +30,7 @@ abstract class RealmSourceOfTruth<K: Any, T: RealmObject>(
         exists(klass, query(key))
 
     override fun listen(key: K): Flow<T> =
-        findFirstAsFlow(klass, query(key))
+        findFirstAsFlow(klass, query(key), closeableResourceManager)
 
     override suspend fun store(key: K, entity: T, removeStale: Boolean): T {
         executeRealmTransactionAwait { bgRealm ->

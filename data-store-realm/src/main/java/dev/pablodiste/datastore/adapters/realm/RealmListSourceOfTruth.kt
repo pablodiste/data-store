@@ -28,7 +28,7 @@ abstract class RealmListSourceOfTruth<K: Any, T: RealmObject>(
         exists(klass, query(key))
 
     override fun listen(key: K): Flow<List<T>> =
-        findAllAsFlow(klass, query(key))
+        findAllAsFlow(klass, query(key), closeableResourceManager)
 
     override suspend fun store(key: K, entity: List<T>, removeStale: Boolean): List<T> {
         executeRealmTransactionAwait { bgRealm ->

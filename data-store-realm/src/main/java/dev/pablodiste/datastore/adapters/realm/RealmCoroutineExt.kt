@@ -7,7 +7,10 @@ import io.realm.RealmObject
 import io.realm.RealmQuery
 import io.realm.kotlin.executeTransactionAwait
 import io.realm.kotlin.toFlow
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 /**
  * Finds a single RealmObject in Realm searching by the runQuery specified.
@@ -60,15 +63,20 @@ suspend fun <T : RealmObject> findAll(javaClass: Class<T>,
  * @param runQuery query to execute, you can add filters and ordering here
  * @return a Flow emitting a list of managed Realm objects -proxies-
  */
-fun <T : RealmObject> findAllAsFlow(javaClass: Class<T>, runQuery: (query: RealmQuery<T>) -> Unit = {}): Flow<List<T>> {
+fun <T : RealmObject> findAllAsFlow(
+    javaClass: Class<T>,
+    runQuery: (query: RealmQuery<T>) -> Unit = {},
+    closeableResourceManager: CloseableResourceManager
+): Flow<List<T>> {
     val realm = Realm.getDefaultInstance()
     val baseQuery = realm.where(javaClass)
     runQuery(baseQuery)
+    closeableResourceManager.addOnCloseListener {
+        Log.d("Realm", "Closing Realm")
+        realm.close()
+    }
     return baseQuery.findAllAsync().toFlow()
         .filter { !realm.isClosed && it.isLoaded }
-        .onCompletion {
-            realm.close()
-        }
 }
 
 /**
@@ -77,8 +85,12 @@ fun <T : RealmObject> findAllAsFlow(javaClass: Class<T>, runQuery: (query: Realm
  * @param runQuery query to execute, you can add filters here
  * @return a Flowable emitting a Realm objects -proxy-
  */
-fun <T : RealmObject> findFirstAsFlow(javaClass: Class<T>, runQuery: (query: RealmQuery<T>) -> Unit = {}): Flow<T> {
-    return findAllAsFlow(javaClass, runQuery).filter { it.isNotEmpty() }.map { it.first() }
+fun <T : RealmObject> findFirstAsFlow(
+    javaClass: Class<T>,
+    runQuery: (query: RealmQuery<T>) -> Unit = {},
+    closeableResourceManager: CloseableResourceManager
+): Flow<T> {
+    return findAllAsFlow(javaClass, runQuery, closeableResourceManager).filter { it.isNotEmpty() }.map { it.first() }
 }
 
 /**
