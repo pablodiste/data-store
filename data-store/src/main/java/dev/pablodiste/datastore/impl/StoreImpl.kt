@@ -2,11 +2,14 @@ package dev.pablodiste.datastore.impl
 
 import android.util.Log
 import dev.pablodiste.datastore.*
+import dev.pablodiste.datastore.fetchers.FetcherController
 import dev.pablodiste.datastore.fetchers.FetcherException
 import dev.pablodiste.datastore.writable.EntityStoreGroup
 import dev.pablodiste.datastore.writable.GroupableStore
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 open class StoreImpl<K: Any, I: Any, T: Any>(
@@ -33,45 +36,20 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
     override fun stream(request: StoreRequest<K>): Flow<StoreResponse<T>> {
         return flow {
             coroutineScope {
-                if (pausableSourceOfTruth.exists(request.key)) {
-                    val streamFlow = streamFromSourceOfTruth(request.key)
-                    streamFlow.onEach { Log.d(TAG, "Coming from source of truth") }
-                    if (request.refresh) {
-                        val fetcherFlow = flow {
-                            val fetched = performFetch(request.key)
-                            // We do not emit the fetched data because we are listening reactively for updates in the streamFlow.
-                            // We only emit errors
-                            if (fetched !is StoreResponse.Data) {
-                                Log.d(TAG, "Emitting from fetcher flow")
-                                emit(fetched)
-                            } else {
-                                Log.d(TAG, "Received data from fetcher, not emitting it")
-                            }
-                        }
-                        emitAll(merge(streamFlow, fetcherFlow))
-                    } else {
-                        emitAll(streamFlow)
-                    }
-                } else {
-                    if (request.fetchWhenNoDataFound) {
-                        emitAll(fetchAndStream(request.key))
-                    } else {
-                        emitAll(streamFromSourceOfTruth(request.key))
-                    }
-                }
-            }
-        }
-    }
 
-    /**
-     * This method will emit first the fetch results and then the source of truth results.
-     * Please note the fetch results will come with entities disconnected from the DB at the beginning
-     */
-    private fun fetchAndStream(key: K): Flow<StoreResponse<T>> {
-        return flow {
-            fetch(key, forced = false)
-            // The result is not emitted directly but as a consequence of caching it.
-            emitAll(streamFromSourceOfTruth(key))
+                var sourceOfTruthFlow = streamFromSourceOfTruth(request.key)
+                    .onEach { Log.d(TAG, "Emit from SOT") }
+                val exist = pausableSourceOfTruth.exists(request.key)
+                val shouldFetch = (exist && request.refresh) || (!exist && request.fetchWhenNoDataFound)
+                val fetcherFlow = streamFromFetcher(this, request, shouldFetch)
+                    .onEach { Log.d(TAG, "Emit from Fetcher") }
+
+                if (exist && request.refresh) {
+                    emit(sourceOfTruthFlow.onEach { Log.d(TAG, "Coming from source of truth (first)") }.first())
+                    sourceOfTruthFlow = sourceOfTruthFlow.drop(1).onEach { Log.d(TAG, "Coming from source of truth (rest)") }
+                }
+                emitAll(merge(sourceOfTruthFlow, fetcherFlow))
+            }
         }
     }
 
@@ -79,14 +57,17 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
      * Loads an entity from source of truth (simple query), if it is not in source of truth, it calls the fetcher for it.
      */
     override suspend fun get(request: StoreRequest<K>): StoreResponse<T> {
-        return if (pausableSourceOfTruth.exists(request.key)) {
-            val cached = pausableSourceOfTruth.get(request.key)
-            StoreResponse.Data(cached, ResponseOrigin.SOURCE_OF_TRUTH)
-        } else {
-            if (request.fetchWhenNoDataFound) {
-                fetch(request.key, forced = true)
+        return coroutineScope {
+            if (pausableSourceOfTruth.exists(request.key)) {
+                val cached = pausableSourceOfTruth.get(request.key)
+                StoreResponse.Data(cached, ResponseOrigin.SOURCE_OF_TRUTH)
             } else {
-                StoreResponse.Error(IllegalStateException("No data found"))
+                if (request.fetchWhenNoDataFound) {
+                    performFetch(request.key, request.forceFetch)
+                    //streamFromFetcher(this, request, shouldFetch = true).first()
+                } else {
+                    StoreResponse.Error(IllegalStateException("No data found"))
+                }
             }
         }
     }
@@ -98,7 +79,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
      */
     override suspend fun fetch(request: StoreRequest<K>): StoreResponse<T> {
 
-        val fetcherResult = fetcherController.fetch(request.key, request.forceFetch)
+        val fetcherResult = fetcherController.fetch(request.key, request.forceFetch, request.emitLoadingStates)
 
         return withContext(coroutineConfig.mainDispatcher) {
             return@withContext when (fetcherResult) {
@@ -137,6 +118,7 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
                 }
                 is FetcherResult.Error -> StoreResponse.Error(FetcherException(fetcherResult.error))
                 is FetcherResult.Success -> StoreResponse.Error(IllegalStateException("Unexpected fetcher result"))
+                is FetcherResult.Loading -> StoreResponse.Loading(ResponseOrigin.FETCHER)
             }
         }
     }
@@ -146,6 +128,38 @@ open class StoreImpl<K: Any, I: Any, T: Any>(
      * @param forced    if true, it ignores the rate limiter and makes the API call anyways.
      */
     suspend fun performFetch(key: K, forced: Boolean = false) = fetch(StoreRequest(key, forceFetch = forced))
+
+    /**
+     * Executes the fetcher call and emits the fetcher result and loading states into a flow.
+     */
+    private fun streamFromFetcher(
+        coroutineScope: CoroutineScope,
+        request: StoreRequest<K>,
+        shouldFetch: Boolean): Flow<StoreResponse<T>> = flow {
+        Log.d(TAG, "Collecting from fetcher flow")
+        val fetcherFlow = fetcherController.getFetcherFlow(request.key)
+            .onSubscription {
+                coroutineScope.launch {
+                    if (shouldFetch) {
+                        fetch(request)
+                    }
+                }
+            }
+            .onEach { Log.d(TAG, "Fetcher Flow: $it") }
+            .map { fetcherResult ->
+                when (fetcherResult) {
+                    is FetcherResult.Loading -> StoreResponse.Loading(ResponseOrigin.FETCHER)
+                    is FetcherResult.Data -> null// This case is used when the cached data comes from the SOT, we don't have to emit here.
+                    is FetcherResult.NoData -> if (request.emitNoDataStates) StoreResponse.NoData(fetcherResult.message) else null
+                    is FetcherResult.Error -> StoreResponse.Error(FetcherException(fetcherResult.error))
+                    is FetcherResult.Success -> StoreResponse.Error(IllegalStateException("Unexpected fetcher result"))
+                }
+            }
+            .filterNotNull()
+            .onEach { Log.d(TAG, "Emitting from fetcher flow") }
+
+        emitAll(fetcherFlow)
+    }
 }
 
 /**

@@ -9,8 +9,6 @@ android {
     defaultConfig {
         minSdk 21
         targetSdk 31
-        versionCode 1
-        versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -48,7 +46,7 @@ dependencies {
 
 ext {
     PUBLISH_GROUP_ID = 'dev.pablodiste.datastore'
-    PUBLISH_VERSION = '0.1.7'
+    PUBLISH_VERSION = '0.1.8'
     PUBLISH_ARTIFACT_ID = 'datastore-retrofit'
     PUBLISH_DESCRIPTION = 'DataStore integration plugin with Retrofit library'
     PUBLISH_URL = 'https://github.com/pablodiste/data-store'

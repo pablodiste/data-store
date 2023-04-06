@@ -65,7 +65,7 @@ class ThrottlingOnErrorFetcherTest: CoroutineTest() {
         store.fetch(TestKey(id = 1))
         val result = store.fetch(TestKey(id = 1))
         assertNotNull(result)
-        assertTrue(result is StoreResponse.Error && result.error is ThrottlingError)
+        assertTrue(result is StoreResponse.Error && result.error is FetcherException && (result.error as FetcherException).fetcherError.exception is ThrottlingError)
     }
 
     @Test

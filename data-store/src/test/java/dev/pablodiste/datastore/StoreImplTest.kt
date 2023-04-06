@@ -3,7 +3,6 @@ package dev.pablodiste.datastore
 import app.cash.turbine.test
 import dev.pablodiste.datastore.impl.SimpleStoreImpl
 import dev.pablodiste.datastore.inmemory.InMemoryListSourceOfTruth
-import dev.pablodiste.datastore.ratelimiter.RateLimitPolicy
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -51,17 +50,26 @@ class StoreImplTest: CoroutineTest() {
     }
 
     @Test
+    fun storeGetAndNotFound() = runTest {
+        val result = store.get(StoreRequest(Key(1), fetchWhenNoDataFound = false))
+        assert(result is StoreResponse.Error)
+    }
+
+    @Test
     fun storeStream() = runTest {
+        // Stream for non existing item should call the fetcher
         store.stream(Key(1), refresh = true).test {
             val data = awaitItem() as StoreResponse.Data
             assertEquals(ResponseOrigin.FETCHER, data.origin)
             cancelAndIgnoreRemainingEvents()
         }
+        // Further streams should return cached data
         store.stream(Key(1), refresh = false).test {
             val data = awaitItem() as StoreResponse.Data
             assertEquals(ResponseOrigin.SOURCE_OF_TRUTH, data.origin)
             cancelAndIgnoreRemainingEvents()
         }
+        // With refresh true it should return SOT item first and then call the fetcher to refresh the data.
         store.stream(Key(1), refresh = true).test {
             val dataSOT = awaitItem() as StoreResponse.Data
             assertEquals(ResponseOrigin.SOURCE_OF_TRUTH, dataSOT.origin)

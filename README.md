@@ -497,6 +497,15 @@ You can also configure a custom retryOn function like the following example. The
 RetryPolicy.ExponentialBackoff(maxRetries = 3, retryOn = { error -> ... })
 ```
 
+### Disable a Fetcher
+
+You can disable a fetcher under certain conditions with this operator. When the fetcher is disabled it returns `NoData`.
+
+```kotlin
+Fetcher<NoKey, List<Post>> { FetcherResult.Data(provideService().getPosts()) }
+  .disableOn { isLoggedIn().not() }
+```
+
 ### Throttling a single fetcher on server errors
 
 With this operator you can detect if multiple errors are happening in the server and avoid sending requests for some time. 
@@ -579,6 +588,19 @@ val fetcherError = ((result as StoreResponse.Error).error as FetcherException).f
 val parsedError = (fetcherError as FetcherError.EntityHttpError<ErrorModel>).errorResult
 ```
 
+### Loading States
+
+You can configure the store to send a loading state in the stream flow. When enabled, `Loading` is sent when the Fetcher starts a network call.
+
+```kotlin
+store.stream(StoreRequest(key = NoKey(), refresh = true, emitLoadingStates = true)).collect { result ->
+  // Result can be Loading
+}
+}
+```
+You can use this, for example, to show a loading indicator when receiving `Loading` and hiding it when receiving `Data` or `Error`.
+Please note if you call `fetch` or any other method that generates a network call, you also need to provide `emitLoadingStates = true` to the `StoreRequest` to receive `Loading` states.
+This is specially helpful when implementing refresh buttons, pull-to-refresh or swipe-to-refresh interactions, you can listen to the `stream` and you can call `fetch` to perform a network call. An example is provided in the demo code.
 
 ### CRUD Stores
 
@@ -650,16 +672,18 @@ Please create an issue in github so we can discuss the idea and collaborate.
 
 ## Roadmap
 
-- Support parsing of error results.
-- Support operators (limit, retry) on Sender
-- Support enabling / disabling fetcher calls based on app state, i.e. login token expiration.
+- Loading state - example with pull to refresh
 - Support of Pagination, integration with Pager3 or custom implementation.
+- Data expiration, TTL, validators.
 - SQLDelight examples and wrappers
-- Add additional testing coverage.
+- Add additional testing coverage, add coverage library.
+- Support multiple responses per request, web-sockets.
 - Limiter: Implement Token RateLimiter
 - Refactor throttling code.
+- Analyze making it available for KMM.
 - Retries: Support 429 and Retry-After header
 - Support X-Rate-Limit headers.
+- Crud: Support operators (limit, retry) on Sender
 - Work in progress: Writeable Store
     - Sender Controller and library helpers    
     - Error handling / Undo
@@ -669,6 +693,5 @@ Please create an issue in github so we can discuss the idea and collaborate.
     - Detect changes on same entity id and process only one
     - More Testing
     - Documentation
-- Analyze making it available for KMM.
 - Investigate if there is a way to create functional builders for the source of truth.
 - Add an optional memory cache.

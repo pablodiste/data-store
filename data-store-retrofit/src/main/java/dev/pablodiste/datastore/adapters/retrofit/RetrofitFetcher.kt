@@ -2,7 +2,6 @@ package dev.pablodiste.datastore.adapters.retrofit
 
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
-import dev.pablodiste.datastore.FetcherServiceProvider
 import dev.pablodiste.datastore.Sender
 import dev.pablodiste.datastore.StoreConfig.throttlingDetectedExceptions
 import dev.pablodiste.datastore.exceptions.FetcherError

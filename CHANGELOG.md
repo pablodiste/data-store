@@ -43,3 +43,9 @@ v0.1.6
 v0.1.7
 - Removing ServiceProvider from Fetchers and Senders
 - Retrofit adding support to parse error responses
+
+v0.1.8
+- Major changes on internals. Updating compose and android gradle plugin.
+- Supporting Loading states.
+- Adding pull-to-refresh sample.
+- Disable fetcher operator
