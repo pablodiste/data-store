@@ -3,23 +3,22 @@ package dev.pablodiste.datastore.sample.ui.room.stream
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.pablodiste.datastore.StoreResponse
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.pablodiste.datastore.impl.stream
 import dev.pablodiste.datastore.sample.models.room.People
 import dev.pablodiste.datastore.sample.repositories.store.room.RoomPeopleStore
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class RoomStreamExampleViewModel : ViewModel() {
+@HiltViewModel
+class RoomStreamExampleViewModel @Inject constructor(private val roomPeopleStore: RoomPeopleStore) : ViewModel() {
 
-    private val peopleStore1 = RoomPeopleStore()
     val uiState = MutableStateFlow<List<People>>(listOf())
 
     init {
         viewModelScope.launch {
-            peopleStore1.stream(refresh = true).collect { result ->
+            roomPeopleStore.stream(refresh = true).collect { result ->
                 Log.d(TAG, "Received $result")
                 uiState.value = result.requireData()
             }

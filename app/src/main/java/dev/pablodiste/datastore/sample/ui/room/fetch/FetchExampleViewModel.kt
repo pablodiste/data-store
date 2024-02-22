@@ -3,18 +3,18 @@ package dev.pablodiste.datastore.sample.ui.room.fetch
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.pablodiste.datastore.StoreRequest
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.pablodiste.datastore.Store
 import dev.pablodiste.datastore.fetch
 import dev.pablodiste.datastore.sample.models.room.People
 import dev.pablodiste.datastore.sample.repositories.store.room.RoomPersonStore
-import dev.pablodiste.datastore.sample.repositories.store.room.providePersonStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class FetchExampleViewModel : ViewModel() {
+@HiltViewModel
+class FetchExampleViewModel @Inject constructor(private val personStore: Store<RoomPersonStore.Key, People>) : ViewModel() {
 
-    //private val personStore = RoomPersonStore()
-    private val personStore = providePersonStore()
     val uiState = MutableStateFlow(People())
 
     init {

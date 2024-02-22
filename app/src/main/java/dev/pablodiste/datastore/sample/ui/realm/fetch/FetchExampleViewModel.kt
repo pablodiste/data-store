@@ -3,15 +3,17 @@ package dev.pablodiste.datastore.sample.ui.realm.fetch
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.pablodiste.datastore.closable.launch
 import dev.pablodiste.datastore.fetch
 import dev.pablodiste.datastore.sample.models.realm.People
 import dev.pablodiste.datastore.sample.repositories.store.realm.RealmPersonStore
 import kotlinx.coroutines.flow.MutableStateFlow
+import javax.inject.Inject
 
-class FetchExampleViewModel : ViewModel() {
+@HiltViewModel
+class FetchExampleViewModel @Inject constructor(private val personStore: RealmPersonStore) : ViewModel() {
 
-    private val personStore = RealmPersonStore()
     val uiState = MutableStateFlow(People())
 
     init {

@@ -2,16 +2,18 @@ package dev.pablodiste.datastore.sample.ui.room.crud
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.pablodiste.datastore.StoreResponse
+import dev.pablodiste.datastore.crud.SimpleCrudStoreImpl
 import dev.pablodiste.datastore.sample.models.room.Post
-import dev.pablodiste.datastore.sample.repositories.store.room.PostKey
-import dev.pablodiste.datastore.sample.repositories.store.room.providePostsCRUDStore
+import dev.pablodiste.datastore.sample.repositories.store.room.dao.PostKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class RoomCrudExampleViewModel : ViewModel() {
+@HiltViewModel
+class RoomCrudExampleViewModel @Inject constructor(private val postsStore: SimpleCrudStoreImpl<PostKey, Post>) : ViewModel() {
 
-    private val postsStore = providePostsCRUDStore()
     val uiState = MutableStateFlow("")
 
     companion object {

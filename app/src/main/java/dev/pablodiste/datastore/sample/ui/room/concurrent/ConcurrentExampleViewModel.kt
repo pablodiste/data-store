@@ -3,15 +3,18 @@ package dev.pablodiste.datastore.sample.ui.room.concurrent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.pablodiste.datastore.impl.NoKey
+import dev.pablodiste.datastore.impl.SimpleStoreImpl
 import dev.pablodiste.datastore.impl.stream
 import dev.pablodiste.datastore.sample.models.room.Post
-import dev.pablodiste.datastore.sample.repositories.store.room.providePostsStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class RoomConcurrentExampleViewModel : ViewModel() {
+@HiltViewModel
+class RoomConcurrentExampleViewModel @Inject constructor(private val postsStore: SimpleStoreImpl<NoKey, List<Post>>) : ViewModel() {
 
-    private val postsStore = providePostsStore()
     val uiState = MutableStateFlow<List<Post>>(listOf())
 
     init {

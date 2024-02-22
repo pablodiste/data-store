@@ -3,17 +3,18 @@ package dev.pablodiste.datastore.sample.ui.room.stream
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.pablodiste.datastore.Store
 import dev.pablodiste.datastore.impl.NoKey
 import dev.pablodiste.datastore.sample.models.room.Starship
-import dev.pablodiste.datastore.sample.repositories.store.room.provideStarshipStore
-import dev.pablodiste.datastore.sample.repositories.store.room.provideStarshipStoreKtor
 import dev.pablodiste.datastore.stream
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class RoomStreamDTOExampleViewModel : ViewModel() {
+@HiltViewModel
+class RoomStreamDTOExampleViewModel @Inject constructor(private val starshipStore: Store<NoKey, List<Starship>>) : ViewModel() {
 
-    private val starshipStore = provideStarshipStoreKtor()
     val uiState = MutableStateFlow<List<Starship>>(listOf())
 
     init {

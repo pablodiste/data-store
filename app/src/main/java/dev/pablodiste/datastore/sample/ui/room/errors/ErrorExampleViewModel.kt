@@ -3,6 +3,7 @@ package dev.pablodiste.datastore.sample.ui.room.errors
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.pablodiste.datastore.StoreConfig
 import dev.pablodiste.datastore.sample.models.room.People
 import dev.pablodiste.datastore.sample.repositories.store.room.RoomPersonStore
@@ -10,13 +11,13 @@ import dev.pablodiste.datastore.sample.repositories.store.room.RoomPersonStoreWi
 import dev.pablodiste.datastore.stream
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ErrorExampleViewModel : ViewModel() {
+@HiltViewModel
+class ErrorExampleViewModel @Inject constructor(private val personStore: RoomPersonStoreWithError) : ViewModel() {
 
-    private val personStore = RoomPersonStoreWithError()
     val uiState = MutableStateFlow(State())
     val throttlingState = StoreConfig.throttlingController.throttlingState
 

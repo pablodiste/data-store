@@ -3,23 +3,24 @@ package dev.pablodiste.datastore.sample.ui.realm.stream
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.pablodiste.datastore.StoreResponse
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.pablodiste.datastore.closable.autoClose
 import dev.pablodiste.datastore.closable.stream
 import dev.pablodiste.datastore.sample.models.realm.People
 import dev.pablodiste.datastore.sample.repositories.store.realm.RealmPeopleStore
 import dev.pablodiste.datastore.sample.repositories.store.realm.RealmPlanetsStore
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class StreamExampleViewModel : ViewModel() {
+@HiltViewModel
+class StreamExampleViewModel @Inject constructor(
+    private val peopleStore1: RealmPeopleStore,
+    private val peopleStore2: RealmPeopleStore,
+    private val planetStore: RealmPlanetsStore) : ViewModel() {
 
-    private val peopleStore1 = RealmPeopleStore()
-    private val peopleStore2 = RealmPeopleStore()
-    private val planetStore = RealmPlanetsStore()
     val uiState = MutableStateFlow<List<People>>(listOf())
 
     init {

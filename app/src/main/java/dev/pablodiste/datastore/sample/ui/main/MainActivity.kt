@@ -4,20 +4,35 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.DrawerValue
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.ModalDrawer
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar
+import androidx.compose.material.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import dagger.hilt.android.AndroidEntryPoint
 import dev.pablodiste.datastore.sample.ui.realm.fetch.FetchExample
 import dev.pablodiste.datastore.sample.ui.realm.fetch.FetchExampleViewModel
 import dev.pablodiste.datastore.sample.ui.realm.get.GetExample
@@ -34,13 +49,14 @@ import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostView
 import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostViewModel
 import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostsList
 import dev.pablodiste.datastore.sample.ui.room.dummyposts.DummyPostsViewModel
+import dev.pablodiste.datastore.sample.ui.room.errors.ErrorExampleViewModel
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamDTOExample
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamDTOExampleViewModel
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamExample
 import dev.pablodiste.datastore.sample.ui.room.stream.RoomStreamExampleViewModel
-import dev.pablodiste.datastore.sample.viewmodels.viewModelFactory
 import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,70 +103,69 @@ fun AppMainScreen() {
                     Home(openDrawer = { openDrawer() })
                 }
                 composable(DrawerScreens.DummyPosts.route) {
-                    val viewModel = viewModel<DummyPostsViewModel>()
+                    val viewModel = hiltViewModel<DummyPostsViewModel>()
                     DummyPostsList(viewModel,
                         openDrawer = { openDrawer() },
                         onPostSelected = { postId -> navController.navigate("dummy_post/$postId") }
                     )
                 }
-                composable(DrawerScreens.ViewDummyPost.route,
-                    arguments = listOf(navArgument("postId") { type = NavType.IntType })) {
-                    val viewModel = viewModel<DummyPostViewModel>(factory = viewModelFactory {
+                composable(DrawerScreens.ViewDummyPost.route, arguments = listOf(navArgument("postId") { type = NavType.IntType })) {
+                    /*
+                    val viewModel = hiltViewModel<DummyPostViewModel>(factory = viewModelFactory {
                         DummyPostViewModel(it.arguments?.getInt("postId") ?: 0)
                     })
+                     */
+                    val viewModel = hiltViewModel<DummyPostViewModel>()
                     DummyPostView(viewModel,
                         openDrawer = { openDrawer() },
                         onDeletePressed = { navController.popBackStack() },
                         onEditPressed = { postId -> navController.navigate("dummy_post/edit/$postId") }
                     )
                 }
-                composable(DrawerScreens.EditDummyPost.route,
-                    arguments = listOf(navArgument("postId") { type = NavType.IntType })) {
-                    val viewModel = viewModel<DummyPostEditViewModel>(factory = viewModelFactory {
-                        DummyPostEditViewModel(it.arguments?.getInt("postId") ?: 0)
-                    })
-                    DummyPostEdit(viewModel,
-                        openDrawer = { openDrawer() }
-                    ) { navController.popBackStack(route = "dummy_posts", inclusive = false) }
+                composable(DrawerScreens.EditDummyPost.route, arguments = listOf(navArgument("postId") { type = NavType.IntType })) {
+                    val viewModel = hiltViewModel<DummyPostEditViewModel>()
+                    DummyPostEdit(viewModel, openDrawer = { openDrawer() }) {
+                        navController.popBackStack(route = "dummy_posts", inclusive = false)
+                    }
                 }
                 composable(DrawerScreens.RealmStreamExample.route) {
-                    val viewModel = viewModel<StreamExampleViewModel>()
+                    val viewModel = hiltViewModel<StreamExampleViewModel>()
                     StreamExample(viewModel, openDrawer = { openDrawer() })
                 }
                 composable(DrawerScreens.RoomFetchExample.route) {
-                    val viewModel = viewModel<dev.pablodiste.datastore.sample.ui.room.fetch.FetchExampleViewModel>()
+                    val viewModel = hiltViewModel<dev.pablodiste.datastore.sample.ui.room.fetch.FetchExampleViewModel>()
                     dev.pablodiste.datastore.sample.ui.room.fetch.FetchExample(viewModel, openDrawer = { openDrawer() })
                 }
                 composable(DrawerScreens.RoomGetExample.route) {
-                    val viewModel = viewModel<dev.pablodiste.datastore.sample.ui.room.get.GetExampleViewModel>()
+                    val viewModel = hiltViewModel<dev.pablodiste.datastore.sample.ui.room.get.GetExampleViewModel>()
                     dev.pablodiste.datastore.sample.ui.room.get.GetExample(viewModel, openDrawer = { openDrawer() })
                 }
                 composable(DrawerScreens.RoomErrorExample.route) {
-                    val viewModel = viewModel<dev.pablodiste.datastore.sample.ui.room.errors.ErrorExampleViewModel>()
+                    val viewModel = hiltViewModel<ErrorExampleViewModel>()
                     dev.pablodiste.datastore.sample.ui.room.errors.ErrorExample(viewModel, openDrawer = { openDrawer() })
                 }
                 composable(DrawerScreens.RoomConcurrentExample.route) {
-                    val viewModel = viewModel<RoomConcurrentExampleViewModel>()
+                    val viewModel = hiltViewModel<RoomConcurrentExampleViewModel>()
                     RoomConcurrentExample(viewModel, openDrawer = { openDrawer() })
                 }
                 composable(DrawerScreens.RoomCrudExample.route) {
-                    val viewModel = viewModel<RoomCrudExampleViewModel>()
+                    val viewModel = hiltViewModel<RoomCrudExampleViewModel>()
                     RoomCrudExample(viewModel, openDrawer = { openDrawer() })
                 }
                 composable(DrawerScreens.RoomStreamExample.route) {
-                    val viewModel = viewModel<RoomStreamExampleViewModel>()
+                    val viewModel = hiltViewModel<RoomStreamExampleViewModel>()
                     RoomStreamExample(viewModel, openDrawer = { openDrawer() })
                 }
                 composable(DrawerScreens.RoomStreamDTOExample.route) {
-                    val viewModel = viewModel<RoomStreamDTOExampleViewModel>()
+                    val viewModel = hiltViewModel<RoomStreamDTOExampleViewModel>()
                     RoomStreamDTOExample(viewModel, openDrawer = { openDrawer() })
                 }
                 composable(DrawerScreens.RealmFetchExample.route) {
-                    val viewModel = viewModel<FetchExampleViewModel>()
+                    val viewModel = hiltViewModel<FetchExampleViewModel>()
                     FetchExample(viewModel, openDrawer = { openDrawer() })
                 }
                 composable(DrawerScreens.RealmGetExample.route) {
-                    val viewModel = viewModel<GetExampleViewModel>()
+                    val viewModel = hiltViewModel<GetExampleViewModel>()
                     GetExample(viewModel, openDrawer = { openDrawer() })
                 }
             }

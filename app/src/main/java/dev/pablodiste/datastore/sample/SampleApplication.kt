@@ -1,23 +1,21 @@
 package dev.pablodiste.datastore.sample
 
 import android.app.Application
-import androidx.room.Room
+import dagger.hilt.android.HiltAndroidApp
 import dev.pablodiste.datastore.sample.database.AppDatabase
 import io.realm.Realm
 import io.realm.RealmConfiguration
+import javax.inject.Inject
 
+@HiltAndroidApp
 class SampleApplication: Application() {
+
+    @Inject lateinit var database: AppDatabase
 
     override fun onCreate() {
         super.onCreate()
         initRealm()
-        initRoom()
-    }
-
-    private fun initRoom() {
-        dev.pablodiste.datastore.sample.SampleApplication.Companion.roomDb = Room.databaseBuilder(applicationContext, AppDatabase::class.java, "store-sample")
-            .fallbackToDestructiveMigration()
-            .build()
+        roomDb = database
     }
 
     private fun initRealm() {
