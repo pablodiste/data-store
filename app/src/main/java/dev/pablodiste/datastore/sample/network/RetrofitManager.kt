@@ -7,18 +7,22 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-object RetrofitManager : FetcherServiceProvider {
+private const val SWAPI = "swapi.py4e.com/api/"
+private const val JSONPLACEHOLDER = "jsonplaceholder.typicode.com/"
+private const val DUMMYJSON = "dummyjson.com/"
+
+class RetrofitManager : FetcherServiceProvider {
 
     private val retrofitSW: Retrofit
     private val retrofitJP: Retrofit
     private val retrofitDJ: Retrofit
     private val gson: Gson = GsonBuilder().setLenient().create()
+    private val okHttpClientBuilder = OkHttpClient.Builder()
 
     init {
-        val okHttpClientBuilder = OkHttpClient.Builder()
-        retrofitSW = okHttpClientBuilder.buildRetrofit("swapi.py4e.com/api/")
-        retrofitJP = okHttpClientBuilder.buildRetrofit("jsonplaceholder.typicode.com/")
-        retrofitDJ = okHttpClientBuilder.buildRetrofit("dummyjson.com/")
+        retrofitSW = okHttpClientBuilder.buildRetrofit(SWAPI)
+        retrofitJP = okHttpClientBuilder.buildRetrofit(JSONPLACEHOLDER)
+        retrofitDJ = okHttpClientBuilder.buildRetrofit(DUMMYJSON)
     }
 
     override fun <T> createService(service: Class<T>): T {
@@ -35,8 +39,4 @@ object RetrofitManager : FetcherServiceProvider {
         .callFactory(build())
         .build()
 
-    val dummyJSONService by lazy { retrofitDJ.create(DummyJsonService::class.java) }
-    val jsonPlaceholderService by lazy { retrofitJP.create(JsonPlaceholderService::class.java) }
-    val starWarsService by lazy { retrofitSW.create(StarWarsService::class.java) }
-    val roomStarWarsService by lazy { retrofitSW.create(RoomStarWarsService::class.java) }
 }

@@ -4,6 +4,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import dev.pablodiste.datastore.sample.network.StarWarsService
 import dev.pablodiste.datastore.sample.repositories.store.realm.RealmPeopleStore
 import dev.pablodiste.datastore.sample.repositories.store.realm.RealmPersonStore
 import dev.pablodiste.datastore.sample.repositories.store.realm.RealmPlanetsStore
@@ -22,7 +23,7 @@ class RealmStoreModule {
     fun providePeopleSourceOfTruth() = PeopleSourceOfTruth()
 
     @Provides
-    fun providePeopleFetcher() = PeopleFetcher()
+    fun providePeopleFetcher(starWarsService: StarWarsService) = PeopleFetcher(starWarsService)
 
     @Provides
     fun provideRealmPeopleStore(fetcher: PeopleFetcher, peopleSourceOfTruth: PeopleSourceOfTruth) =
@@ -32,7 +33,7 @@ class RealmStoreModule {
     fun providePersonSourceOfTruth() = PersonSourceOfTruth()
 
     @Provides
-    fun providePersonFetcher() = PersonFetcher()
+    fun providePersonFetcher(starWarsService: StarWarsService) = PersonFetcher(starWarsService)
 
     @Provides
     fun provideRealmPersonStore(fetcher: PersonFetcher, personSourceOfTruth: PersonSourceOfTruth) =
@@ -42,7 +43,7 @@ class RealmStoreModule {
     fun providePlanetSourceOfTruth() = PlanetSourceOfTruth()
 
     @Provides
-    fun providePlanetFetcher() = PlanetsFetcher()
+    fun providePlanetFetcher(starWarsService: StarWarsService) = PlanetsFetcher(starWarsService)
 
     @Provides
     fun provideRealmPlanetStore(fetcher: PlanetsFetcher, planetSourceOfTruth: PlanetSourceOfTruth) =

@@ -2,19 +2,22 @@ package dev.pablodiste.datastore.sample.network
 
 import android.util.Log
 import dev.pablodiste.datastore.FetcherServiceProvider
-import io.ktor.client.*
-import io.ktor.client.engine.android.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
-import io.ktor.client.plugins.observer.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.serialization.gson.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.DefaultRequest
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.observer.ResponseObserver
+import io.ktor.client.request.header
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.serialization.gson.gson
 
 private const val TIME_OUT = 60_000
 
-object KtorManager: FetcherServiceProvider {
+class KtorManager: FetcherServiceProvider {
 
     private val ktorHttpClient = HttpClient(Android) {
 
@@ -51,7 +54,5 @@ object KtorManager: FetcherServiceProvider {
     override fun <T> createService(service: Class<T>): T {
         return service.getConstructor(HttpClient::class.java).newInstance(ktorHttpClient)
     }
-
-    val ktorStarWarsService by lazy { createService(KtorStarWarsService::class.java) }
 
 }
