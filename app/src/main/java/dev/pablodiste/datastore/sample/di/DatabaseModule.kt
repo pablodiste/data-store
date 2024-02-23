@@ -14,15 +14,12 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
 
-    lateinit var roomDb: AppDatabase
-
     @Provides
     @Singleton
     fun provideRoom(@ApplicationContext applicationContext: Context): AppDatabase {
-        roomDb = Room.databaseBuilder(applicationContext, AppDatabase::class.java, "store-sample")
+        return Room.databaseBuilder(applicationContext, AppDatabase::class.java, "store-sample")
             .fallbackToDestructiveMigration()
             .build()
-        return roomDb
     }
 
 }

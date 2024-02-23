@@ -24,3 +24,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun dummyPostsSourceOfTruth(): DummyPostsSourceOfTruth
     abstract fun dummyPostSourceOfTruth(): DummyPostSourceOfTruth
 }
+
+object RoomDatabase {
+    lateinit var roomDb: AppDatabase
+}

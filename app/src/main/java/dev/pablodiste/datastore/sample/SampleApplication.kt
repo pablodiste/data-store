@@ -3,6 +3,7 @@ package dev.pablodiste.datastore.sample
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 import dev.pablodiste.datastore.sample.database.AppDatabase
+import dev.pablodiste.datastore.sample.database.RoomDatabase
 import io.realm.Realm
 import io.realm.RealmConfiguration
 import javax.inject.Inject
@@ -15,7 +16,7 @@ class SampleApplication: Application() {
     override fun onCreate() {
         super.onCreate()
         initRealm()
-        roomDb = database
+        RoomDatabase.roomDb = database
     }
 
     private fun initRealm() {
@@ -25,9 +26,5 @@ class SampleApplication: Application() {
             .deleteRealmIfMigrationNeeded() // Deletes local db if any schema changes
             .build()
         Realm.setDefaultConfiguration(realmConfig)
-    }
-
-    companion object {
-        lateinit var roomDb: AppDatabase
     }
 }

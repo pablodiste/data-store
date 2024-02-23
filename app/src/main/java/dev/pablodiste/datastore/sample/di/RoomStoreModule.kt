@@ -114,10 +114,10 @@ class RoomStoreModule {
      */
 
     @Provides
-    fun provideStarshipStoreKtor(apiService: KtorStarWarsService): Store<NoKey, List<Starship>> =
+    fun provideStarshipStoreKtor(apiService: KtorStarWarsService, roomDatabase: AppDatabase): Store<NoKey, List<Starship>> =
         StoreBuilder.from(
             fetcher = KtorFetcher.of(apiService) { key, service: KtorStarWarsService -> service.getStarships().results },
-            sourceOfTruth = SampleApplication.roomDb.starshipSourceOfTruth(),
+            sourceOfTruth = roomDatabase.starshipSourceOfTruth(),
             mapper = StarshipMapper()
         ).build()
 
