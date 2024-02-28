@@ -34,7 +34,7 @@ class LimitedFetcher<K: Any, I: Any>(
         return if (force || isLimiterDisabled || rateLimiter.shouldFetch()) {
             fetcher.fetch(key)
         } else {
-            FetcherResult.NoData("Fetch not executed")
+            FetcherResult.NoData("Fetch was not executed. Call ignored by rate limiter.")
         }
     }
 

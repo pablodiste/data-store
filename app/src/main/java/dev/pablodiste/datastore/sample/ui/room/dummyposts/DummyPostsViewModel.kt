@@ -25,19 +25,24 @@ class DummyPostsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            postsStore.stream(StoreRequest(key = NoKey(), refresh = true, emitLoadingStates = true)).collect { result ->
+            postsStore.stream(StoreRequest(
+                key = NoKey(),
+                refresh = true,
+                emitNoDataStates = true,
+                emitLoadingStates = true
+            )).collect { result ->
                 Log.d(TAG, "Received $result")
                 when (result) {
                     is StoreResponse.Data -> {
-                        Log.d(TAG, "Received Data")
                         uiState.value = result.requireData()
                         loading.value = false
                     }
                     is StoreResponse.Loading -> {
-                        Log.d(TAG, "Received Loading")
                         loading.value = true
                     }
-                    else -> { Log.d(TAG, "Error or NoData") }
+                    else -> {
+                        loading.value = false
+                    }
                 }
             }
         }

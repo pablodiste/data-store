@@ -1,5 +1,6 @@
 package dev.pablodiste.datastore.fetchers
 
+import android.util.Log
 import dev.pablodiste.datastore.Fetcher
 import dev.pablodiste.datastore.FetcherResult
 import dev.pablodiste.datastore.StoreConfig
@@ -7,6 +8,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -18,6 +20,7 @@ class FetcherController<K: Any, I: Any>(
 ) {
     private val TAG = this.javaClass.simpleName
     private val keyBasedFlows: MutableMap<String, MutableSharedFlow<FetcherResult<I>>> = mutableMapOf()
+    private val loading: AtomicBoolean = AtomicBoolean(false)
 
     /**
      * @param force when true makes the api call ignoring the rate limiter. Force param does not ignore the throttling state.
@@ -26,9 +29,12 @@ class FetcherController<K: Any, I: Any>(
         val config = StoreConfig.coroutineConfig
         return withContext(config.ioDispatcher + FetcherContextImpl(force)) {
             val mutableFetcherFlow = getMutableFetcherFlow(key)
-            if (emitLoadingState) mutableFetcherFlow.emit(FetcherResult.Loading)
+            Log.d(TAG, "IsLoading: ${loading.get()}")
+            if (emitLoadingState && loading.get().not()) mutableFetcherFlow.emit(FetcherResult.Loading)
+            loading.set(true)
             val result = fetcher.fetch(key)
             mutableFetcherFlow.emit(result)
+            loading.set(false)
             return@withContext result
         }
     }
@@ -39,7 +45,7 @@ class FetcherController<K: Any, I: Any>(
         return fetcherFlow
     }
 
-    fun getFetcherFlow(key: K): SharedFlow<FetcherResult<I>> = getMutableFetcherFlow(key).asSharedFlow()
+    fun getFetcherFlow(key: K): SharedFlow<FetcherResult<I>> = getMutableFetcherFlow(key)
 
     class FetcherContextImpl(override val forceFetch: Boolean) : FetcherContext
 }
