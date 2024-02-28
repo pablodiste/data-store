@@ -44,7 +44,7 @@ dependencies {
 
 ext {
     PUBLISH_GROUP_ID = 'dev.pablodiste.datastore'
-    PUBLISH_VERSION = '0.1.8'
+    PUBLISH_VERSION = '0.1.9'
     PUBLISH_ARTIFACT_ID = 'datastore'
     PUBLISH_DESCRIPTION = 'Android library implementing a repository pattern allowing API calls and caching'
     PUBLISH_URL = 'https://github.com/pablodiste/data-store'

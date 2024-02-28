@@ -49,3 +49,7 @@ v0.1.8
 - Supporting Loading states.
 - Adding pull-to-refresh sample.
 - Disable fetcher operator
+
+v0.1.9
+- Examples using Hilt DI library
+- Bug fixed in loading state emitting multiple times with concurrent calls
